@@ -1,0 +1,295 @@
+/* Modal Overlay Styles */
+/* Manual Time Modal Styles */
+.manual-time-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.manual-time-modal-content {
+    background: white;
+    border-radius: 10px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.manual-time-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 10px 10px 0 0;
+}
+
+.manual-time-modal-header h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.25rem;
+}
+
+.manual-time-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.manual-time-close:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.manual-time-modal-body {
+    padding: 25px;
+}
+
+.time-input-group {
+    margin-bottom: 20px;
+}
+
+.time-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.datetime-inputs {
+    display: flex;
+    gap: 10px;
+}
+
+.datetime-inputs input[type="date"],
+.datetime-inputs input[type="time"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.datetime-inputs input[type="date"]:focus,
+.datetime-inputs input[type="time"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+.manual-time-preview {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.manual-time-preview span {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.manual-time-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px 25px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+}
+
+.manual-time-modal-footer .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.manual-time-modal-footer .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.manual-time-modal-footer .btn-primary:hover {
+    background-color: var(--secondary-color);
+}
+
+.manual-time-modal-footer .btn-primary:disabled {
+    background-color: #ccc;
+    color: #888;
+    cursor: not-allowed;
+}
+
+.manual-time-modal-footer .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.manual-time-modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+
+@media (max-width: 768px) {
+    .manual-time-modal-content {
+        padding: 10px;
+    }
+    .datetime-inputs {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .manual-time-modal-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .manual-time-modal-footer .btn {
+        width: 100%;
+    }
+}
+
+/* Fault Modal Styles */
+.fault-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.fault-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    min-width: 320px;
+    max-width: 90vw;
+    box-shadow: 0 2px 16px #0002;
+    position: relative;
+}
+
+.fault-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.fault-modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #dc3545;
+}
+
+.fault-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #888;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+
+.fault-modal-close:hover {
+    color: #dc3545;
+}
+
+.fault-modal-body {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.form-group textarea {
+    width: 100%;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 1rem;
+    resize: vertical;
+    min-height: 80px;
+    max-height: 200px;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220,53,69,0.1);
+}
+
+.fault-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.fault-modal-footer .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.fault-modal-footer .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.fault-modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.fault-modal-footer .btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.fault-modal-footer .btn-danger:hover {
+    background-color: #c82333;
+}
+
+.fault-modal-footer .btn:disabled {
+    background-color: #ccc;
+    color: #888;
+    cursor: not-allowed;
+} 

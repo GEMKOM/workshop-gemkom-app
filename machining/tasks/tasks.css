@@ -1,0 +1,548 @@
+:root {
+    --primary-color: #8B0000;
+    --secondary-color: #DC143C;
+    --accent-color: #FF4D4D;
+    --text-color: #2c3e50;
+    --light-bg: #f8f9fa;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f9f9f9;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.timer-container {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.timer-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 20px 0;
+    font-family: monospace;
+}
+
+.timer-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.action-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.action-button.green {
+    background-color: #28a745;
+    color: white;
+}
+
+.action-button.green:hover {
+    background-color: #218838;
+}
+
+.action-button.red {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-button.red:hover {
+    background-color: #c82333;
+}
+
+.action-button.secondary-button {
+    background-color: #6c757d;
+    color: white;
+}
+
+.action-button.secondary-button:hover {
+    background-color: #5a6268;
+}
+
+.action-button.danger-button {
+    background-color: #dc3545;
+    color: white;
+}
+
+.action-button.danger-button:hover {
+    background-color: #c82333;
+}
+
+.title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.machine-name {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.task-right {
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    justify-content: end;
+    gap: 0.5rem;
+    margin-bottom: 5px;
+}
+
+.label {
+    font-weight: bold;
+    text-align: left;
+}
+
+.value {
+    text-align: right;
+}
+
+/* Manual Time Modal Styles */
+.manual-time-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.manual-time-modal-content {
+    background: white;
+    border-radius: 10px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.manual-time-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 10px 10px 0 0;
+}
+
+.manual-time-modal-header h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.25rem;
+}
+
+.manual-time-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.manual-time-close:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.manual-time-modal-body {
+    padding: 25px;
+}
+
+.time-input-group {
+    margin-bottom: 20px;
+}
+
+.time-input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.datetime-inputs {
+    display: flex;
+    gap: 10px;
+}
+
+.datetime-inputs input[type="date"],
+.datetime-inputs input[type="time"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.datetime-inputs input[type="date"]:focus,
+.datetime-inputs input[type="time"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+.manual-time-preview {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.manual-time-preview span {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.manual-time-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px 25px;
+    border-top: 1px solid #e9ecef;
+    background: #f8f9fa;
+    border-radius: 0 0 10px 10px;
+}
+
+.manual-time-modal-footer .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-width: 80px;
+}
+
+.manual-time-modal-footer .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.manual-time-modal-footer .btn-primary:hover {
+    background-color: var(--secondary-color);
+}
+
+.manual-time-modal-footer .btn-primary:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
+.manual-time-modal-footer .btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.manual-time-modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+@media (max-width: 768px) {
+    .manual-time-modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .datetime-inputs {
+        flex-direction: column;
+    }
+    
+    .manual-time-modal-footer {
+        flex-direction: column;
+    }
+    
+    .manual-time-modal-footer .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .timer-controls {
+        flex-direction: column;
+    }
+
+    .action-button {
+        width: 100%;
+    }
+}
+
+/* Fault Report Modal Styles */
+.fault-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.fault-modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.fault-modal-header {
+    padding: 20px 20px 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.fault-modal-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.fault-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.fault-modal-close:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.fault-modal-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+    transition: border-color 0.2s ease;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.fault-modal-footer {
+    padding: 0 20px 20px 20px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.fault-modal-footer .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.fault-modal-footer .btn-secondary {
+    background-color: #6b7280;
+    color: white;
+}
+
+.fault-modal-footer .btn-secondary:hover {
+    background-color: #4b5563;
+}
+
+.fault-modal-footer .btn-danger {
+    background-color: #ef4444;
+    color: white;
+}
+
+.fault-modal-footer .btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.fault-modal-footer .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Comment Modal Styles */
+.comment-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.comment-modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.comment-modal-header {
+    padding: 20px 20px 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.comment-modal-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.comment-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.comment-modal-close:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.comment-modal-body {
+    padding: 20px;
+}
+
+.comment-modal-footer {
+    padding: 0 20px 20px 20px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.comment-modal-footer .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.comment-modal-footer .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.comment-modal-footer .btn-primary:hover {
+    background-color: var(--secondary-color);
+}
+
+.comment-modal-footer .btn-secondary {
+    background-color: #6b7280;
+    color: white;
+}
+
+.comment-modal-footer .btn-secondary:hover {
+    background-color: #4b5563;
+} 

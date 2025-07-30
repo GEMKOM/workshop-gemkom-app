@@ -1,0 +1,274 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%);
+  min-height: 100vh;
+  color: #333;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ============================================================================
+   LAYOUT STYLES
+   ============================================================================ */
+
+.main-content {
+  padding: 20px 0;
+}
+
+.main-container {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  padding: 2.5rem;
+  margin-top: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Mobile Navigation Tabs */
+.mobile-nav {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  padding: 1rem 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 85px;
+  z-index: 999;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-tabs-container {
+  display: flex;
+  gap: 1rem;
+  padding: 0 1.5rem;
+}
+
+.nav-tab {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(224, 224, 224, 0.8);
+  color: #666;
+  padding: 1rem 1.2rem;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  min-height: 56px;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.nav-tab:hover::before {
+  left: 100%;
+}
+
+.nav-tab i {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-tab.active {
+  background: linear-gradient(135deg, #8B0000, #A52A2A);
+  border-color: #8B0000;
+  color: white;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(139, 0, 0, 0.4);
+}
+
+.nav-tab.active i {
+  transform: scale(1.1);
+}
+
+.nav-tab:hover:not(.active) {
+  border-color: #8B0000;
+  color: #8B0000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #8B0000, #A52A2A);
+  border: none;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #A52A2A, #8B0000);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(139, 0, 0, 0.4);
+}
+
+/* Form controls enhancement */
+.form-select, .form-control {
+  border: 2px solid rgba(224, 224, 224, 0.8);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-select:focus, .form-control:focus {
+  border-color: #8B0000;
+  box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.form-label {
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+/* Card enhancements */
+.card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* =========================================================================
+   MAINTENANCE INDICATOR STYLES
+   ========================================================================= */
+
+.maintenance-indicator {
+  margin-bottom: 20px;
+  padding: 1rem 1.2rem;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 2px solid #ffc107;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+  transition: all 0.3s ease;
+}
+
+.maintenance-indicator:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+}
+
+.maintenance-warning {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #856404;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.warning-icon {
+  font-size: 1.2rem;
+  animation: pulse 2s infinite;
+}
+
+.warning-text {
+  flex: 1;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 15px 0;
+  }
+  
+  .main-container {
+    padding: 2rem;
+    margin: 0 10px;
+    border-radius: 20px;
+  }
+  
+  .nav-tab {
+    font-size: 0.9rem;
+    padding: 0.8rem 1rem;
+    min-height: 52px;
+  }
+  
+  .nav-tab i {
+    font-size: 1.1rem;
+  }
+  
+  .nav-tabs-container {
+    padding: 0 1rem;
+    gap: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .main-content {
+    padding: 10px 0;
+  }
+  
+  .main-container {
+    padding: 1.5rem;
+    margin: 0 5px;
+  }
+  
+  .nav-tabs-container {
+    padding: 0 0.8rem;
+    gap: 0.6rem;
+  }
+  
+  .nav-tab {
+    font-size: 0.85rem;
+    padding: 0.7rem 0.8rem;
+    min-height: 48px;
+  }
+  
+  .nav-tab i {
+    font-size: 1rem;
+  }
+}

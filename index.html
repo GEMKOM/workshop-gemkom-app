@@ -1,18 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Welcome to Blue App</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="container">
-    <h1>Welcome to the Blue App</h1>
-    <p>This is a basic GitHub Pages site for <strong>blue.gemcore.com.tr</strong>.</p>
-    <button onclick="sayHello()">Click Me</button>
-  </div>
+<script type="text/javascript" src="https://gemkom-1.atlassian.net/s/d41d8cd98f00b204e9800998ecf8427e-T/xghl7j/b/9/c95134bc67d3a521bb3f4331beb9b804/_/download/batch/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector/com.atlassian.jira.collector.plugin.jira-issue-collector-plugin:issuecollector.js?locale=tr-TR&collectorId=3eb49cb5"></script>
 
-  <script src="script.js"></script>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemkom</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="components/timerWidget.css" rel="stylesheet">
+    <link href="components/shared.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="images/gemkom.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="pre-auth.css">
+</head>
+<body class="pre-auth">
+    <!-- Header will be dynamically inserted -->
+    <div id="header-container"></div>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="modules-section">
+                    <h2 class="text-center mb-5">Modüller</h2>
+                    <div class="row g-4" id="modules-container">
+                        <!-- Module cards will be dynamically generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer will be dynamically inserted -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main Script -->
+    <script type="module" src="main.js"></script>
+    <!-- Timer Widget -->
+    <script type="module" src="components/timerWidgetInit.js"></script>
 </body>
 </html>

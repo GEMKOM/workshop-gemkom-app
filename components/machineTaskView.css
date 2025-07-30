@@ -1,0 +1,133 @@
+:root {
+    --primary-color: #8B0000;
+    --secondary-color: #DC143C;
+    --accent-color: #FF4D4D;
+    --text-color: #2c3e50;
+    --light-bg: #f8f9fa;
+}
+
+.task-list {
+    display: grid;
+    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.task-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.task-left {
+    flex: 1;
+}
+
+.task-left h3 {
+    color: var(--primary-color);
+    margin: 0 0 10px 0;
+    font-size: 1.2rem;
+}
+
+.task-left p {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.task-right {
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.task-right div {
+    margin-bottom: 5px;
+}
+
+.filter-bar {
+    margin-bottom: 20px;
+}
+
+.filter-bar .form-label {
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.filter-bar .form-select {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 16px;
+    color: #333;
+    background-color: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filter-bar .form-select:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+}
+
+.filter-bar .form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    outline: none;
+}
+
+.filter-bar .form-select option {
+    padding: 10px;
+    font-size: 16px;
+}
+
+.filter-bar .form-select option:first-child {
+    color: #666;
+}
+
+.search-container {
+    margin-bottom: 20px;
+}
+
+.search-input {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 16px;
+    color: #333;
+    background-color: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#search-bar-container {
+    padding: 8px 16px;
+    margin-bottom: 8px;
+}
+
+#search-input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+@media (max-width: 768px) {
+    .task-list {
+        grid-template-columns: 1fr;
+    }
+} 
