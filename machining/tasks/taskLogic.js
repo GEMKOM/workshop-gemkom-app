@@ -77,9 +77,13 @@ export async function handleStopTimer(save_to_jira=true) {
             TimerWidget.triggerUpdate();
         } else {
             alert("Hata oluştu. Lütfen tekrar deneyin.");
+            // Re-enable button on error
+            startBtn.disabled = false;
         }
     } catch (error) {
         console.error('Error stopping timer:', error);
         alert("Hata oluştu. Lütfen tekrar deneyin.");
+        // Re-enable button on error
+        startBtn.disabled = false;
     }
 }

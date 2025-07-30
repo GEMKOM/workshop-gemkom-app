@@ -38,10 +38,6 @@ export async function handleStartStopClick() {
     }
 }
 
-export async function handleStopOnlyClick() {
-    await handleStopTimer(false);
-}
-
 export async function handleMarkDoneClick() {
     if (await checkMaintenanceAndAlert()) return;
     

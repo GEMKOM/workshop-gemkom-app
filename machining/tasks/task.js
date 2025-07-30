@@ -1,6 +1,7 @@
 // --- task.js ---
 // Entry point for task page - initialization and coordination
 
+import { initNavbar } from '../../components/navbar.js';
 import { guardRoute, navigateTo, ROUTES } from '../../authService.js';
 import { 
     getTaskKeyFromURL, 
@@ -27,6 +28,8 @@ async function initializeTaskView() {
     if (!guardRoute()) {
         return;
     }
+    
+    initNavbar();
     
     const taskKey = getTaskKeyFromURL();
     if (!taskKey) {

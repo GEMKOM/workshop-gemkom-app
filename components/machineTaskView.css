@@ -1,133 +1,476 @@
+/* ============================================================================
+   MACHINE TASK VIEW STYLES
+   ============================================================================ */
+
 :root {
     --primary-color: #8B0000;
-    --secondary-color: #DC143C;
+    --secondary-color: #b40024;
     --accent-color: #FF4D4D;
     --text-color: #2c3e50;
     --light-bg: #f8f9fa;
+    --border-radius: 12px;
+    --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s ease;
 }
 
+/* ============================================================================
+   MAIN CONTAINER
+   ============================================================================ */
+
+.machine-task-view {
+    max-width: 100%;
+}
+
+/* ============================================================================
+   SECTION HEADERS
+   ============================================================================ */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--light-bg);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.section-subtitle {
+    color: #6c757d;
+    margin: 0.5rem 0 0 0;
+    font-size: 0.95rem;
+}
+
+.task-count {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* ============================================================================
+   MACHINE SELECTION
+   ============================================================================ */
+
+.machine-selection-section {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    transition: var(--transition);
+}
+
+.machine-selection-section:hover {
+    box-shadow: var(--card-hover-shadow);
+}
+
+.machine-selector {
+    margin-top: 1rem;
+}
+
+.machine-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: var(--text-color);
+    background-color: white;
+    transition: var(--transition);
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    width: 100%;
+}
+
+.machine-select:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.1);
+}
+
+.machine-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+    outline: none;
+}
+
+.machine-select option {
+    padding: 0.5rem;
+    font-size: 1rem;
+}
+
+.machine-select option:first-child {
+    color: #6c757d;
+}
+
+/* ============================================================================
+   SEARCH SECTION
+   ============================================================================ */
+
+.search-section {
+    margin-bottom: 2rem;
+}
+
+.search-container {
+    position: relative;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    color: #6c757d;
+    z-index: 2;
+}
+
+.search-input {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    font-size: 1rem;
+    color: var(--text-color);
+    background-color: white;
+    transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    width: 100%;
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: #6c757d;
+}
+
+/* ============================================================================
+   TASKS SECTION
+   ============================================================================ */
+
+.tasks-section {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 2rem;
+    transition: var(--transition);
+}
+
+.tasks-section:hover {
+    box-shadow: var(--card-hover-shadow);
+}
+
+/* ============================================================================
+   TASK LIST
+   ============================================================================ */
+
 .task-list {
-    display: grid;
-    gap: 15px;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
 .task-card {
     background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.task-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.02), rgba(180, 0, 36, 0.02));
+    opacity: 0;
+    transition: var(--transition);
 }
 
 .task-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    box-shadow: var(--card-hover-shadow);
+    border-color: var(--primary-color);
 }
 
-.task-left {
+.task-card:hover::before {
+    opacity: 1;
+}
+
+.task-card.placeholder-task {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border-color: #ffc107;
+}
+
+.task-card.placeholder-task:hover {
+    background: linear-gradient(135deg, #ffeaa7, #fff3cd);
+    border-color: #ffb300;
+}
+
+.task-card-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.task-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+
+.task-card:hover .task-icon {
+    transform: scale(1.1);
+}
+
+.task-info {
     flex: 1;
+    min-width: 0;
 }
 
-.task-left h3 {
-    color: var(--primary-color);
-    margin: 0 0 10px 0;
-    font-size: 1.2rem;
-}
-
-.task-left p {
-    margin: 0;
+.task-title {
+    font-size: 1.1rem;
+    font-weight: 600;
     color: var(--text-color);
-    font-size: 0.9rem;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
 }
 
-.task-right {
-    text-align: right;
+.task-description {
+    color: #6c757d;
+    margin: 0 0 1rem 0;
     font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.task-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.task-detail {
+    background: var(--light-bg);
     color: var(--text-color);
-}
-
-.task-right div {
-    margin-bottom: 5px;
-}
-
-.filter-bar {
-    margin-bottom: 20px;
-}
-
-.filter-bar .form-label {
-    color: #666;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
     font-weight: 500;
-    margin-bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
 }
 
-.filter-bar .form-select {
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 10px 15px;
-    font-size: 16px;
-    color: #333;
-    background-color: white;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+.task-detail.deadline {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
 }
 
-.filter-bar .form-select:hover {
-    border-color: #007bff;
-    box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+.task-action {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    transition: var(--transition);
+    flex-shrink: 0;
 }
 
-.filter-bar .form-select:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
-    outline: none;
+.task-card:hover .task-action {
+    transform: translateX(4px);
+    color: var(--secondary-color);
 }
 
-.filter-bar .form-select option {
-    padding: 10px;
-    font-size: 16px;
+/* ============================================================================
+   LOADING AND ERROR STATES
+   ============================================================================ */
+
+.loading-container,
+.error-container,
+.empty-state {
+    padding: 3rem 1rem;
 }
 
-.filter-bar .form-select option:first-child {
-    color: #666;
+.loading-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(139, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    animation: spin 1s ease-in-out infinite;
 }
 
-.search-container {
-    margin-bottom: 20px;
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
-.search-input {
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 10px 15px;
-    font-size: 16px;
-    color: #333;
-    background-color: white;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-#search-bar-container {
-    padding: 8px 16px;
-    margin-bottom: 8px;
-}
-
-#search-input {
-    width: 100%;
-    padding: 10px 14px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-}
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
 
 @media (max-width: 768px) {
-    .task-list {
-        grid-template-columns: 1fr;
+    .machine-selection-section,
+    .tasks-section {
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+    }
+    
+    .task-card {
+        padding: 1rem;
+    }
+    
+    .task-card-content {
+        gap: 0.75rem;
+    }
+    
+    .task-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .task-title {
+        font-size: 1rem;
+    }
+    
+    .task-description {
+        font-size: 0.85rem;
+    }
+    
+    .task-details {
+        gap: 0.5rem;
+    }
+    
+    .task-detail {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .machine-select,
+    .search-input {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
+
+@media (max-width: 576px) {
+    .machine-selection-section,
+    .tasks-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+    }
+    
+    .task-card {
+        padding: 0.875rem;
+    }
+    
+    .task-card-content {
+        gap: 0.5rem;
+    }
+    
+    .task-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    
+    .task-title {
+        font-size: 0.95rem;
+    }
+    
+    .task-description {
+        font-size: 0.8rem;
+    }
+    
+    .task-details {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    
+    .task-detail {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.3rem;
+    }
+    
+    .task-action {
+        font-size: 1rem;
+    }
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .task-card,
+    .task-icon,
+    .task-action,
+    .machine-select,
+    .search-input {
+        transition: none;
+    }
+}
+
+/* Focus states for accessibility */
+.task-card:focus,
+.machine-select:focus,
+.search-input:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .task-card {
+        border: 2px solid #000;
+    }
+    
+    .machine-select,
+    .search-input {
+        border: 2px solid #000;
     }
 } 

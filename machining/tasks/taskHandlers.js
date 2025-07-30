@@ -1,7 +1,7 @@
 // --- taskHandlers.js ---
 // Event handler setup for task functionality
 
-import { handleStartStopClick, handleMarkDoneClick, handleManualLogClick, handleBackClick, handleFaultReportClick, handleStopOnlyClick } from './taskActions.js';
+import { handleStartStopClick, handleMarkDoneClick, handleManualLogClick, handleBackClick, handleFaultReportClick } from './taskActions.js';
 import { setupTimerHandlers } from './taskLogic.js';
 
 // ============================================================================
@@ -25,16 +25,6 @@ export function setupMarkDoneHandler() {
     
     // Add new event listener
     doneBtn.addEventListener('click', handleMarkDoneClick);
-}
-
-export function setupStopOnlyHandler() {
-    const stopOnlyBtn = document.getElementById('stop-only-button');
-    
-    // Remove any existing listeners to prevent duplicates
-    stopOnlyBtn.removeEventListener('click', handleStopOnlyClick);
-    
-    // Add new event listener
-    stopOnlyBtn.addEventListener('click', handleStopOnlyClick);
 }
 
 export function setupManualLogHandler() {
@@ -72,7 +62,6 @@ export function setupAllHandlers(restoring = false) {
     setupTimerHandlers(restoring);
     // Setup all event handlers
     setupStartStopHandler();
-    setupStopOnlyHandler();
     setupBackHandler();
     setupManualLogHandler();
     setupMarkDoneHandler();

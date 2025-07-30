@@ -14,39 +14,67 @@ export async function createMachineTaskView({
 }) {
     const container = document.getElementById(containerId);
     if (!container) return;
+    
     container.innerHTML = `
-        <div class="row mb-4">
-            <div class="col">
-                <div class="filter-bar" id="filter-bar">
-                    <label for="filter-select" class="form-label">${machineLabel}</label>
-                    <select id="filter-select" class="form-select">
+        <div class="machine-task-view">
+            <!-- Machine Selection Section -->
+            <div class="machine-selection-section">
+                <div class="section-header">
+                    <h3 class="section-title">
+                        <i class="fas fa-cogs me-2"></i>
+                        ${machineLabel}
+                    </h3>
+                    <p class="section-subtitle">Çalışmak istediğiniz makineyi seçin</p>
+                </div>
+                
+                <div class="machine-selector">
+                    <select id="filter-select" class="form-select machine-select">
                         <option value="" disabled selected>Makine Seçiniz...</option>
                     </select>
                 </div>
             </div>
-        </div>
-        <div class="row">
-            <div class="col">
+
+            <!-- Search Section -->
+            <div class="search-section">
                 <div class="search-container">
-                    <input type="text" id="search-input" class="form-control" placeholder="${searchPlaceholder}">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="search-input" class="form-control search-input" 
+                               placeholder="${searchPlaceholder}">
+                    </div>
                 </div>
-                <div class="task-list" id="task-list"></div>
+            </div>
+
+            <!-- Tasks Section -->
+            <div class="tasks-section">
+                <div class="section-header">
+                    <h4 class="section-title">
+                        <i class="fas fa-tasks me-2"></i>
+                        Görevler
+                    </h4>
+                    <div class="task-count" id="task-count"></div>
+                </div>
+                
+                <div class="task-list" id="task-list">
+                    <div class="loading-container text-center py-5">
+                        <div class="loading-spinner"></div>
+                        <p class="mt-3 text-muted">Makine seçiniz...</p>
+                    </div>
+                </div>
             </div>
         </div>
     `;
-    if (title) {
-        const h = document.createElement('h2');
-        h.textContent = title;
-        container.prepend(h);
-    }
+
     // Fetch and render machines
     const select = container.querySelector('#filter-select');
     const machines = await fetchMachines();
+    
     machines.forEach(f => {
         const option = document.createElement('option');
         option.value = f.id;
         option.dataset.machineId = f.id;
         let label = f.name;
+        
         if (f.has_active_timer) {
             label += ' (Kullanımda)';
             option.disabled = true;
@@ -62,11 +90,33 @@ export async function createMachineTaskView({
         option.textContent = label;
         select.appendChild(option);
     });
+    
     let allTasks = [];
     
     async function loadTasks(machineId) {
-        allTasks = await fetchTasks(machineId);
-        renderTaskList(allTasks);
+        const taskList = container.querySelector('#task-list');
+        taskList.innerHTML = `
+            <div class="loading-container text-center py-5">
+                <div class="loading-spinner"></div>
+                <p class="mt-3 text-muted">Görevler yükleniyor...</p>
+            </div>
+        `;
+        
+        try {
+            allTasks = await fetchTasks(machineId);
+            renderTaskList(allTasks);
+        } catch (error) {
+            taskList.innerHTML = `
+                <div class="error-container text-center py-5">
+                    <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3 text-danger">Hata Oluştu</h4>
+                    <p class="text-muted">Görevler yüklenirken bir hata oluştu.</p>
+                    <button class="btn btn-primary mt-3" onclick="location.reload()">
+                        <i class="fas fa-redo me-2"></i>Tekrar Dene
+                    </button>
+                </div>
+            `;
+        }
     }
     
     select.onchange = () => {
@@ -98,7 +148,8 @@ export async function createMachineTaskView({
             renderTaskList(allTasks);
         }
     });
-    // Search
+    
+    // Search functionality
     container.querySelector('#search-input').oninput = (e) => {
         const term = e.target.value.trim().toLowerCase();
         const filtered = allTasks.filter(task =>
@@ -107,15 +158,45 @@ export async function createMachineTaskView({
         );
         renderTaskList(filtered);
     };
+    
     function renderTaskList(tasks) {
         const ul = container.querySelector('#task-list');
+        const taskCount = container.querySelector('#task-count');
+        
+        // Update task count
+        taskCount.textContent = `${tasks.length} görev`;
+        
         ul.innerHTML = '';
+        
+        if (tasks.length === 0) {
+            ul.innerHTML = `
+                <div class="empty-state text-center py-5">
+                    <i class="fas fa-inbox text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 text-muted">Görev Bulunamadı</h5>
+                    <p class="text-muted">Seçilen makine için görev bulunmuyor.</p>
+                </div>
+            `;
+            return;
+        }
+        
         // Add placeholder task at the top
         const placeholderCard = document.createElement('div');
         placeholderCard.className = 'task-card placeholder-task';
-        placeholderCard.style.background = '#ffeeba'; // Distinct color
-        placeholderCard.style.cursor = 'pointer';
-        placeholderCard.innerHTML = '<h3>Diğer İşler</h3><p>Makineyi bekletme (Arıza, fabrika işleri, malzeme bekleme, yemek molası, izin, vs) için tıklayın</p>';
+        placeholderCard.innerHTML = `
+            <div class="task-card-content">
+                <div class="task-icon">
+                    <i class="fas fa-pause-circle"></i>
+                </div>
+                <div class="task-info">
+                    <h5 class="task-title">Diğer İşler</h5>
+                    <p class="task-description">Makineyi bekletme (Arıza, fabrika işleri, malzeme bekleme, yemek molası, izin, vs) için tıklayın</p>
+                </div>
+                <div class="task-action">
+                    <i class="fas fa-chevron-right"></i>
+                </div>
+            </div>
+        `;
+        
         placeholderCard.onclick = async () => {
             // Show modal to select reason_code
             let modal = document.getElementById('hold-task-modal');
@@ -127,21 +208,32 @@ export async function createMachineTaskView({
                   <div class="modal-dialog">
                     <div class="modal-content">
                       <div class="modal-header">
-                        <h5 class="modal-title">Bekletme Nedeni Seç</h5>
+                        <h5 class="modal-title">
+                            <i class="fas fa-pause-circle me-2"></i>
+                            Bekletme Nedeni Seç
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
                       </div>
                       <div class="modal-body">
-                        <select id="reason-code-select" class="form-select"><option>Yükleniyor...</option></select>
+                        <p class="text-muted mb-3">Makineyi bekletme nedenini seçin:</p>
+                        <select id="reason-code-select" class="form-select">
+                            <option>Yükleniyor...</option>
+                        </select>
                       </div>
                       <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                        <button type="button" class="btn btn-primary" id="select-reason-code-btn">Devam</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>İptal
+                        </button>
+                        <button type="button" class="btn btn-primary" id="select-reason-code-btn">
+                            <i class="fas fa-play me-2"></i>Devam
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>`;
                 document.body.appendChild(modal);
             }
+            
             // Fetch reason codes
             const select = document.getElementById('reason-code-select');
             select.innerHTML = '<option>Yükleniyor...</option>';
@@ -155,6 +247,7 @@ export async function createMachineTaskView({
             } catch (err) {
                 select.innerHTML = '<option>Bekletme nedenleri alınamadı</option>';
             }
+            
             // Show modal
             const bsModal = new bootstrap.Modal(document.getElementById('hold-task-modal-inner'));
             bsModal.show();
@@ -169,6 +262,7 @@ export async function createMachineTaskView({
             };
         };
         ul.appendChild(placeholderCard);
+        
         // Render normal tasks
         tasks.forEach(task => {
             const card = document.createElement('div');
@@ -183,26 +277,46 @@ export async function createMachineTaskView({
                     window.location.href = url;
                 }
             };
-            // Render using backend fields
-            const left = document.createElement('div');
-            left.className = 'task-left';
-            const title = document.createElement('h3');
-            title.textContent = task.key || '';
-            const summary = document.createElement('p');
-            summary.textContent = task.name || '';
-            left.appendChild(title);
-            left.appendChild(summary);
-            const right = document.createElement('div');
-            right.className = 'task-right';
-            right.innerHTML = `
-                <div>İş Emri: ${task.job_no || '-'}</div>
-                <div>Resim No: ${task.image_no || '-'}</div>
-                <div>Poz No: ${task.position_no || '-'}</div>
-                <div>Adet: ${task.quantity || '-'}</div>
-                <div>Bitmesi Gereken Tarih: ${task.finish_time ? new Date(task.finish_time).toLocaleDateString('tr-TR') : '-'}</div>
+            
+            card.innerHTML = `
+                <div class="task-card-content">
+                    <div class="task-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="task-info">
+                        <h5 class="task-title">${task.key || ''}</h5>
+                        <p class="task-description">${task.name || ''}</p>
+                        <div class="task-details">
+                            <span class="task-detail">
+                                <i class="fas fa-hashtag me-1"></i>
+                                İş Emri: ${task.job_no || '-'}
+                            </span>
+                            <span class="task-detail">
+                                <i class="fas fa-image me-1"></i>
+                                Resim: ${task.image_no || '-'}
+                            </span>
+                            <span class="task-detail">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                Poz: ${task.position_no || '-'}
+                            </span>
+                            <span class="task-detail">
+                                <i class="fas fa-cubes me-1"></i>
+                                Adet: ${task.quantity || '-'}
+                            </span>
+                            ${task.finish_time ? `
+                                <span class="task-detail deadline">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    Bitiş: ${new Date(task.finish_time).toLocaleDateString('tr-TR')}
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="task-action">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
             `;
-            card.appendChild(left);
-            card.appendChild(right);
+            
             ul.appendChild(card);
         });
     }

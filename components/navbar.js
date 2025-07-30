@@ -18,9 +18,6 @@ export function createNavbar() {
                     <li class="nav-item">
                         <a class="nav-link" href="/">Ana Sayfa</a>
                     </li>
-                    <li class="nav-item admin-only" style="display: none;">
-                        <a class="nav-link" href="/admin">Admin</a>
-                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/maintenance">Bakım</a>
                     </li>
@@ -61,14 +58,6 @@ export function createNavbar() {
             }
         });
     });
-
-    // Show admin tab if user is admin (sync)
-    const adminTab = navbar.querySelector('.admin-only');
-    if (isAdmin()) {
-        adminTab.style.display = 'block';
-    } else {
-        adminTab.style.display = 'none';
-    }
     
     // Show machining tab if user is machining team or admin
     const machiningTab = navbar.querySelector('.machining-only');
@@ -169,61 +158,105 @@ export function initNavbar() {
         user = await getUser();
         localStorage.setItem('user', JSON.stringify(user));
       }
+      
       const username = user.username || user.email || 'Kullanıcı';
-      const userIconHTML = `
-        <div id="navbar-user-icon" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;margin-right:2rem;">
-          <span style="font-size:1.5rem;color:#ffc107;">👤</span>
-          <span id="navbar-username" style="font-weight:500;color:#fff;">${username}</span>
-        </div>
-      `;
+      const userDisplayName = user.first_name && user.last_name ? 
+        `${user.first_name} ${user.last_name}` : username;
+      
       const navHTML = `
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
-                <a class="navbar-brand" href="/">
-                    <img src="/images/gemkom.png" alt="Gemkom Logo" style="height: 30px;">
+                <a class="navbar-brand d-flex align-items-center" href="/">
+                    <img src="/images/gemkom.png" alt="Gemkom Logo" style="height: 30px; margin-right: 10px;">
+                    <span>GEMKOM</span>
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+                
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">
+                                <i class="fas fa-home me-1"></i>
+                                <span>Ana Sayfa</span>
+                            </a>
+                        </li>
                         <li class="nav-item machining-only" style="display: none;">
-                            <a class="nav-link" href="/machining">Talaşlı İmalat</a>
+                            <a class="nav-link" href="/machining">
+                                <i class="fas fa-cogs me-1"></i>
+                                <span>Talaşlı İmalat</span>
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/maintenance">Bakım</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/procurement">Satın Alma</a>
-                        </li>
-                        <li class="nav-item admin-only" style="display: none;">
-                            <a class="nav-link" href="/admin">Admin</a>
+                            <a class="nav-link" href="/maintenance">
+                                <i class="fas fa-tools me-1"></i>
+                                <span>Bakım</span>
+                            </a>
                         </li>
                     </ul>
+                    
                     <ul class="navbar-nav ms-auto align-items-center">
-                        <li class="nav-item">
-                          <div id="navbar-user-icon" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;margin-right:2rem;">
-                            <span style="font-size:1.5rem;color:#ffc107;">👤</span>
-                            <span id="navbar-username" style="font-weight:500;color:#fff;">${username}</span>
-                          </div>
-                        </li>
-                        <li class="nav-item ms-2">
-                            <button id="logout-button" class="btn btn-danger">Çıkış Yap</button>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false" id="userDropdown">
+                                <div class="user-avatar me-2">
+                                    <i class="fas fa-user-circle"></i>
+                                </div>
+                                <span>${userDisplayName}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><h6 class="dropdown-header">Kullanıcı Bilgileri</h6></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" id="edit-profile-btn">
+                                    <i class="fas fa-user-edit me-2"></i>Profili Düzenle
+                                </a></li>
+                                <li><h6 class="dropdown-item">Takım: ${user.team_label || 'Atanmamış'}</h6></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" id="logout-button">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                                </a></li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
       `;
+      
       navbarContainer.innerHTML = navHTML;
-      document.getElementById('navbar-user-icon').onclick = () => createUserEditModal(user);
+      
+      // Add event listeners
+      const editProfileBtn = document.getElementById('edit-profile-btn');
+      if (editProfileBtn) {
+          editProfileBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              createUserEditModal(user);
+          });
+      }
+      
+      const teamInfoBtn = document.getElementById('team-info-btn');
+      if (teamInfoBtn) {
+          teamInfoBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              // Show team info in a simple alert for now
+              const teamName = user.team ? 
+                  (user.team === 'machining' ? 'Talaşlı İmalat' : 
+                   user.team === 'maintenance' ? 'Bakım' : user.team) : 'Atanmamış';
+              alert(`Takımınız: ${teamName}`);
+          });
+      }
 
       const logoutButton = document.getElementById('logout-button');
       if (logoutButton) {
-          logoutButton.addEventListener('click', () => {
+          logoutButton.addEventListener('click', (e) => {
+              e.preventDefault();
               logout();
           });
       }
+      
       // Highlight active page
       const links = navbarContainer.querySelectorAll('.nav-link');
       const currentPath = window.location.pathname;
@@ -232,13 +265,6 @@ export function initNavbar() {
               link.classList.add('active');
           }
       });
-      // Show admin tab if user is admin (sync)
-      const adminTab = navbarContainer.querySelector('.admin-only');
-      if (isAdmin()) {
-          adminTab.style.display = 'block';
-      } else {
-          adminTab.style.display = 'none';
-      }
       
       // Show machining tab if user is machining team or admin
       const machiningTab = navbarContainer.querySelector('.machining-only');
@@ -248,6 +274,7 @@ export function initNavbar() {
           machiningTab.style.display = 'none';
       }
     }
+    
     renderNavbar();
 }
 

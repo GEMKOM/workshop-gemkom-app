@@ -1,29 +1,9 @@
-import { guardRoute, authedFetch } from '../authService.js';
+import { initNavbar } from '../components/navbar.js';
+import { guardRoute } from '../authService.js';
+import { authedFetch } from '../authService.js';
 import { backendBase } from '../base.js';
 import { fetchMachines } from '../generic/machines.js';
 import { createMaintenanceRequest, resolveMaintenanceRequest } from './maintenanceApi.js';
-import { createHeader, createFooter, populateUserInfo } from '../components/header.js';
-
-// ============================================================================
-// MOBILE NAVIGATION
-// ============================================================================
-
-function setupMobileNavigation() {
-    const navTabs = document.querySelectorAll('.nav-tab');
-    
-    navTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const section = tab.dataset.section;
-            
-            // Update active tab
-            navTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            // Show appropriate section
-            showSection(section);
-        });
-    });
-}
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -34,6 +14,95 @@ const state = {
     maintenanceRequests: [],
     currentFilter: 'all'
 };
+
+// ============================================================================
+// TAB NAVIGATION SETUP
+// ============================================================================
+
+function setupTabNavigation() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+            
+            // Update active state
+            updateTabActiveState(button);
+            
+            // Load appropriate content
+            loadTabContent(targetTab);
+        });
+    });
+}
+
+function updateTabActiveState(activeButton) {
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Add active class to clicked button
+    activeButton.classList.add('active');
+}
+
+async function loadTabContent(tabName) {
+    const contentContainer = document.getElementById('maintenance-content');
+    
+    // Add loading state
+    contentContainer.innerHTML = `
+        <div class="loading-container text-center py-5">
+            <div class="loading-spinner"></div>
+            <p class="mt-3 text-muted">Yükleniyor...</p>
+        </div>
+    `;
+    
+    try {
+        // Update state
+        state.currentSection = tabName;
+        
+        // Load appropriate content
+        switch (tabName) {
+            case 'view-requests':
+                await loadViewRequestsContent();
+                break;
+            case 'create-request':
+                await loadCreateRequestContent();
+                break;
+            default:
+                await loadViewRequestsContent();
+        }
+    } catch (error) {
+        console.error('Error loading tab content:', error);
+        contentContainer.innerHTML = `
+            <div class="error-container text-center py-5">
+                <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                <h4 class="mt-3 text-danger">Hata Oluştu</h4>
+                <p class="text-muted">İçerik yüklenirken bir hata oluştu. Lütfen tekrar deneyin.</p>
+                <button class="btn btn-primary mt-3" onclick="location.reload()">
+                    <i class="fas fa-redo me-2"></i>Yenile
+                </button>
+            </div>
+        `;
+    }
+}
+
+async function loadViewRequestsContent() {
+    const contentContainer = document.getElementById('maintenance-content');
+    contentContainer.innerHTML = createViewRequestsSection();
+    
+    // Load maintenance requests
+    await loadMaintenanceRequests();
+    setupResolveModal();
+}
+
+async function loadCreateRequestContent() {
+    const contentContainer = document.getElementById('maintenance-content');
+    contentContainer.innerHTML = createMaintenanceRequestForm();
+    
+    // Load machines and setup form
+    await loadMachines();
+    setupMaintenanceRequestForm();
+}
 
 // ============================================================================
 // API FUNCTIONS
@@ -56,6 +125,45 @@ async function fetchMaintenanceRequests() {
     }
 }
 
+// ============================================================================
+// REFRESH FUNCTIONALITY
+// ============================================================================
+
+function setupRefreshButton() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', async () => {
+            // Add loading state to button
+            const originalContent = refreshBtn.innerHTML;
+            refreshBtn.classList.add('loading');
+            refreshBtn.innerHTML = '<span class="loading-spinner"></span> Yenileniyor...';
+            
+            try {
+                // Get current active tab
+                const activeTab = document.querySelector('.tab-button.active');
+                const currentTab = activeTab ? activeTab.getAttribute('data-tab') : 'view-requests';
+                
+                // Reload current tab content
+                await loadTabContent(currentTab);
+                
+                // Show success feedback
+                refreshBtn.innerHTML = '<i class="fas fa-check me-2"></i>Yenilendi';
+                setTimeout(() => {
+                    refreshBtn.classList.remove('loading');
+                    refreshBtn.innerHTML = originalContent;
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Refresh error:', error);
+                refreshBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Hata';
+                setTimeout(() => {
+                    refreshBtn.classList.remove('loading');
+                    refreshBtn.innerHTML = originalContent;
+                }, 2000);
+            }
+        });
+    }
+}
 
 // ============================================================================
 // CONTENT MANAGEMENT
@@ -352,30 +460,6 @@ function createRequestCard(request) {
     `;
 }
 
-function loadContent() {
-    const contentContainer = document.getElementById('maintenance-content');
-    
-    // Clear existing content
-    contentContainer.innerHTML = '';
-    
-    // Add both sections (one will be active)
-    contentContainer.innerHTML = createMaintenanceRequestForm() + createViewRequestsSection();
-    
-    // Show the current section
-    showSection(state.currentSection);
-    
-    // Load maintenance requests if viewing that section
-    if (state.currentSection === 'view-requests') {
-        loadMaintenanceRequests();
-        setupResolveModal();
-    }
-    
-    else if (state.currentSection === 'create-request') {
-        loadMachines();
-        setupMaintenanceRequestForm();
-    }
-}
-
 async function loadMaintenanceRequests() {
     try {
         await fetchMaintenanceRequests();
@@ -435,66 +519,6 @@ function setupFilterHandlers() {
         });
     });
 }
-
-function showSection(sectionId) {
-    // Hide all sections
-    document.querySelectorAll('.maintenance-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    // Show the selected section
-    const targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-        targetSection.classList.add('active');
-    }
-    
-    // Update state
-    state.currentSection = sectionId;
-    
-    // Load maintenance requests if switching to that section
-    if (sectionId === 'view-requests') {
-        loadMaintenanceRequests();
-        setupResolveModal();
-    }
-    
-    // Load machines if switching to create request section
-    if (sectionId === 'create-request') {
-        loadMachines();
-        setupMaintenanceRequestForm();
-    }
-}
-
-// ============================================================================
-// INITIALIZATION
-// ============================================================================
-
-// Initialize the page
-document.addEventListener('DOMContentLoaded', async () => {
-    if (!guardRoute()) {
-        return;
-    }
-    
-    // Insert header and footer
-    const headerContainer = document.getElementById('header-container');
-    const footerContainer = document.getElementById('footer-container');
-    
-    if (headerContainer) {
-        headerContainer.innerHTML = createHeader();
-    }
-    
-    if (footerContainer) {
-        footerContainer.innerHTML = createFooter();
-    }
-    
-    // Populate user info
-    populateUserInfo();
-    
-    // Setup mobile navigation
-    setupMobileNavigation();
-    
-    // Load content
-    loadContent();
-});
 
 async function loadMachines() {
     const machineSelect = document.getElementById('machine-select');
@@ -590,7 +614,10 @@ function setupMaintenanceRequestForm() {
             alert('Bakım talebi başarıyla oluşturuldu.');
 
             // Switch to view requests to see the new request
-            showSection('view-requests');
+            const viewRequestsTab = document.querySelector('[data-tab="view-requests"]');
+            if (viewRequestsTab) {
+                viewRequestsTab.click();
+            }
 
         } catch (error) {
             console.error('Error creating maintenance request:', error);
@@ -664,3 +691,20 @@ function setupResolveModal() {
         });
     }
 }
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!guardRoute()) {
+        return;
+    }
+    
+    initNavbar();
+    setupTabNavigation();
+    setupRefreshButton();
+    
+    // Initialize the default view (View Requests)
+    loadTabContent('view-requests');
+});

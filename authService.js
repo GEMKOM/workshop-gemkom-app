@@ -14,8 +14,7 @@ export const ROUTES = {
     ADMIN: '/admin/',
     MACHINING: '/machining/',
     MACHINING_TASKS: '/machining/tasks/',
-    MAINTENANCE: '/maintenance/',
-    PROCUREMENT: '/procurement/'
+    MAINTENANCE: '/maintenance/'
 };
 
 // Track if we're currently redirecting to prevent loops
@@ -111,40 +110,14 @@ export function navigateTo(path, options = {}) {
 
 export function navigateByTeam() {
     const user = JSON.parse(localStorage.getItem('user'));
-    const currentPath = window.location.pathname;
-    
-    // If admin or no team, should stay on home page
-    if (isAdmin() || user.team === null) {
-        // Only redirect if not already on home page
-        if (currentPath !== ROUTES.HOME) {
-            navigateTo(ROUTES.HOME);
-        }
+    if (isAdmin() || user.team === null){
+        navigateTo(ROUTES.HOME);
         return;
     }
-    
-    // Redirect based on team
-    switch(user.team) {
-        case 'machining':
-            if (currentPath !== ROUTES.MACHINING) {
-                navigateTo(ROUTES.MACHINING);
-            }
-            break;
-        case 'maintenance':
-            if (currentPath !== ROUTES.MAINTENANCE) {
-                navigateTo(ROUTES.MAINTENANCE);
-            }
-            break;
-        case 'planning':
-        case 'cutting':
-        case 'warehouse':
-        case 'manufacturing':
-        case 'welding':
-        default:
-            // For teams without specific pages, redirect to home
-            if (currentPath !== ROUTES.HOME) {
-                navigateTo(ROUTES.HOME);
-            }
-            break;
+    if (user.team === 'machining') {
+        navigateTo(ROUTES.MACHINING);
+    } else if (user.team === 'maintenance') {
+        navigateTo(ROUTES.MAINTENANCE);
     }
 }
 
