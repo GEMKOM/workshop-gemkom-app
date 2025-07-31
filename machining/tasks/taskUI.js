@@ -18,7 +18,10 @@ export function getUIElements() {
         backBtn: document.getElementById('back-button'),
         timerDisplay: document.getElementById('timer-display'),
         taskTitle: document.getElementById('task-title'),
-        machineName: document.getElementById('machine-name')
+        machineName: document.getElementById('machine-name'),
+        taskStatus: document.getElementById('task-status'),
+        taskDetailsGrid: document.getElementById('task-details-grid'),
+        w07Warning: document.getElementById('w-07-warning')
     };
 }
 
@@ -32,33 +35,17 @@ export function resetTimerDisplay() {
 }
 
 export function setupTaskDisplay(hasActiveTimer, isHoldTask) {
-    const { startBtn, manualBtn, doneBtn, faultBtn, backBtn, timerDisplay, taskTitle, machineName } = getUIElements();
+    const { startBtn, manualBtn, doneBtn, faultBtn, backBtn, timerDisplay, taskTitle, machineName, taskStatus, taskDetailsGrid, w07Warning } = getUIElements();
+    
     if (!taskTitle.textContent) {
-        
         taskTitle.textContent = state.currentIssue.key;
         machineName.textContent = state.currentMachine.name;
         
-        // Update the new compact task-details structure
-        const taskDetails = document.getElementById('task-details-compact');
+        // Update task status
+        updateTaskStatus(hasActiveTimer);
         
-        taskDetails.innerHTML = `
-            <div class="detail-item-compact">
-                <span class="detail-label-compact">İş Emri</span>
-                <span class="detail-value-compact">${state.currentIssue.job_no || '-'}</span>
-            </div>
-            <div class="detail-item-compact">
-                <span class="detail-label-compact">Resim No</span>
-                <span class="detail-value-compact">${state.currentIssue.image_no || '-'}</span>
-            </div>
-            <div class="detail-item-compact">
-                <span class="detail-label-compact">Poz No</span>
-                <span class="detail-value-compact">${state.currentIssue.position_no || '-'}</span>
-            </div>
-            <div class="detail-item-compact">
-                <span class="detail-label-compact">Adet</span>
-                <span class="detail-value-compact">${state.currentIssue.quantity || '-'}</span>
-            </div>
-        `;
+        // Update the new task details grid structure
+        updateTaskDetailsGrid();
     }
     
     // Special handling for W-07 tasks
@@ -68,30 +55,17 @@ export function setupTaskDisplay(hasActiveTimer, isHoldTask) {
         manualBtn.style.display = 'none';
         doneBtn.style.display = 'none';
         faultBtn.style.display = 'none';
-        backBtn.style.display = 'none';
         
-        // Add warning message
-        const timerControls = document.querySelector('.timer-controls-main');
-        if (timerControls) {
-            // Remove any existing warning message
-            const existingWarning = timerControls.querySelector('.w-07-warning');
-            if (existingWarning) {
-                existingWarning.remove();
-            }
-            
-            // Add new warning message
-            const warningDiv = document.createElement('div');
-            warningDiv.className = 'w-07-warning';
-            warningDiv.textContent = 'Zamanlayıcı arızanız bakım ekibi tarafından çözüldüğünde otomatik olarak durdurulacaktır.';
-            timerControls.appendChild(warningDiv);
+        // Show warning message
+        if (w07Warning) {
+            w07Warning.style.display = 'block';
         }
         return;
     }
     
-    // Remove any existing W-07 warning message for other cases
-    const existingWarning = document.querySelector('.w-07-warning');
-    if (existingWarning) {
-        existingWarning.remove();
+    // Hide W-07 warning for other cases
+    if (w07Warning) {
+        w07Warning.style.display = 'none';
     }
     
     // Handle hold task restrictions
@@ -99,71 +73,125 @@ export function setupTaskDisplay(hasActiveTimer, isHoldTask) {
         // Hide "Tamamlandı" button for hold tasks
         doneBtn.style.display = 'none';
     } else {
-        // Show "Tamamlandı" button for non-hold tasks
         doneBtn.style.display = 'flex';
     }
     
     // Update button states based on timer status
-    if (hasActiveTimer) {
-        // Timer is running
-        startBtn.innerHTML = '<i class="fas fa-stop me-2"></i>Durdur';
-        startBtn.className = 'btn btn-danger action-button-main';
-        startBtn.disabled = false;
-        
-        // Update button colors for running state
-        startBtn.classList.remove('btn-success');
-        startBtn.classList.add('btn-danger');
-        
-    } else {
-        // Timer is stopped - reset display and make start button active
-        startBtn.innerHTML = '<i class="fas fa-play me-2"></i>Başlat';
-        startBtn.className = 'btn btn-success action-button-main';
-        startBtn.disabled = false;
-        
-        // Reset timer display
-        resetTimerDisplay();
-        
-        // Update button colors for stopped state
-        startBtn.classList.remove('btn-danger');
-        startBtn.classList.add('btn-success');
-    }
-    
-    // Ensure all other buttons are visible
-    manualBtn.style.display = 'flex';
-    faultBtn.style.display = 'flex';
-    backBtn.style.display = 'flex';
-    
-    // Update button styles to use flexbox for consistent alignment
-    [startBtn, manualBtn, doneBtn, faultBtn, backBtn].forEach(btn => {
-        if (btn && btn.style.display !== 'none') {
-            btn.style.display = 'flex';
-        }
-    });
+    updateButtonStates(hasActiveTimer);
 }
 
-// ============================================================================
-// TIMER UPDATE FUNCTIONS
-// ============================================================================
+function updateTaskStatus(hasActiveTimer) {
+    const taskStatus = document.getElementById('task-status');
+    if (taskStatus) {
+        if (hasActiveTimer) {
+            taskStatus.innerHTML = '<i class="fas fa-play"></i><span>Çalışıyor</span>';
+            taskStatus.classList.add('active');
+        } else {
+            taskStatus.innerHTML = '<i class="fas fa-clock"></i><span>Beklemede</span>';
+            taskStatus.classList.remove('active');
+        }
+    }
+}
+
+function updateTaskDetailsGrid() {
+    const taskDetailsGrid = document.getElementById('task-details-grid');
+    if (!taskDetailsGrid) return;
+    
+    const details = [
+        {
+            icon: 'fas fa-file-alt',
+            label: 'İş Emri',
+            value: state.currentIssue.job_no || '-'
+        },
+        {
+            icon: 'fas fa-image',
+            label: 'Resim No',
+            value: state.currentIssue.image_no || '-'
+        },
+        {
+            icon: 'fas fa-map-marker-alt',
+            label: 'Poz No',
+            value: state.currentIssue.position_no || '-'
+        },
+        {
+            icon: 'fas fa-cubes',
+            label: 'Adet',
+            value: state.currentIssue.quantity || '-'
+        }
+    ];
+    
+    taskDetailsGrid.innerHTML = details.map(detail => `
+        <div class="detail-card">
+            <div class="detail-icon">
+                <i class="${detail.icon}"></i>
+            </div>
+            <div class="detail-label">${detail.label}</div>
+            <div class="detail-value">${detail.value}</div>
+        </div>
+    `).join('');
+}
+
+function updateButtonStates(hasActiveTimer) {
+    const { startBtn, manualBtn, doneBtn, faultBtn } = getUIElements();
+    
+    if (hasActiveTimer) {
+        // Timer is running
+        startBtn.innerHTML = '<i class="fas fa-stop"></i><span>Durdur</span>';
+        startBtn.classList.remove('btn-primary');
+        startBtn.classList.add('btn-danger', 'running');
+        
+        // Disable other buttons while timer is running
+        manualBtn.disabled = true;
+        doneBtn.disabled = true;
+        faultBtn.disabled = true;
+        
+        manualBtn.classList.add('disabled');
+        doneBtn.classList.add('disabled');
+        faultBtn.classList.add('disabled');
+    } else {
+        // Timer is stopped
+        startBtn.innerHTML = '<i class="fas fa-play"></i><span>Başlat</span>';
+        startBtn.classList.remove('btn-danger', 'running');
+        startBtn.classList.add('btn-primary');
+        startBtn.disabled = false; // Explicitly enable the start button
+        
+        // Enable other buttons
+        manualBtn.disabled = false;
+        doneBtn.disabled = false;
+        faultBtn.disabled = false;
+        
+        manualBtn.classList.remove('disabled');
+        doneBtn.classList.remove('disabled');
+        faultBtn.classList.remove('disabled');
+    }
+}
 
 export function startTimerUpdate() {
-    // Clear any existing interval
-    if (window.timerUpdateInterval) {
-        clearInterval(window.timerUpdateInterval);
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
     }
     
-    // Start new interval
-    window.timerUpdateInterval = setInterval(() => {
-        if (state.currentTimer && state.currentTimer.start_time) {
-            updateTimerDisplay();
-        }
+    state.timerInterval = setInterval(() => {
+        updateTimerDisplay();
     }, 1000);
+    
+    // Update button states
+    updateButtonStates(true);
+    updateTaskStatus(true);
 }
 
 export function stopTimerUpdate() {
-    if (window.timerUpdateInterval) {
-        clearInterval(window.timerUpdateInterval);
-        window.timerUpdateInterval = null;
+    if (state.timerInterval) {
+        clearInterval(state.timerInterval);
+        state.timerInterval = null;
     }
+    
+    // Reset timer display
+    resetTimerDisplay();
+    
+    // Update button states
+    updateButtonStates(false);
+    updateTaskStatus(false);
 }
 
 // ============================================================================
@@ -173,99 +201,120 @@ export function stopTimerUpdate() {
 export function showModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        modal.style.display = 'flex';
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
         
-        // Add click outside to close functionality
-        const backdrop = modal.querySelector('.fault-modal-backdrop');
-        if (backdrop) {
-            backdrop.addEventListener('click', () => hideModal(modalId));
-        }
-        
-        // Add focus trap for accessibility
+        // Focus management
         const firstFocusable = modal.querySelector('button, input, textarea, select');
         if (firstFocusable) {
             firstFocusable.focus();
         }
+        
+        // Close on backdrop click
+        const backdrop = modal.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.addEventListener('click', () => hideModal(modalId));
+        }
+        
+        // Close on escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                hideModal(modalId);
+                document.removeEventListener('keydown', handleEscape);
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
     }
 }
 
 export function hideModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('show');
+        document.body.style.overflow = '';
         
-        // Clear any input fields
-        const textarea = modal.querySelector('textarea');
-        if (textarea) {
-            textarea.value = '';
-        }
+        // Clear any form inputs
+        const inputs = modal.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            if (input.type !== 'submit') {
+                input.value = '';
+            }
+        });
     }
 }
 
 // ============================================================================
-// UTILITY FUNCTIONS
+// LOADING STATES
 // ============================================================================
 
 export function showLoadingState(button) {
     const originalContent = button.innerHTML;
-    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Yükleniyor...';
+    button.innerHTML = '<span class="loading-spinner"></span> Yükleniyor...';
     button.disabled = true;
+    button.classList.add('loading');
     return originalContent;
 }
 
 export function restoreButtonState(button, originalContent) {
     button.innerHTML = originalContent;
     button.disabled = false;
+    button.classList.remove('loading');
 }
 
+// ============================================================================
+// MESSAGE DISPLAY
+// ============================================================================
+
 export function showSuccessMessage(message, duration = 3000) {
-    // Create a temporary success message
-    const successDiv = document.createElement('div');
-    successDiv.className = 'alert alert-success position-fixed';
-    successDiv.style.cssText = `
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    messageDiv.style.cssText = `
         top: 20px;
         right: 20px;
-        z-index: 1050;
+        z-index: 1060;
         min-width: 300px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     `;
-    successDiv.innerHTML = `
+    
+    messageDiv.innerHTML = `
         <i class="fas fa-check-circle me-2"></i>
         ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
-    document.body.appendChild(successDiv);
+    document.body.appendChild(messageDiv);
     
-    // Remove after duration
+    // Auto remove after duration
     setTimeout(() => {
-        if (successDiv.parentNode) {
-            successDiv.parentNode.removeChild(successDiv);
+        if (messageDiv.parentNode) {
+            messageDiv.remove();
         }
     }, duration);
 }
 
 export function showErrorMessage(message, duration = 5000) {
-    // Create a temporary error message
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'alert alert-danger position-fixed';
-    errorDiv.style.cssText = `
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    messageDiv.style.cssText = `
         top: 20px;
         right: 20px;
-        z-index: 1050;
+        z-index: 1060;
         min-width: 300px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     `;
-    errorDiv.innerHTML = `
-        <i class="fas fa-exclamation-triangle me-2"></i>
+    
+    messageDiv.innerHTML = `
+        <i class="fas fa-exclamation-circle me-2"></i>
         ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
-    document.body.appendChild(errorDiv);
+    document.body.appendChild(messageDiv);
     
-    // Remove after duration
+    // Auto remove after duration
     setTimeout(() => {
-        if (errorDiv.parentNode) {
-            errorDiv.parentNode.removeChild(errorDiv);
+        if (messageDiv.parentNode) {
+            messageDiv.remove();
         }
     }, duration);
 } 

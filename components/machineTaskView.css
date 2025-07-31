@@ -80,7 +80,16 @@
     margin-top: 1rem;
 }
 
-.machine-select {
+/* Modern dropdown styling for machine selection */
+#machine-dropdown-container {
+    width: 100%;
+}
+
+#machine-dropdown-container .modern-dropdown {
+    width: 100%;
+}
+
+#machine-dropdown-container .dropdown-selected {
     border: 2px solid #e9ecef;
     border-radius: 8px;
     padding: 0.75rem 1rem;
@@ -91,27 +100,15 @@
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     width: 100%;
+    min-height: 48px;
 }
 
-.machine-select:hover {
+#machine-dropdown-container .dropdown-selected:hover {
     border-color: var(--primary-color);
     box-shadow: 0 2px 8px rgba(139, 0, 0, 0.1);
 }
 
-.machine-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
-    outline: none;
-}
-
-.machine-select option {
-    padding: 0.5rem;
-    font-size: 1rem;
-}
-
-.machine-select option:first-child {
-    color: #6c757d;
-}
+/* Removed old machine-select styles as we're now using the modern dropdown */
 
 /* ============================================================================
    SEARCH SECTION
@@ -387,7 +384,6 @@
         padding: 0.2rem 0.4rem;
     }
     
-    .machine-select,
     .search-input {
         font-size: 16px; /* Prevents zoom on iOS */
     }
@@ -449,7 +445,6 @@
     .task-card,
     .task-icon,
     .task-action,
-    .machine-select,
     .search-input {
         transition: none;
     }
@@ -457,7 +452,6 @@
 
 /* Focus states for accessibility */
 .task-card:focus,
-.machine-select:focus,
 .search-input:focus {
     outline: 2px solid var(--accent-color);
     outline-offset: 2px;
@@ -469,7 +463,6 @@
         border: 2px solid #000;
     }
     
-    .machine-select,
     .search-input {
         border: 2px solid #000;
     }

@@ -1,6 +1,7 @@
 // components/machineTaskView.js
 // Generic machine/task view for machining etc.
 import { extractResultsFromResponse } from '../generic/paginationHelper.js';
+import { ModernDropdown } from './dropdown.js';
 
 export async function createMachineTaskView({
     containerId = 'main-view',
@@ -28,9 +29,7 @@ export async function createMachineTaskView({
                 </div>
                 
                 <div class="machine-selector">
-                    <select id="filter-select" class="form-select machine-select">
-                        <option value="" disabled selected>Makine Seçiniz...</option>
-                    </select>
+                    <div id="machine-dropdown-container"></div>
                 </div>
             </div>
 
@@ -66,30 +65,40 @@ export async function createMachineTaskView({
     `;
 
     // Fetch and render machines
-    const select = container.querySelector('#filter-select');
     const machines = await fetchMachines();
     
-    machines.forEach(f => {
-        const option = document.createElement('option');
-        option.value = f.id;
-        option.dataset.machineId = f.id;
-        let label = f.name;
+    // Initialize machine dropdown
+    const machineDropdownContainer = container.querySelector('#machine-dropdown-container');
+    let machineDropdown = null;
+    
+    // Create dropdown items from machines
+    const dropdownItems = machines.map(machine => {
+        let label = machine.name;
         
-        if (f.has_active_timer) {
+        if (machine.has_active_timer) {
             label += ' (Kullanımda)';
-            option.disabled = true;
-            option.style.color = '#6b7280';
-            option.style.fontStyle = 'italic';
         } 
-        if (f.is_under_maintenance) {
+        if (machine.is_under_maintenance) {
             label += ' (Bakımda)';
-            option.disabled = true;
-            option.style.color = '#dc2626';
-            option.style.fontStyle = 'italic';
         }
-        option.textContent = label;
-        select.appendChild(option);
+        
+        return {
+            value: machine.id,
+            text: label,
+            disabled: machine.has_active_timer || machine.is_under_maintenance
+        };
     });
+    
+    // Initialize the dropdown
+    machineDropdown = new ModernDropdown(machineDropdownContainer, {
+        placeholder: 'Makine Seçiniz...',
+        searchable: true,
+        multiple: false,
+        maxHeight: 250
+    });
+    
+    // Set items
+    machineDropdown.setItems(dropdownItems);
     
     let allTasks = [];
     
@@ -119,9 +128,10 @@ export async function createMachineTaskView({
         }
     }
     
-    select.onchange = () => {
-        const selectedOption = select.options[select.selectedIndex];
-        const selectedMachine = machines.find(m => String(m.id) === String(selectedOption.dataset.machineId));
+    // Listen for machine selection events
+    machineDropdownContainer.addEventListener('dropdown:select', (e) => {
+        const selectedMachineId = e.detail.value;
+        const selectedMachine = machines.find(m => String(m.id) === String(selectedMachineId));
         if (selectedMachine) {
             // Update URL without page reload
             const newUrl = `/machining/?machine_id=${encodeURIComponent(selectedMachine.id)}`;
@@ -130,7 +140,7 @@ export async function createMachineTaskView({
             // Load tasks for the selected machine
             loadTasks(selectedMachine.id);
         }
-    };
+    });
     
     // Handle browser back/forward buttons
     window.addEventListener('popstate', (event) => {
@@ -139,11 +149,11 @@ export async function createMachineTaskView({
         if (machineId) {
             const machine = machines.find(m => String(m.id) === String(machineId));
             if (machine) {
-                select.value = machine.id;
+                machineDropdown.setValue(machine.id);
                 loadTasks(machine.id);
             }
         } else {
-            select.value = '';
+            machineDropdown.setValue(null);
             allTasks = [];
             renderTaskList(allTasks);
         }

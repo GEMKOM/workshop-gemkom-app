@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="../components/navbar.css">
     <link rel="stylesheet" href="../components/timerWidget.css">
+    <link rel="stylesheet" href="../components/dropdown.css">
     <link rel="stylesheet" href="maintenance.css">
     <link rel="icon" type="image/png" href="../images/gemkom.png">
     <link rel="stylesheet" href="../pre-auth.css">
@@ -26,9 +27,9 @@
                 <div class="col-md-8">
                     <h1 class="page-title">
                         <i class="fas fa-tools me-3"></i>
-                        Bakım
+                        Bakım Yönetimi
                     </h1>
-                    <p class="page-subtitle">Bakım taleplerini yönetin ve ekipman durumlarını izleyin</p>
+                    <p class="page-subtitle">Bakım taleplerini yönetin, planlı bakımları takip edin ve ekipman durumlarını izleyin</p>
                 </div>
                 <div class="col-md-4 text-md-end">
                     <div class="page-actions">
@@ -45,11 +46,15 @@
                     <div class="page-tabs">
                         <button class="tab-button active" data-tab="view-requests">
                             <i class="fas fa-list me-2"></i>
-                            <span class="tab-label">Bakım Taleplerini Görüntüle</span>
+                            <span class="tab-label">Bakım Talepleri</span>
                         </button>
                         <button class="tab-button" data-tab="create-request">
                             <i class="fas fa-plus-circle me-2"></i>
-                            <span class="tab-label">Bakım/Arıza Talebi Oluştur</span>
+                            <span class="tab-label">Yeni Talep</span>
+                        </button>
+                        <button class="tab-button" data-tab="equipment-status">
+                            <i class="fas fa-clipboard-check me-2"></i>
+                            <span class="tab-label">Ekipman Durumu</span>
                         </button>
                     </div>
                 </div>
@@ -65,7 +70,7 @@
                 <div class="main-container">
                     <!-- Content will be dynamically loaded here -->
                     <div id="maintenance-content">
-                        <!-- Initially shows "Bakım Taleplerini Görüntüle" content -->
+                        <!-- Initially shows "Bakım Talepleri" content -->
                     </div>
                 </div>
             </div>

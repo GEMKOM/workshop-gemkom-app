@@ -2,7 +2,7 @@
 // Core business logic for task functionality
 
 import { state, stopTimerShared } from '../machiningService.js';
-import { updateTimerDisplay, setupTaskDisplay} from './taskUI.js';
+import { updateTimerDisplay, setupTaskDisplay, stopTimerUpdate } from './taskUI.js';
 import { TimerWidget } from '../../components/timerWidget.js';
 import { startTimer } from './taskApi.js';
 import { getSyncedNow } from '../../generic/timeService.js';
@@ -71,19 +71,29 @@ export async function handleStopTimer(save_to_jira=true) {
         });
         
         if (stopSuccess) {
+            // Call stopTimerUpdate to properly reset timer display and button states
+            stopTimerUpdate();
             setupTaskDisplay(false, state.currentIssue.is_hold_task);
             setCurrentTimerState(null);
             setCurrentMachineState(state.currentMachine.id);
             TimerWidget.triggerUpdate();
+            // Ensure button is re-enabled after successful stop
+            startBtn.disabled = false;
+            // Force button to be clickable by removing disabled class
+            startBtn.classList.remove('disabled');
         } else {
             alert("Hata oluştu. Lütfen tekrar deneyin.");
             // Re-enable button on error
             startBtn.disabled = false;
+            // Force button to be clickable by removing disabled class
+            startBtn.classList.remove('disabled');
         }
     } catch (error) {
         console.error('Error stopping timer:', error);
         alert("Hata oluştu. Lütfen tekrar deneyin.");
         // Re-enable button on error
         startBtn.disabled = false;
+        // Force button to be clickable by removing disabled class
+        startBtn.classList.remove('disabled');
     }
 }

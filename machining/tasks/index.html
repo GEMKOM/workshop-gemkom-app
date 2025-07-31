@@ -19,45 +19,65 @@
     <div id="navbar-container"></div>
 
     <!-- Main Content -->
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="task-page-container">
-                    <!-- Compact Header -->
-                    <div class="task-header-compact">
-                        <div class="header-main">
-                            <div class="task-info-compact">
-                                <h1 id="task-title" class="task-title-compact"></h1>
-                                <p id="machine-name" class="machine-name-compact"></p>
+    <div class="task-page-wrapper">
+        <!-- Header Section -->
+        <div class="task-header-section">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-12">
+                        <div class="task-header-content">
+                            <div class="task-header-left">
+                                <button class="btn btn-outline-light btn-sm back-btn" id="back-button">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <div class="task-info">
+                                    <h1 id="task-title" class="task-title"></h1>
+                                    <p id="machine-name" class="machine-name"></p>
+                                </div>
                             </div>
-                            <div class="task-details-compact" id="task-details-compact">
-                                <!-- dynamically filled -->
+                            <div class="task-header-right">
+                                <div class="task-status-badge" id="task-status">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Beklemede</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
 
-                    <!-- Timer Section - Prioritized -->
-                    <div class="timer-section-main">
-                        <div class="timer-container-main">
-                            <div class="timer-display-main" id="timer-display">00:00:00</div>
-                            <div class="timer-controls-main">
+        <!-- Timer Section - PRIORITIZED -->
+        <div class="timer-section">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <div class="timer-card">
+                            <div class="timer-display-container">
+                                <div class="timer-display" id="timer-display">00:00:00</div>
+                                <div class="timer-label">Geçen Süre</div>
+                            </div>
+                            
+                            <div class="timer-controls">
                                 <div class="primary-controls">
-                                    <button id="start-stop" class="btn btn-success action-button-main">
-                                        <i class="fas fa-play me-2"></i>Başlat
+                                    <button id="start-stop" class="btn btn-primary btn-lg timer-btn-primary">
+                                        <i class="fas fa-play"></i>
+                                        <span>Başlat</span>
                                     </button>
                                 </div>
+                                
                                 <div class="secondary-controls">
-                                    <button id="manual-log-button" class="btn btn-info action-button-secondary">
-                                        <i class="fas fa-clock me-2"></i>Manuel
+                                    <button id="manual-log-button" class="btn btn-outline-primary timer-btn-secondary">
+                                        <i class="fas fa-clock"></i>
+                                        <span>Manuel</span>
                                     </button>
-                                    <button id="mark-done-button" class="btn btn-primary action-button-secondary">
-                                        <i class="fas fa-check me-2"></i>Tamamla
+                                    <button id="mark-done-button" class="btn btn-success timer-btn-secondary">
+                                        <i class="fas fa-check"></i>
+                                        <span>Tamamla</span>
                                     </button>
-                                    <button id="fault-report-button" class="btn btn-danger action-button-secondary">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>Arıza
-                                    </button>
-                                    <button id="back-button" class="btn btn-secondary action-button-secondary">
-                                        <i class="fas fa-arrow-left me-2"></i>Geri
+                                    <button id="fault-report-button" class="btn btn-danger timer-btn-secondary">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span>Arıza</span>
                                     </button>
                                 </div>
                             </div>
@@ -66,28 +86,132 @@
                 </div>
             </div>
         </div>
+
+        <!-- Task Details Section -->
+        <div class="task-details-section">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="task-details-grid" id="task-details-grid">
+                            <!-- Dynamically filled -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- W-07 Warning Section -->
+        <div class="warning-section" id="w-07-warning" style="display: none;">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <div class="warning-card">
+                            <div class="warning-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="warning-content">
+                                <h5>Bakım Ekibi Bildirimi</h5>
+                                <p>Zamanlayıcı arızanız bakım ekibi tarafından çözüldüğünde otomatik olarak durdurulacaktır.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Time Modal -->
+    <div id="manual-time-modal" class="modal-overlay">
+        <div class="modal-backdrop" id="manual-time-modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-clock me-2"></i>Manuel Zaman Girişi</h3>
+                <button class="modal-close" id="manual-time-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="start-datetime">Başlangıç Tarihi ve Saati:</label>
+                    <input type="datetime-local" id="start-datetime" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="end-datetime">Bitiş Tarihi ve Saati:</label>
+                    <input type="datetime-local" id="end-datetime" class="form-control" required>
+                </div>
+                <div class="time-preview">
+                    <strong>Toplam Süre: <span id="duration-preview">00:00:00</span></strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="manual-time-modal-cancel">
+                    <i class="fas fa-times me-2"></i>İptal
+                </button>
+                <button class="btn btn-primary" id="manual-time-modal-submit">
+                    <i class="fas fa-save me-2"></i>Kaydet
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Fault Report Modal -->
-    <div id="fault-modal" class="fault-modal" style="display: none;">
-        <div class="fault-modal-backdrop" id="fault-modal-backdrop"></div>
-        <div class="fault-modal-content">
-            <div class="fault-modal-header">
+    <div id="fault-modal" class="modal-overlay">
+        <div class="modal-backdrop" id="fault-modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
                 <h3><i class="fas fa-exclamation-triangle me-2"></i>Arıza Bildirimi</h3>
-                <button class="fault-modal-close" id="fault-modal-close">&times;</button>
+                <button class="modal-close" id="fault-modal-close">&times;</button>
             </div>
-            <div class="fault-modal-body">
+            <div class="modal-body">
                 <div class="form-group">
                     <label for="fault-description">Arıza Açıklaması:</label>
                     <textarea id="fault-description" rows="4" placeholder="Arıza detaylarını buraya yazın..." required></textarea>
                 </div>
             </div>
-            <div class="fault-modal-footer">
+            <div class="modal-footer">
                 <button class="btn btn-secondary" id="fault-modal-cancel">
                     <i class="fas fa-times me-2"></i>İptal
                 </button>
                 <button class="btn btn-danger" id="fault-modal-submit">
                     <i class="fas fa-paper-plane me-2"></i>Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine Status Modal -->
+    <div id="machine-status-modal" class="modal-overlay">
+        <div class="modal-backdrop" id="machine-status-modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-question-circle me-2"></i>Makine Durumu</h3>
+                <button class="modal-close" id="machine-status-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Makine çalışır durumda mı?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="machine-status-no">
+                    <i class="fas fa-times me-2"></i>Hayır
+                </button>
+                <button class="btn btn-primary" id="machine-status-yes">
+                    <i class="fas fa-check me-2"></i>Evet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Redirect Warning Modal -->
+    <div id="redirect-warning-modal" class="modal-overlay">
+        <div class="modal-backdrop" id="redirect-warning-modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle me-2"></i>Yönlendirme Uyarısı</h3>
+            </div>
+            <div class="modal-body">
+                <p>Makine çalışmıyor olarak işaretlendi. Bekletme sayfasına yönlendirileceksiniz.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="redirect-warning-ok">
+                    <i class="fas fa-check me-2"></i>Tamam
                 </button>
             </div>
         </div>

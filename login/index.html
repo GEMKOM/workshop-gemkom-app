@@ -7,32 +7,157 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="../images/gemkom.png">
     <link rel="stylesheet" href="login.css">
+    <link rel="stylesheet" href="../components/dropdown.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-box">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="../images/gemkom.png" alt="Gemkom Logo" class="mb-4" style="height: 75px;">
-                <h3 class="mb-4" style="margin: 0;">Personel Girişi</h3>
-              </div>
-            <div id="error-message" class="alert alert-danger" style="display: none;"></div>
-            <form id="login-form">
-                <div class="mb-3">
-                    <label for="user-select" class="form-label">Kullanıcı Seç</label>
-                    <select id="user-select" class="form-select">
-                        <option value="">Seçiniz...</option>
-                    </select>
+    <div class="login-wrapper">
+        <!-- Admin Login Button -->
+        <div class="admin-login-btn">
+            <button type="button" class="btn btn-outline-light" id="admin-login-btn">
+                <i class="fas fa-user-shield"></i>
+                Admin Girişi
+            </button>
+        </div>
+        
+        <div class="login-container">
+            <!-- Logo and Header Section -->
+            <div class="login-header">
+                <div class="logo-container">
+                    <img src="../images/gemkom.png" alt="Gemkom Logo" class="logo">
+                    <div class="brand-info">
+                        <h1 class="brand-title">Gemkom</h1>
+                        <p class="brand-subtitle">Atölye Personel Giriş Sistemi</p>
+                    </div>
                 </div>
-                <div class="mb-3" hidden>
-                    <label for="username" class="form-label">Kullanıcı Adı</label>
-                    <input type="text" class="form-control" id="username" required readonly>
+            </div>
+
+            <!-- Login Form Section -->
+            <div class="login-form-container">
+                <div class="form-header">
+                    <h2 class="form-title">
+                        <i class="fas fa-tools"></i>
+                        Atölye Çalışanları
+                    </h2>
+                    <p class="form-subtitle">Kaynak, işleme ve kesim işlemleri için giriş yapın</p>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Şifre</label>
-                    <input type="password" class="form-control" id="password" required>
+
+                <!-- Error Message -->
+                <div id="error-message" class="alert alert-danger alert-dismissible fade" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="error-text"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
-                <button type="submit" id="login-button" class="btn btn-primary w-100">Giriş Yap</button>
-            </form>
+
+                <!-- Login Form -->
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="user-dropdown" class="form-label">
+                            <i class="fas fa-users"></i>
+                            Kullanıcı Seçin
+                        </label>
+                        <div id="user-dropdown-container"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            Şifre
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-key"></i>
+                            </span>
+                            <input type="password" class="form-control" id="password" required>
+                            <button type="button" class="btn btn-outline-secondary" id="toggle-password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" id="login-button" class="btn btn-primary btn-login">
+                            <span class="btn-text">Giriş Yap</span>
+                            <span class="btn-loading" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Giriş Yapılıyor...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Footer -->
+                <div class="login-footer">
+                    <p class="footer-text">
+                        <i class="fas fa-shield-alt"></i>
+                        Güvenli bağlantı ile korunmaktadır
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workshop Background Animation -->
+        <div class="background-animation">
+            <div class="floating-shapes">
+                <div class="shape shape-1" title="Kaynak İşlemi"></div>
+                <div class="shape shape-2" title="İşleme İşlemi"></div>
+                <div class="shape shape-3" title="Kesim İşlemi"></div>
+                <div class="shape shape-4" title="Metal İşleme"></div>
+            </div>
+            <!-- Industrial grid pattern -->
+            <div class="industrial-grid"></div>
+        </div>
+        
+        <!-- Admin Login Modal -->
+        <div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="adminLoginModalLabel">
+                            <i class="fas fa-user-shield"></i>
+                            Admin Girişi
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="admin-login-form">
+                            <div class="form-group mb-3">
+                                <label for="admin-username" class="form-label">
+                                    <i class="fas fa-user"></i>
+                                    Kullanıcı Adı
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="admin-username" required>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="admin-password" class="form-label">
+                                    <i class="fas fa-lock"></i>
+                                    Şifre
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="admin-password" required>
+                                    <button type="button" class="btn btn-outline-secondary" id="admin-toggle-password">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="admin-login-button">
+                                    <span class="btn-text">Giriş Yap</span>
+                                    <span class="btn-loading" style="display: none;">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        Giriş Yapılıyor...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
