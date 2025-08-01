@@ -1,5 +1,6 @@
-import { guardRoute, isAdmin, getUser, navigateByTeam } from './authService.js';
+import { guardRoute, isAdmin, getUser, navigateByTeamIfFreshLogin } from './authService.js';
 import { initNavbar } from './components/navbar.js';
+import { TimerWidget } from './components/timerWidget.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!guardRoute()) {
@@ -7,6 +8,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     initNavbar();
+
+    // Initialize timer widget for non-admin users
+    if (!isAdmin()) {
+        // Check if timer widget already exists
+        if (!window.timerWidget) {
+            console.log('Initializing timer widget on home page...');
+            window.timerWidget = new TimerWidget();
+            
+            // Add global event listener for timer updates
+            window.addEventListener('timerUpdated', async () => {
+                if (window.timerWidget) {
+                    await window.timerWidget.refreshTimerWidget();
+                }
+            });
+        }
+    }
 
     // Handle landing page specific logic
     if (window.location.pathname === '/') {
@@ -26,12 +43,9 @@ async function handleLandingPage() {
             }
         }
 
-        // Auto-redirect if user has a specific team (not admin)
+        // Only redirect on fresh logins, not manual navigation
         if (user.team && !isAdmin()) {
-            // Add a small delay to show the landing page briefly
-            setTimeout(() => {
-                navigateByTeam();
-            }, 2000);
+            navigateByTeamIfFreshLogin();
         }
 
     } catch (error) {

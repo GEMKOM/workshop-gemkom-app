@@ -38,8 +38,20 @@ export function createNavbar() {
     const currentPath = window.location.pathname;
     const navLinks = navbar.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
-        if (link.getAttribute('href') === currentPath) {
-            link.classList.add('active');
+        const href = link.getAttribute('href');
+        if (href) {
+            // Check for exact match first
+            if (href === currentPath) {
+                link.classList.add('active');
+            }
+            // Check for partial match for subpages (e.g., /machining/tasks/ should highlight /machining)
+            else if (href !== '/' && currentPath.startsWith(href)) {
+                link.classList.add('active');
+            }
+            // Special case for home page - only highlight if we're exactly on home
+            else if (href === '/' && currentPath === '/') {
+                link.classList.add('active');
+            }
         }
     });
 
@@ -267,8 +279,20 @@ export function initNavbar() {
       const links = navbarContainer.querySelectorAll('.nav-link');
       const currentPath = window.location.pathname;
       links.forEach(link => {
-          if (link.getAttribute('href') === currentPath) {
-              link.classList.add('active');
+          const href = link.getAttribute('href');
+          if (href) {
+              // Check for exact match first
+              if (href === currentPath) {
+                  link.classList.add('active');
+              }
+              // Check for partial match for subpages (e.g., /machining/tasks/ should highlight /machining)
+              else if (href !== '/' && currentPath.startsWith(href)) {
+                  link.classList.add('active');
+              }
+              // Special case for home page - only highlight if we're exactly on home
+              else if (href === '/' && currentPath === '/') {
+                  link.classList.add('active');
+              }
           }
       });
       

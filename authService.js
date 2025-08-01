@@ -20,6 +20,11 @@ export const ROUTES = {
 // Track if we're currently redirecting to prevent loops
 let isRedirecting = false;
 
+// Track if this is a fresh login to prevent redirects on manual navigation
+// This flag is set to true only when a user successfully logs in
+// and is reset to false after the first team-based navigation
+let isFreshLogin = false;
+
 export async function getUser() {
     const user_data = await authedFetch(`${backendBase}/users/me/`);
     return await user_data.json();
@@ -56,6 +61,10 @@ export async function login(username, password) {
     setTokens(data.access, data.refresh);
     const user_data = await getUser();
     localStorage.setItem('user', JSON.stringify(user_data));
+    
+    // Mark this as a fresh login
+    isFreshLogin = true;
+    
     return data;
 }
 
@@ -118,6 +127,15 @@ export function navigateByTeam() {
         navigateTo(ROUTES.MACHINING);
     } else if (user.team === 'maintenance') {
         navigateTo(ROUTES.MAINTENANCE);
+    }
+}
+
+// New function to handle team-based navigation only on fresh logins
+// This prevents unwanted redirects when users manually navigate to pages
+export function navigateByTeamIfFreshLogin() {
+    if (isFreshLogin) {
+        isFreshLogin = false; // Reset the flag
+        navigateByTeam();
     }
 }
 

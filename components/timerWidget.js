@@ -28,7 +28,7 @@ export class TimerWidget {
         // Ensure time is synchronized when widget initializes
         await this.loadActiveTimers();
         if (this.activeTimers.length === 0) {
-            // If no active timers, just render empty state
+            // If no active timers, keep as icon only
             this.renderTimers();
             return;
         }    
@@ -57,14 +57,17 @@ export class TimerWidget {
         widget.id = 'timer-widget';
         widget.className = 'timer-widget';
         widget.innerHTML = `
-            <div class="timer-widget-header">
-                <span class="timer-widget-title">⏱️ Aktif Zamanlayıcılar</span>
-                <span class="timer-widget-toggle" id="timer-widget-toggle">−</span>
+            <div class="timer-widget-icon">
+                <div class="timer-widget-badge" id="timer-widget-badge" style="display: none;">0</div>
             </div>
-            <div class="timer-widget-content" id="timer-widget-content">
+            <div class="timer-widget-header" style="display: none;">
+                <span class="timer-widget-title"></span>
+                <span class="timer-widget-toggle" id="timer-widget-toggle">×</span>
+            </div>
+            <div class="timer-widget-content" id="timer-widget-content" style="display: none;">
                 <div class="timer-widget-loading">Yükleniyor...</div>
             </div>
-            <div class="timer-widget-footer">
+            <div class="timer-widget-footer" style="display: none;">
                 <button class="timer-widget-new" id="timer-widget-new">+ Yeni Zamanlayıcı</button>
             </div>
         `;
@@ -76,11 +79,17 @@ export class TimerWidget {
             navigateTo(ROUTES.MACHINING);
         });
 
-        // Make widget draggable and handle header clicks
+        // Make widget draggable and handle icon clicks
         this.makeDraggable(widget);
         
         // Add click outside to minimize functionality
         this.setupClickOutsideToMinimize(widget);
+        
+        // Add window resize handler to keep widget within bounds
+        this.setupResizeHandler(widget);
+        
+        // Add click handler for the icon
+        this.setupIconClickHandler(widget);
     }
 
     makeDraggable(widget) {
@@ -94,19 +103,51 @@ export class TimerWidget {
         let yOffset = 0;
         let dragThreshold = 5; // Minimum distance to consider as dragging
         let startX, startY;
+        let initialPosition = null; // Store initial position
 
+        const icon = widget.querySelector('.timer-widget-icon');
         const header = widget.querySelector('.timer-widget-header');
 
-        header.addEventListener('mousedown', (e) => {
-            hasDragged = false;
-            startX = e.clientX;
-            startY = e.clientY;
-            initialX = e.clientX - xOffset;
-            initialY = e.clientY - yOffset;
-            isDragging = true;
-            
-            // Add dragging class for visual feedback
-            widget.classList.add('dragging');
+        // Make both icon and header draggable
+        [icon, header].forEach(element => {
+            if (element) {
+                element.addEventListener('mousedown', (e) => {
+                    hasDragged = false;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    
+                    // Get current transform values to calculate the actual initial position
+                    const transform = widget.style.transform;
+                    const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+                    let currentTransformX = 0;
+                    let currentTransformY = 0;
+                    
+                    if (match) {
+                        currentTransformX = parseFloat(match[1]);
+                        currentTransformY = parseFloat(match[2]);
+                    }
+                    
+                    // Calculate the actual initial position by subtracting the current transform
+                    const rect = widget.getBoundingClientRect();
+                    initialPosition = {
+                        x: rect.left - currentTransformX,
+                        y: rect.top - currentTransformY
+                    };
+                    
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                    isDragging = true;
+                    
+                    // Add dragging class for visual feedback
+                    widget.classList.add('dragging');
+                    
+                    // Prevent text selection during drag
+                    document.body.style.userSelect = 'none';
+                    document.body.style.webkitUserSelect = 'none';
+                    document.body.style.mozUserSelect = 'none';
+                    document.body.style.msUserSelect = 'none';
+                });
+            }
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -125,6 +166,22 @@ export class TimerWidget {
                     hasDragged = true;
                 }
                 
+                // Get widget dimensions and viewport dimensions
+                const widgetRect = widget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                // Calculate boundaries based on initial position
+                // Allow movement from initial position to full viewport
+                const minX = -(initialPosition.x); // Allow moving left from initial position
+                const maxX = viewportWidth - widgetRect.width - initialPosition.x; // Allow moving right
+                const minY = -(initialPosition.y); // Allow moving up from initial position
+                const maxY = viewportHeight - widgetRect.height - initialPosition.y; // Allow moving down
+                
+                // Constrain the position within viewport boundaries
+                currentX = Math.max(minX, Math.min(maxX, currentX));
+                currentY = Math.max(minY, Math.min(maxY, currentY));
+                
                 xOffset = currentX;
                 yOffset = currentY;
 
@@ -135,12 +192,18 @@ export class TimerWidget {
             }
         });
 
-        document.addEventListener('mouseup', () => {
+        const stopDragging = () => {
             if (isDragging) {
                 isDragging = false;
                 
                 // Remove dragging class
                 widget.classList.remove('dragging');
+                
+                // Restore text selection
+                document.body.style.userSelect = '';
+                document.body.style.webkitUserSelect = '';
+                document.body.style.mozUserSelect = '';
+                document.body.style.msUserSelect = '';
                 
                 // If we dragged, prevent the click event from toggling
                 if (hasDragged) {
@@ -149,20 +212,17 @@ export class TimerWidget {
                     }, 100);
                 }
             }
-        });
+        };
 
-        // Handle header clicks for toggle functionality
-        header.addEventListener('click', (e) => {
-            // If we just dragged, don't toggle
-            if (hasDragged) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-            
-            // Otherwise, toggle the widget
-            this.toggleWidget();
-        });
+        // Handle mouseup on document
+        document.addEventListener('mouseup', stopDragging);
+        
+        // Also handle mouseleave to stop dragging if mouse leaves window
+        document.addEventListener('mouseleave', stopDragging);
+        
+        // Store dragging state on widget for access by other methods
+        widget.hasDragged = () => hasDragged;
+        widget.setHasDragged = (value) => { hasDragged = value; };
     }
 
     setupClickOutsideToMinimize(widget) {
@@ -195,6 +255,66 @@ export class TimerWidget {
         });
     }
 
+    setupResizeHandler(widget) {
+        let resizeTimeout;
+        let initialPosition = null;
+        
+        const handleResize = () => {
+            // Clear existing timeout
+            if (resizeTimeout) {
+                clearTimeout(resizeTimeout);
+            }
+            
+            // Debounce the resize handler
+            resizeTimeout = setTimeout(() => {
+                const widgetRect = widget.getBoundingClientRect();
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                // Get current transform values to calculate the actual initial position
+                const transform = widget.style.transform;
+                const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+                let currentTransformX = 0;
+                let currentTransformY = 0;
+                
+                if (match) {
+                    currentTransformX = parseFloat(match[1]);
+                    currentTransformY = parseFloat(match[2]);
+                }
+                
+                // Calculate the actual initial position by subtracting the current transform
+                initialPosition = {
+                    x: widgetRect.left - currentTransformX,
+                    y: widgetRect.top - currentTransformY
+                };
+                
+                if (match) {
+                    let currentX = parseFloat(match[1]);
+                    let currentY = parseFloat(match[2]);
+                    
+                    // Calculate boundaries using the updated initial position
+                    const minX = -(initialPosition.x);
+                    const maxX = viewportWidth - widgetRect.width - initialPosition.x;
+                    const minY = -(initialPosition.y);
+                    const maxY = viewportHeight - widgetRect.height - initialPosition.y;
+                    
+                    // Constrain the position within viewport boundaries
+                    currentX = Math.max(minX, Math.min(maxX, currentX));
+                    currentY = Math.max(minY, Math.min(maxY, currentY));
+                    
+                    // Apply the constrained position
+                    widget.style.transform = `translate(${currentX}px, ${currentY}px)`;
+                }
+            }, 100); // Debounce delay
+        };
+        
+        // Add resize event listener
+        window.addEventListener('resize', handleResize);
+        
+        // Store the handler for cleanup
+        this.resizeHandler = handleResize;
+    }
+
     async loadActiveTimers() {
         try {
             const response = await fetchTimers(true);
@@ -208,13 +328,25 @@ export class TimerWidget {
 
     renderTimers() {
         const content = document.getElementById('timer-widget-content');
+        const badge = document.getElementById('timer-widget-badge');
         
         if (this.activeTimers.length === 0) {
             content.innerHTML = `
                 <div class="timer-widget-empty">
+                    <span>Aktif zamanlayıcı bulunmuyor</span>
                 </div>
             `;
+            // Hide badge when no timers
+            if (badge) {
+                badge.style.display = 'none';
+            }
             return;
+        }
+
+        // Show badge with timer count
+        if (badge) {
+            badge.textContent = this.activeTimers.length;
+            badge.style.display = 'flex';
         }
 
         content.innerHTML = this.activeTimers.map(timer => {
@@ -303,38 +435,27 @@ export class TimerWidget {
     }
 
     toggleWidget() {
-        const content = document.getElementById('timer-widget-content');
-        const footer = document.querySelector('.timer-widget-footer');
-        const toggle = document.getElementById('timer-widget-toggle');
-        
-        this.isVisible = !this.isVisible;
-        
         if (this.isVisible) {
-            content.style.display = 'block';
-            footer.style.display = 'block';
-            toggle.textContent = '−';
+            this.collapseWidget();
         } else {
-            content.style.display = 'none';
-            footer.style.display = 'none';
-            toggle.textContent = '+';
+            this.expandWidget();
         }
     }
 
     minimizeWidget() {
-        const content = document.getElementById('timer-widget-content');
-        const footer = document.querySelector('.timer-widget-footer');
-        const toggle = document.getElementById('timer-widget-toggle');
-        
-        this.isVisible = false;
-        
-        content.style.display = 'none';
-        footer.style.display = 'none';
-        toggle.textContent = '+';
+        this.collapseWidget();
     }
 
     destroy() {
         this.stopUpdateInterval();
         this.stopAdminPolling();
+        
+        // Clean up resize event listener
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+            this.resizeHandler = null;
+        }
+        
         const widget = document.getElementById('timer-widget');
         if (widget) {
             document.body.removeChild(widget);
@@ -397,11 +518,19 @@ export class TimerWidget {
         if (this.activeTimers.length > 0 && !hadActiveTimers) {
             this.startAdminStopPolling();
             this.startUpdateInterval();
+            // Auto-expand widget when timers are added
+            if (!this.isVisible) {
+                this.expandWidget();
+            }
         }
         // If we no longer have active timers but did before, stop polling and update interval
         else if (this.activeTimers.length === 0 && hadActiveTimers) {
             this.stopAdminPolling();
             this.stopUpdateInterval();
+            // Collapse widget when no timers
+            if (this.isVisible) {
+                this.collapseWidget();
+            }
         }
         
         this.renderTimers();
@@ -423,6 +552,63 @@ export class TimerWidget {
             clearInterval(this.updateInterval);
             this.updateInterval = null;
         }
+    }
+
+    setupIconClickHandler(widget) {
+        const icon = widget.querySelector('.timer-widget-icon');
+        const header = widget.querySelector('.timer-widget-header');
+        const content = widget.querySelector('.timer-widget-content');
+        const footer = widget.querySelector('.timer-widget-footer');
+        const toggle = widget.querySelector('.timer-widget-toggle');
+        
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Only expand if we didn't drag
+            if (!widget.hasDragged()) {
+                this.expandWidget();
+            }
+            // Reset drag state after a short delay
+            setTimeout(() => {
+                widget.setHasDragged(false);
+            }, 100);
+        });
+        
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.collapseWidget();
+        });
+    }
+    
+    expandWidget() {
+        const widget = document.getElementById('timer-widget');
+        const icon = widget.querySelector('.timer-widget-icon');
+        const header = widget.querySelector('.timer-widget-header');
+        const content = widget.querySelector('.timer-widget-content');
+        const footer = widget.querySelector('.timer-widget-footer');
+        
+        widget.classList.add('expanded');
+        icon.style.display = 'none';
+        header.style.display = 'flex';
+        content.style.display = 'block';
+        footer.style.display = 'block';
+        
+        this.isVisible = true;
+    }
+    
+    collapseWidget() {
+        const widget = document.getElementById('timer-widget');
+        const icon = widget.querySelector('.timer-widget-icon');
+        const header = widget.querySelector('.timer-widget-header');
+        const content = widget.querySelector('.timer-widget-content');
+        const footer = widget.querySelector('.timer-widget-footer');
+        
+        widget.classList.remove('expanded');
+        icon.style.display = 'flex';
+        header.style.display = 'none';
+        content.style.display = 'none';
+        footer.style.display = 'none';
+        
+        this.isVisible = false;
     }
 
     // Static method to trigger timer updates globally
