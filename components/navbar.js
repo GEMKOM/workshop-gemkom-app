@@ -228,6 +228,12 @@ export function initNavbar() {
       
       navbarContainer.innerHTML = navHTML;
       
+      // Initialize Bootstrap dropdowns after navbar is created
+      const dropdownElementList = navbarContainer.querySelectorAll('.dropdown-toggle');
+      dropdownElementList.forEach(dropdownToggleEl => {
+          new bootstrap.Dropdown(dropdownToggleEl);
+      });
+      
       // Add event listeners
       const editProfileBtn = document.getElementById('edit-profile-btn');
       if (editProfileBtn) {

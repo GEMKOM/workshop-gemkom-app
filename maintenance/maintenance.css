@@ -588,6 +588,159 @@ body {
 }
 
 /* ============================================================================
+   MODERN CHECKBOX STYLES
+   ============================================================================ */
+
+.modern-checkbox-container {
+    margin: 1rem 0;
+}
+
+.modern-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.02), rgba(220, 20, 60, 0.02));
+    border: 2px solid transparent;
+}
+
+.modern-checkbox:hover {
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.05), rgba(220, 20, 60, 0.05));
+    border-color: rgba(220, 20, 60, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 20, 60, 0.1);
+}
+
+.modern-checkbox input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.modern-checkmark {
+    height: 24px;
+    width: 24px;
+    background-color: #ffffff;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    margin-right: 1rem;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.modern-checkbox:hover .modern-checkmark {
+    border-color: var(--secondary-color);
+    background-color: rgba(220, 20, 60, 0.05);
+    transform: scale(1.05);
+}
+
+.modern-checkbox input:checked ~ .modern-checkmark {
+    background: var(--gradient-primary);
+    border-color: var(--secondary-color);
+    box-shadow: 0 2px 8px rgba(220, 20, 60, 0.3);
+}
+
+.modern-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 7px;
+    top: 4px;
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    transition: all 0.2s ease;
+}
+
+.modern-checkbox input:checked ~ .modern-checkmark:after {
+    display: block;
+    animation: checkmarkAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes checkmarkAppear {
+    0% {
+        opacity: 0;
+        transform: rotate(45deg) scale(0.5);
+    }
+    50% {
+        opacity: 0.7;
+        transform: rotate(45deg) scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: rotate(45deg) scale(1);
+    }
+}
+
+.modern-checkbox-text {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.modern-checkbox input:checked ~ .modern-checkbox-text {
+    color: var(--secondary-color);
+    font-weight: 600;
+}
+
+.modern-checkbox input:checked ~ .modern-checkbox-text i {
+    color: var(--secondary-color) !important;
+}
+
+/* Disabled state */
+.modern-checkbox input:disabled ~ .modern-checkmark {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.modern-checkbox input:disabled ~ .modern-checkbox-text {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Focus state */
+.modern-checkbox:focus-within {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+}
+
+/* Responsive design for modern checkbox */
+@media (max-width: 576px) {
+    .modern-checkbox {
+        padding: 0.5rem;
+    }
+    
+    .modern-checkmark {
+        height: 20px;
+        width: 20px;
+        margin-right: 0.75rem;
+    }
+    
+    .modern-checkmark:after {
+        left: 5px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+    }
+    
+    .modern-checkbox-text {
+        font-size: 0.9rem;
+    }
+}
+
+/* ============================================================================
    MODAL STYLES
    ============================================================================ */
 
@@ -768,5 +921,442 @@ body {
     
     .tab-button.active {
         border: 2px solid white;
+    }
+}
+
+/* ============================================================================
+   EQUIPMENT STATUS STYLES
+   ============================================================================ */
+
+.equipment-status-section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.equipment-status-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.section-title i {
+    color: var(--primary-color);
+}
+
+.section-description {
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 0;
+}
+
+/* ============================================================================
+   EQUIPMENT SUMMARY CARDS
+   ============================================================================ */
+
+.equipment-summary {
+    margin-bottom: 3rem;
+}
+
+.summary-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 100%;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.summary-card.operational {
+    border-left-color: #28a745;
+}
+
+.summary-card.critical {
+    border-left-color: #dc3545;
+}
+
+.summary-card.maintenance {
+    border-left-color: #ffc107;
+}
+
+.summary-card.minor {
+    border-left-color: #17a2b8;
+}
+
+.summary-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.summary-card.operational .summary-icon {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.summary-card.critical .summary-icon {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+}
+
+.summary-card.maintenance .summary-icon {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+}
+
+.summary-card.minor .summary-icon {
+    background: linear-gradient(135deg, #17a2b8, #6f42c1);
+}
+
+.summary-content {
+    flex: 1;
+}
+
+.summary-count {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 0;
+    font-weight: 500;
+}
+
+/* ============================================================================
+   EQUIPMENT TYPE SECTIONS
+   ============================================================================ */
+
+.equipment-type-section {
+    margin-bottom: 3rem;
+}
+
+.equipment-type-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    align-items: center;
+}
+
+.equipment-type-title i {
+    color: var(--primary-color);
+}
+
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+/* ============================================================================
+   EQUIPMENT CARDS
+   ============================================================================ */
+
+.equipment-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.equipment-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.equipment-card.success {
+    border-color: #28a745;
+}
+
+.equipment-card.danger {
+    border-color: #dc3545;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+}
+
+.equipment-card.warning {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, #fffbf0 0%, #ffffff 100%);
+}
+
+.equipment-card.info {
+    border-color: #17a2b8;
+    background: linear-gradient(135deg, #f0f8ff 0%, #ffffff 100%);
+}
+
+.equipment-card-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+    position: relative;
+}
+
+.equipment-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.equipment-status-badge.success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.equipment-status-badge.danger {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    color: white;
+}
+
+.equipment-status-badge.warning {
+    background: linear-gradient(135deg, #ffc107, #fd7e14);
+    color: #212529;
+}
+
+.equipment-status-badge.info {
+    background: linear-gradient(135deg, #17a2b8, #6f42c1);
+    color: white;
+}
+
+.equipment-status-badge i {
+    font-size: 0.9rem;
+}
+
+.equipment-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.equipment-id {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.equipment-card-body {
+    padding: 1.5rem;
+}
+
+.equipment-info {
+    margin-bottom: 1.5rem;
+}
+
+.equipment-type,
+.equipment-location {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.equipment-type i,
+.equipment-location i {
+    color: var(--primary-color);
+    width: 20px;
+    margin-right: 0.5rem;
+}
+
+.equipment-properties-toggle {
+    margin-top: 1rem;
+}
+
+.properties-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s ease;
+}
+
+.properties-toggle-btn:hover {
+    color: var(--primary-color-dark);
+}
+
+.properties-toggle-btn i {
+    margin-right: 0.5rem;
+    transition: transform 0.2s ease;
+}
+
+.equipment-properties {
+    margin-top: 0.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.equipment-properties.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    opacity: 0;
+}
+
+.equipment-property {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.equipment-property:last-child {
+    margin-bottom: 0;
+}
+
+.equipment-property strong {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+/* ============================================================================
+   EQUIPMENT FAULTS
+   ============================================================================ */
+
+.equipment-faults {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #fff5f5;
+    border-radius: 8px;
+    border-left: 3px solid #dc3545;
+}
+
+.faults-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #dc3545;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.faults-title i {
+    margin-right: 0.5rem;
+}
+
+.fault-item {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.fault-item:last-child {
+    margin-bottom: 0;
+}
+
+.fault-description {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.fault-meta {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.fault-meta i {
+    margin-right: 0.25rem;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN FOR EQUIPMENT STATUS
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .equipment-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .summary-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .summary-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .summary-count {
+        font-size: 1.5rem;
+    }
+    
+    .section-title {
+        font-size: 1.75rem;
+    }
+    
+    .equipment-type-title {
+        font-size: 1.25rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .equipment-card-header,
+    .equipment-card-body {
+        padding: 1rem;
+    }
+    
+    .equipment-status-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    
+    .equipment-name {
+        font-size: 1.1rem;
+    }
+    
+    .equipment-faults {
+        padding: 0.75rem;
+    }
+    
+    .fault-item {
+        padding: 0.5rem;
     }
 }

@@ -75,3 +75,18 @@ export async function resolveMaintenanceRequest(requestId, resolutionDescription
     
     return response.json();
 }
+
+export async function fetchMachineFaults() {
+    const response = await authedFetch(`${backendBase}/machines/faults/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to fetch machine faults');
+    }
+    
+    return response.json();
+}

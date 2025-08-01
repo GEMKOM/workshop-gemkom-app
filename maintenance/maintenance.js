@@ -3,7 +3,8 @@ import { guardRoute } from '../authService.js';
 import { authedFetch } from '../authService.js';
 import { backendBase } from '../base.js';
 import { fetchMachines } from '../generic/machines.js';
-import { createMaintenanceRequest, resolveMaintenanceRequest } from './maintenanceApi.js';
+import { createMaintenanceRequest, resolveMaintenanceRequest, fetchMachineFaults } from './maintenanceApi.js';
+import { ModernDropdown } from '../components/dropdown.js';
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -68,6 +69,9 @@ async function loadTabContent(tabName) {
             case 'create-request':
                 await loadCreateRequestContent();
                 break;
+            case 'equipment-status':
+                await loadEquipmentStatusContent();
+                break;
             default:
                 await loadViewRequestsContent();
         }
@@ -101,9 +105,338 @@ async function loadCreateRequestContent() {
     const contentContainer = document.getElementById('maintenance-content');
     contentContainer.innerHTML = createMaintenanceRequestForm();
     
-    // Load machines and setup form
-    await loadMachines();
+    // Setup form first, then load machines
     setupMaintenanceRequestForm();
+    await loadMachines();
+}
+
+async function loadEquipmentStatusContent() {
+    const contentContainer = document.getElementById('maintenance-content');
+    contentContainer.innerHTML = createEquipmentStatusSection();
+    
+    // Load equipment status data
+    await loadEquipmentStatus();
+}
+
+// ============================================================================
+// EQUIPMENT STATUS FUNCTIONS
+// ============================================================================
+
+async function loadEquipmentStatus() {
+    try {
+        // Fetch machines and faults in parallel
+        const [machines, faults] = await Promise.all([
+            fetchMachines(),
+            fetchMachineFaults()
+        ]);
+        
+        // Process and combine the data
+        const equipmentStatus = processEquipmentStatus(machines, faults);
+        
+        // Render the equipment status
+        renderEquipmentStatus(equipmentStatus);
+        
+    } catch (error) {
+        console.error('Error loading equipment status:', error);
+        const statusContainer = document.getElementById('equipment-status-container');
+        if (statusContainer) {
+            statusContainer.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-danger mb-2">Hata Oluştu</h4>
+                    <p class="text-muted">Ekipman durumu yüklenirken bir hata oluştu. Lütfen tekrar deneyin.</p>
+                    <button class="btn btn-primary mt-3" onclick="location.reload()">
+                        <i class="fas fa-redo me-2"></i>Yenile
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+function processEquipmentStatus(machines, faults) {
+    // Create a map of active faults by machine ID
+    const activeFaultsByMachine = {};
+    
+    faults.forEach(fault => {
+        if (!fault.resolved_at) { // Only consider unresolved faults
+            if (!activeFaultsByMachine[fault.machine]) {
+                activeFaultsByMachine[fault.machine] = [];
+            }
+            activeFaultsByMachine[fault.machine].push(fault);
+        }
+    });
+    
+    // Process each machine and determine its status
+    return machines.map(machine => {
+        const machineFaults = activeFaultsByMachine[machine.id] || [];
+        
+        // Determine machine status
+        let status = 'operational';
+        let statusLabel = 'Çalışır Durumda';
+        let statusIcon = 'fas fa-check-circle';
+        let statusClass = 'success';
+        
+        if (machineFaults.length > 0) {
+            const hasBreakingFault = machineFaults.some(fault => fault.is_breaking);
+            const hasMaintenanceFault = machineFaults.some(fault => fault.is_maintenance);
+            
+            if (hasBreakingFault) {
+                status = 'critical';
+                statusLabel = 'Kritik Arıza';
+                statusIcon = 'fas fa-exclamation-triangle';
+                statusClass = 'danger';
+            } else if (hasMaintenanceFault) {
+                status = 'maintenance';
+                statusLabel = 'Bakım Gerekli';
+                statusIcon = 'fas fa-tools';
+                statusClass = 'warning';
+            } else {
+                status = 'minor';
+                statusLabel = 'Küçük Arıza';
+                statusIcon = 'fas fa-info-circle';
+                statusClass = 'info';
+            }
+        }
+        
+        return {
+            ...machine,
+            status,
+            statusLabel,
+            statusIcon,
+            statusClass,
+            activeFaults: machineFaults
+        };
+    });
+}
+
+function renderEquipmentStatus(equipmentStatus) {
+    const statusContainer = document.getElementById('equipment-status-container');
+    if (!statusContainer) return;
+    
+    // Update summary counts
+    updateSummaryCounts(equipmentStatus);
+    
+    // Group machines by type
+    const machinesByType = {};
+    equipmentStatus.forEach(machine => {
+        const type = machine.machine_type_label || machine.machine_type;
+        if (!machinesByType[type]) {
+            machinesByType[type] = [];
+        }
+        machinesByType[type].push(machine);
+    });
+    
+    let html = '';
+    
+    // Render each machine type group
+    Object.entries(machinesByType).forEach(([type, machines]) => {
+        html += `
+            <div class="equipment-type-section mb-4">
+                <h3 class="equipment-type-title">
+                    <i class="fas fa-cogs me-2"></i>
+                    ${type}
+                </h3>
+                <div class="equipment-grid">
+        `;
+        
+        machines.forEach(machine => {
+            html += createEquipmentCard(machine);
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    statusContainer.innerHTML = html;
+}
+
+function updateSummaryCounts(equipmentStatus) {
+    const counts = {
+        operational: 0,
+        critical: 0,
+        maintenance: 0,
+        minor: 0
+    };
+    
+    equipmentStatus.forEach(machine => {
+        counts[machine.status]++;
+    });
+    
+    // Update the summary count elements
+    const operationalCount = document.getElementById('operational-count');
+    const criticalCount = document.getElementById('critical-count');
+    const maintenanceCount = document.getElementById('maintenance-count');
+    const minorCount = document.getElementById('minor-count');
+    
+    if (operationalCount) operationalCount.textContent = counts.operational;
+    if (criticalCount) criticalCount.textContent = counts.critical;
+    if (maintenanceCount) maintenanceCount.textContent = counts.maintenance;
+    if (minorCount) minorCount.textContent = counts.minor;
+}
+
+function createEquipmentCard(machine) {
+    const propertiesHtml = Object.entries(machine.properties || {}).map(([key, value]) => 
+        `<div class="equipment-property"><strong>${key}:</strong> ${value}</div>`
+    ).join('');
+    
+    const faultsHtml = machine.activeFaults.length > 0 ? `
+        <div class="equipment-faults">
+            <h6 class="faults-title">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Aktif Arızalar (${machine.activeFaults.length})
+            </h6>
+            ${machine.activeFaults.map(fault => `
+                <div class="fault-item">
+                    <div class="fault-description">${fault.description}</div>
+                    <div class="fault-meta">
+                        <small class="text-muted">
+                            <i class="fas fa-user me-1"></i>${fault.reported_by_username}
+                            <i class="fas fa-calendar ms-3 me-1"></i>${new Date(fault.reported_at).toLocaleDateString('tr-TR', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
+                        </small>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    ` : '';
+    
+    const propertiesToggleHtml = propertiesHtml ? `
+        <div class="equipment-properties-toggle">
+            <button class="properties-toggle-btn" onclick="toggleProperties(this)" data-target="properties-${machine.id}">
+                <i class="fas fa-chevron-down"></i>
+                <span>Özellikleri Göster</span>
+            </button>
+            <div class="equipment-properties collapsed" id="properties-${machine.id}">
+                ${propertiesHtml}
+            </div>
+        </div>
+    ` : '';
+    
+    return `
+        <div class="equipment-card ${machine.statusClass}">
+            <div class="equipment-card-header">
+                <div class="equipment-status-badge ${machine.statusClass}">
+                    <i class="${machine.statusIcon}"></i>
+                    ${machine.statusLabel}
+                </div>
+                <h5 class="equipment-name">${machine.name}</h5>
+            </div>
+            <div class="equipment-card-body">
+                <div class="equipment-info">
+                    ${propertiesToggleHtml}
+                </div>
+                ${faultsHtml}
+            </div>
+        </div>
+    `;
+}
+
+// Global function for toggling properties visibility
+window.toggleProperties = function(button) {
+    const targetId = button.getAttribute('data-target');
+    const propertiesDiv = document.getElementById(targetId);
+    const icon = button.querySelector('i');
+    const span = button.querySelector('span');
+    
+    if (propertiesDiv.classList.contains('collapsed')) {
+        // Expand
+        propertiesDiv.classList.remove('collapsed');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        span.textContent = 'Özellikleri Gizle';
+    } else {
+        // Collapse
+        propertiesDiv.classList.add('collapsed');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        span.textContent = 'Özellikleri Göster';
+    }
+}
+
+function createEquipmentStatusSection() {
+    return `
+        <div class="equipment-status-section">
+            <div class="row">
+                <div class="col-12">
+                    <div class="equipment-status-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-clipboard-check me-3"></i>
+                            Ekipman Durumu
+                        </h2>
+                        <p class="section-description">
+                            Tüm ekipmanların mevcut durumunu ve aktif arızalarını görüntüleyin
+                        </p>
+                    </div>
+                    
+                    <div class="equipment-summary mb-4">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="summary-card operational">
+                                    <div class="summary-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="summary-content">
+                                        <h4 class="summary-count" id="operational-count">-</h4>
+                                        <p class="summary-label">Çalışır Durumda</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="summary-card critical">
+                                    <div class="summary-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="summary-content">
+                                        <h4 class="summary-count" id="critical-count">-</h4>
+                                        <p class="summary-label">Kritik Arıza</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="summary-card maintenance">
+                                    <div class="summary-icon">
+                                        <i class="fas fa-tools"></i>
+                                    </div>
+                                    <div class="summary-content">
+                                        <h4 class="summary-count" id="maintenance-count">-</h4>
+                                        <p class="summary-label">Bakım Gerekli</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="summary-card minor">
+                                    <div class="summary-icon">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div class="summary-content">
+                                        <h4 class="summary-count" id="minor-count">-</h4>
+                                        <p class="summary-label">Küçük Arıza</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="equipment-status-container">
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p class="text-muted">Ekipman durumu yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // ============================================================================
@@ -208,36 +541,32 @@ function createMaintenanceRequestForm() {
                             <form id="maintenance-request-form">
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="machine-select" class="form-label">
+                                        <label for="machine-dropdown" class="form-label">
                                             <i class="fas fa-cogs"></i>
                                             Makine Seçin
                                         </label>
-                                        <select class="form-select" id="machine-select" required>
-                                            <option value="">Makine seçin...</option>
-                                            <!-- Machines will be loaded dynamically -->
-                                        </select>
+                                        <div id="machine-dropdown"></div>
                                     </div>
                                     
                                     <div class="col-md-6">
-                                        <label for="request-type" class="form-label">
+                                        <label for="request-type-dropdown" class="form-label">
                                             <i class="fas fa-tag"></i>
                                             Talep Türü
                                         </label>
-                                        <select class="form-select" id="request-type" required>
-                                            <option value="">Tür seçin...</option>
-                                            <option value="maintenance">Bakım</option>
-                                            <option value="fault">Arıza</option>
-                                        </select>
+                                        <div id="request-type-dropdown"></div>
                                     </div>
                                     
                                     <div class="col-12" id="fault-operable-container" style="display: none;">
                                         <div class="maintenance-card" style="margin-bottom: 0;">
                                             <div class="maintenance-card-body">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="is-operable" checked>
-                                                    <label class="form-check-label" for="is-operable">
-                                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                                        Makine çalışır durumda
+                                                <div class="modern-checkbox-container">
+                                                    <label class="modern-checkbox">
+                                                        <input type="checkbox" id="is-operable" checked>
+                                                        <span class="modern-checkmark"></span>
+                                                        <span class="modern-checkbox-text">
+                                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                                            Makine çalışır durumda
+                                                        </span>
                                                     </label>
                                                 </div>
                                             </div>
@@ -581,42 +910,48 @@ function setupFilterHandlers() {
 }
 
 async function loadMachines() {
-    const machineSelect = document.getElementById('machine-select');
-    if (!machineSelect) return;
+    const machineDropdownContainer = document.getElementById('machine-dropdown');
+    if (!machineDropdownContainer) return;
     
     // Show loading state
-    machineSelect.innerHTML = '<option value="">Makineler yükleniyor...</option>';
-    machineSelect.disabled = true;
+    machineDropdownContainer.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><p class="text-muted">Makineler yükleniyor...</p></div>';
     
     try {
         const machines = await fetchMachines();
         populateMachinesDropdown(machines);
     } catch (error) {
-        machineSelect.innerHTML = `
-            <option value="">Makine yüklenirken hata oluştu</option>
-        `;
-        machineSelect.disabled = true;
+        machineDropdownContainer.innerHTML = '<div class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Makine yüklenirken hata oluştu</div>';
         console.error('Error loading machines:', error);
     }
 }
 
 function populateMachinesDropdown(machines) {
-    const machineSelect = document.getElementById('machine-select');
-    if (!machineSelect) return;
+    const machineDropdownContainer = document.getElementById('machine-dropdown');
+    if (!machineDropdownContainer) {
+        console.error('Machine dropdown container not found');
+        return;
+    }
     
-    // Clear existing options except the first placeholder
-    machineSelect.innerHTML = '<option value="">Makine seçin...</option>';
+    console.log('Creating machine dropdown with', machines.length, 'machines');
     
-    // Add machine options
-    machines.forEach(machine => {
-        const option = document.createElement('option');
-        option.value = machine.id;
-        option.textContent = machine.name || `Makine ${machine.id}`;
-        machineSelect.appendChild(option);
+    // Create modern dropdown for machines
+    const machineDropdown = new ModernDropdown(machineDropdownContainer, {
+        placeholder: 'Makine seçin...',
+        searchable: true
     });
     
-    // Enable the select if it was disabled during loading
-    machineSelect.disabled = false;
+    // Convert machines to dropdown items
+    const machineItems = machines.map(machine => ({
+        value: machine.id,
+        text: machine.name || `Makine ${machine.id}`
+    }));
+    
+    machineDropdown.setItems(machineItems);
+    
+    // Store dropdown reference for form submission
+    machineDropdownContainer.dropdownInstance = machineDropdown;
+    
+    console.log('Machine dropdown created successfully');
 }
 
 function setupMaintenanceRequestForm() {
@@ -628,27 +963,51 @@ function setupMaintenanceRequestForm() {
     form.parentNode.replaceChild(newForm, form);
 
     // Get new references from the new form
-    const requestTypeSelect = newForm.querySelector('#request-type');
     const faultOperableContainer = newForm.querySelector('#fault-operable-container');
-    const machineSelect = newForm.querySelector('#machine-select');
     const descriptionInput = newForm.querySelector('#description');
     const isOperableCheckbox = newForm.querySelector('#is-operable');
 
-    if (requestTypeSelect && faultOperableContainer) {
-        requestTypeSelect.addEventListener('change', (e) => {
-            if (e.target.value === 'fault') {
+    // Setup request type dropdown
+    const requestTypeContainer = newForm.querySelector('#request-type-dropdown');
+    if (requestTypeContainer) {
+        console.log('Creating request type dropdown');
+        const requestTypeDropdown = new ModernDropdown(requestTypeContainer, {
+            placeholder: 'Tür seçin...'
+        });
+        
+        const requestTypeItems = [
+            { value: 'maintenance', text: 'Bakım' },
+            { value: 'fault', text: 'Arıza' }
+        ];
+        
+        requestTypeDropdown.setItems(requestTypeItems);
+        
+        // Handle request type change
+        requestTypeContainer.addEventListener('dropdown:select', (e) => {
+            console.log('Request type changed to:', e.detail.value);
+            if (e.detail.value === 'fault') {
                 faultOperableContainer.style.display = 'block';
             } else {
                 faultOperableContainer.style.display = 'none';
             }
         });
+        
+        // Store dropdown reference for form submission
+        requestTypeContainer.dropdownInstance = requestTypeDropdown;
+        console.log('Request type dropdown created successfully');
+    } else {
+        console.error('Request type dropdown container not found');
     }
 
     newForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const machineId = machineSelect ? machineSelect.value : '';
-        const requestType = requestTypeSelect ? requestTypeSelect.value : '';
+        // Get values from modern dropdowns
+        const machineDropdown = newForm.querySelector('#machine-dropdown').dropdownInstance;
+        const requestTypeDropdown = newForm.querySelector('#request-type-dropdown').dropdownInstance;
+        
+        const machineId = machineDropdown ? machineDropdown.getValue() : '';
+        const requestType = requestTypeDropdown ? requestTypeDropdown.getValue() : '';
         const description = descriptionInput ? descriptionInput.value : '';
         const isOperable = isOperableCheckbox ? isOperableCheckbox.checked : true;
 
@@ -667,6 +1026,11 @@ function setupMaintenanceRequestForm() {
 
             // Reset form
             newForm.reset();
+            
+            // Reset dropdowns
+            if (machineDropdown) machineDropdown.setValue('');
+            if (requestTypeDropdown) requestTypeDropdown.setValue('');
+            
             // Hide the operable checkbox after form reset
             if (faultOperableContainer) {
                 faultOperableContainer.style.display = 'none';
