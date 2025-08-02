@@ -465,53 +465,16 @@ async function fetchMaintenanceRequests() {
 // ============================================================================
 
 function setupRefreshButton() {
-    const refreshBtn = document.getElementById('refresh-btn');
-    if (refreshBtn) {
-        // Remove existing event listeners by cloning the button
-        const newRefreshBtn = refreshBtn.cloneNode(true);
-        refreshBtn.parentNode.replaceChild(newRefreshBtn, refreshBtn);
-        
-        let isRefreshing = false;
-        
-        newRefreshBtn.addEventListener('click', async () => {
-            // Prevent multiple simultaneous refreshes
-            if (isRefreshing) {
-                return;
-            }
+    const refreshButton = new RefreshButton('refresh-btn-container', {
+        onRefresh: async () => {
+            // Get current active tab
+            const activeTab = document.querySelector('.tab-button.active');
+            const currentTab = activeTab ? activeTab.getAttribute('data-tab') : 'view-requests';
             
-            // Add loading state to button
-            const originalContent = newRefreshBtn.innerHTML;
-            isRefreshing = true;
-            newRefreshBtn.classList.add('loading');
-            newRefreshBtn.innerHTML = '<span class="loading-spinner"></span> Yenileniyor...';
-            
-            try {
-                // Get current active tab
-                const activeTab = document.querySelector('.tab-button.active');
-                const currentTab = activeTab ? activeTab.getAttribute('data-tab') : 'view-requests';
-                
-                // Reload current tab content
-                await loadTabContent(currentTab);
-                
-                // Show success feedback
-                newRefreshBtn.innerHTML = '<i class="fas fa-check me-2"></i>Yenilendi';
-                setTimeout(() => {
-                    newRefreshBtn.classList.remove('loading');
-                    newRefreshBtn.innerHTML = originalContent;
-                    isRefreshing = false;
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Refresh error:', error);
-                newRefreshBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Hata';
-                setTimeout(() => {
-                    newRefreshBtn.classList.remove('loading');
-                    newRefreshBtn.innerHTML = originalContent;
-                    isRefreshing = false;
-                }, 2000);
-            }
-        });
-    }
+            // Reload current tab content
+            await loadTabContent(currentTab);
+        }
+    });
 }
 
 // ============================================================================

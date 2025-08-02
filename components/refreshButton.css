@@ -1,0 +1,121 @@
+/* ============================================================================
+   REFRESH BUTTON COMPONENT STYLES
+   ============================================================================ */
+
+.refresh-btn {
+    position: relative;
+    min-width: 120px; /* Fixed minimum width */
+    width: auto;
+    height: 48px; /* Fixed height */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.refresh-btn .refresh-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.refresh-btn .refresh-icon i {
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.refresh-btn .refresh-text {
+    font-weight: 500;
+    text-align: center;
+    min-width: 60px; /* Ensure text area has minimum width */
+    display: inline-block;
+}
+
+/* Loading state */
+.refresh-btn.loading {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.refresh-btn.loading:hover {
+    transform: none;
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.2);
+}
+
+.refresh-btn.loading .refresh-icon i {
+    animation: spin 1s linear infinite;
+}
+
+/* Success state */
+.refresh-btn .refresh-icon i.fa-check {
+    color: #28a745;
+}
+
+/* Error state */
+.refresh-btn .refresh-icon i.fa-exclamation-triangle {
+    color: #dc3545;
+}
+
+/* Hover effects */
+.refresh-btn:hover:not(.loading) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+}
+
+/* Focus state */
+.refresh-btn:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Responsive design */
+@media (max-width: 576px) {
+    .refresh-btn {
+        min-width: 100px;
+        height: 44px;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .refresh-btn .refresh-icon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .refresh-btn .refresh-icon i {
+        font-size: 0.9rem;
+    }
+    
+    .refresh-btn .refresh-text {
+        min-width: 50px;
+    }
+}
+
+/* Animation for spinning icon */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .refresh-btn .refresh-icon i {
+        animation: none;
+    }
+    
+    .refresh-btn:hover:not(.loading) {
+        transform: none;
+    }
+} 

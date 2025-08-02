@@ -48,16 +48,15 @@ function loadTabContent(tabName) {
 // ============================================================================
 
 function setupRefreshButton() {
-    const refreshBtn = document.getElementById('refresh-btn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
+    const refreshButton = new RefreshButton('refresh-btn-container', {
+        onRefresh: async () => {
             const activeTab = document.querySelector('.tab-button.active');
             if (activeTab) {
                 const tabName = activeTab.getAttribute('data-tab');
                 loadTabContent(tabName);
             }
-        });
-    }
+        }
+    });
 }
 
 // ============================================================================

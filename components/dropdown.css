@@ -160,6 +160,7 @@
     justify-content: space-between;
     border-bottom: 1px solid #f8f9fa;
     position: relative;
+    color: var(--text-color);
 }
 
 .modern-dropdown .dropdown-item:last-child {
@@ -369,35 +370,4 @@
     }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .modern-dropdown .dropdown-selected {
-        background: #2d3748;
-        border-color: #4a5568;
-        color: #e2e8f0;
-    }
-    
-    .modern-dropdown .dropdown-menu {
-        background: #2d3748;
-        border-color: #4a5568;
-    }
-    
-    .modern-dropdown .dropdown-item {
-        border-bottom-color: #4a5568;
-        color: #e2e8f0;
-    }
-    
-    .modern-dropdown .dropdown-item:hover {
-        background: rgba(220, 20, 60, 0.2);
-    }
-    
-    .modern-dropdown .dropdown-search {
-        background: #1a202c;
-        color: #e2e8f0;
-        border-bottom-color: #4a5568;
-    }
-    
-    .modern-dropdown .dropdown-search:focus {
-        background: #2d3748;
-    }
-} 
+ 
