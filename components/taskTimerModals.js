@@ -137,8 +137,30 @@ export function showManualTimeModal({ createManualTimeEntry, comment = null }) {
 export function createCommentModal(title = "Yorum Giriniz") {
     const modal = document.createElement('div');
     modal.className = 'comment-modal';
+    // Add inline styles as backup to ensure proper positioning
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
     modal.innerHTML = `
-        <div class="comment-modal-content">
+        <div class="comment-modal-content" style="
+            background: #fff;
+            border-radius: 10px;
+            min-width: 320px;
+            max-width: 90vw;
+            width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        ">
             <div class="comment-modal-header">
                 <h3>${title}</h3>
                 <button class="comment-modal-close" id="comment-modal-close">&times;</button>
