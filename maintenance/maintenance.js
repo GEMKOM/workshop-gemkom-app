@@ -880,7 +880,8 @@ async function loadMachines() {
     machineDropdownContainer.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><p class="text-muted">Makineler yükleniyor...</p></div>';
     
     try {
-        const machines = await fetchMachines();
+        const machinesResponse = await fetchMachines();
+        const machines = machinesResponse.results || machinesResponse || [];
         populateMachinesDropdown(machines);
     } catch (error) {
         machineDropdownContainer.innerHTML = '<div class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Makine yüklenirken hata oluştu</div>';
