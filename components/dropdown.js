@@ -143,12 +143,9 @@ export class ModernDropdown {
         this.dropdown.classList.add('open');
         this.selectedDisplay.querySelector('.dropdown-arrow').className = 'fas fa-chevron-up dropdown-arrow';
         
-        // Ensure dropdown menu is visible
+        // Ensure proper positioning and z-index
         this.menu.style.display = 'block';
-        this.menu.style.opacity = '1';
-        this.menu.style.visibility = 'visible';
-        this.menu.style.transform = 'translateY(0)';
-        this.menu.style.maxHeight = '400px';
+        this.menu.style.zIndex = '99999';
         
         // Focus search input if available
         if (this.options.searchable && this.searchInput) {
@@ -164,12 +161,12 @@ export class ModernDropdown {
         this.dropdown.classList.remove('open');
         this.selectedDisplay.querySelector('.dropdown-arrow').className = 'fas fa-chevron-down dropdown-arrow';
         
-        // Hide dropdown menu
-        this.menu.style.display = 'none';
-        this.menu.style.opacity = '0';
-        this.menu.style.visibility = 'hidden';
-        this.menu.style.transform = 'translateY(-10px)';
-        this.menu.style.maxHeight = '0';
+        // Hide dropdown after transition completes
+        setTimeout(() => {
+            if (!this.isOpen) {
+                this.menu.style.display = 'none';
+            }
+        }, 300); // Match CSS transition duration
         
         // Clear search if available
         if (this.options.searchable && this.searchInput) {
