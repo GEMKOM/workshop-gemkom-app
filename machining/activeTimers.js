@@ -26,7 +26,7 @@ export function loadActiveTimersContent() {
             fetchTasks: async (machineId) => {
                 const { backendBase } = await import('../base.js');
                 const { authedFetch } = await import('../authService.js');
-                const resp = await authedFetch(`${backendBase}/machining/tasks/?machine_fk=${machineId}`);
+                const resp = await authedFetch(`${backendBase}/machining/tasks/?machine_fk=${machineId}&completion_date__isnull=true`);
                 const data = await resp.json();
                 return data.results || data;
             },
