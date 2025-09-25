@@ -5,6 +5,7 @@ import { backendBase } from '../base.js';
 import { fetchMachines } from '../generic/machines.js';
 import { createMaintenanceRequest, resolveMaintenanceRequest, fetchMachineFaults } from './maintenanceApi.js';
 import { ModernDropdown } from '../components/dropdown.js';
+import { extractResultsFromResponse } from '../generic/paginationHelper.js';
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -125,10 +126,13 @@ async function loadEquipmentStatusContent() {
 async function loadEquipmentStatus() {
     try {
         // Fetch machines and faults in parallel
-        const [machines, faults] = await Promise.all([
+        const [machines, faultsResponse] = await Promise.all([
             fetchMachines(),
             fetchMachineFaults()
         ]);
+        
+        // Extract results from paginated response
+        const faults = extractResultsFromResponse(faultsResponse);
         
         // Process and combine the data
         const equipmentStatus = processEquipmentStatus(machines, faults);
@@ -445,13 +449,14 @@ function createEquipmentStatusSection() {
 
 async function fetchMaintenanceRequests() {
     try {
-        const response = await authedFetch(`${backendBase}/machines/faults/`);
+        const response = await authedFetch(`${backendBase}/machines/faults/?page_size=1000`);
         
         if (!response.ok) {
             throw new Error('Failed to fetch maintenance requests');
         }
         
-        const requests = await response.json();
+        const requestsResponse = await response.json();
+        const requests = extractResultsFromResponse(requestsResponse);
         state.maintenanceRequests = requests;
         return requests;
     } catch (error) {

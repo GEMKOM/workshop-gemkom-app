@@ -43,7 +43,7 @@ export async function resolveMaintenanceRequest(requestId, resolutionDescription
 }
 
 export async function fetchMachineFaults() {
-    const response = await authedFetch(`${backendBase}/machines/faults/`, {
+    const response = await authedFetch(`${backendBase}/machines/faults/?page_size=1000`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'

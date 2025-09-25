@@ -9,8 +9,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initNavbar();
 
-    // Initialize timer widget for non-admin users
-    if (!isAdmin()) {
+    // Initialize timer widget for machining team users only
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!isAdmin() && user && user.team === 'machining') {
         // Check if timer widget already exists
         if (!window.timerWidget) {
             console.log('Initializing timer widget on home page...');
