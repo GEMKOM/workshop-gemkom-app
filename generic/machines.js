@@ -1,13 +1,24 @@
 import { authedFetch } from '../authService.js';
 import { backendBase } from '../base.js';
+import { extractResultsFromResponse } from './paginationHelper.js';
 
-export async function fetchMachines(used_in = null) {
+export async function fetchMachines(filters = {}) {
     try {
         let url = `${backendBase}/machines/`;
+        const params = new URLSearchParams();
         
-        // Add used_in filter if provided
-        if (used_in) {
-            url += `?used_in=${encodeURIComponent(used_in)}`;
+        // Add page_size to get all machines
+        params.append('page_size', '1000');
+        
+        // Apply any filters that are provided
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                params.append(key, value);
+            }
+        });
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
         }
         
         const response = await authedFetch(url);
@@ -16,8 +27,8 @@ export async function fetchMachines(used_in = null) {
             throw new Error('Failed to fetch machines');
         }
         
-        const machines = await response.json();
-        return machines;
+        const machinesResponse = await response.json();
+        return extractResultsFromResponse(machinesResponse);
     } catch (error) {
         console.error('Error fetching machines:', error);
         throw error;

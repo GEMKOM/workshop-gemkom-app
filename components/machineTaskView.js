@@ -65,7 +65,7 @@ export async function createMachineTaskView({
     `;
 
     // Fetch and render machines
-    const machines = await fetchMachines();
+    const machines = await fetchMachines({});
     
     // Initialize machine dropdown
     const machineDropdownContainer = container.querySelector('#machine-dropdown-container');

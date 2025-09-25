@@ -126,12 +126,13 @@ async function loadEquipmentStatusContent() {
 async function loadEquipmentStatus() {
     try {
         // Fetch machines and faults in parallel
-        const [machines, faultsResponse] = await Promise.all([
-            fetchMachines(),
+        const [machinesResponse, faultsResponse] = await Promise.all([
+            fetchMachines({}),
             fetchMachineFaults()
         ]);
         
-        // Extract results from paginated response
+        // Extract results from paginated responses
+        const machines = extractResultsFromResponse(machinesResponse);
         const faults = extractResultsFromResponse(faultsResponse);
         
         // Process and combine the data
@@ -885,8 +886,7 @@ async function loadMachines() {
     machineDropdownContainer.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><p class="text-muted">Makineler yükleniyor...</p></div>';
     
     try {
-        const machinesResponse = await fetchMachines();
-        const machines = machinesResponse.results || machinesResponse || [];
+        const machines = await fetchMachines({});
         populateMachinesDropdown(machines);
     } catch (error) {
         machineDropdownContainer.innerHTML = '<div class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Makine yüklenirken hata oluştu</div>';

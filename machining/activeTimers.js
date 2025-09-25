@@ -20,7 +20,7 @@ export function loadActiveTimersContent() {
         createMachineTaskView({
             containerId: 'main-view',
             fetchMachines: async () => {
-                const data = await fetchMachines("machining");
+                const data = await fetchMachines({ used_in: "machining", is_active: true });
                 return data.results || data;
             },
             fetchTasks: async (machineId) => {
