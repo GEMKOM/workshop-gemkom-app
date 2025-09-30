@@ -51,12 +51,43 @@
 
                 <!-- Login Form -->
                 <form id="login-form" class="login-form">
+                    <!-- User Selection Mode Toggle -->
                     <div class="form-group">
+                        <div class="user-selection-toggle">
+                            <div class="toggle-buttons">
+                                <button type="button" class="toggle-btn active" id="dropdown-mode-btn">
+                                    <i class="fas fa-list"></i>
+                                    Listeden Seç
+                                </button>
+                                <button type="button" class="toggle-btn" id="manual-mode-btn">
+                                    <i class="fas fa-keyboard"></i>
+                                    Manuel Giriş
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown Mode -->
+                    <div class="form-group" id="dropdown-mode">
                         <label for="user-dropdown" class="form-label">
                             <i class="fas fa-users"></i>
                             Kullanıcı Seçin
                         </label>
                         <div id="user-dropdown-container"></div>
+                    </div>
+
+                    <!-- Manual Entry Mode -->
+                    <div class="form-group" id="manual-mode" style="display: none;">
+                        <label for="manual-username" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Kullanıcı Adı
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                            <input type="text" class="form-control" id="manual-username" placeholder="Kullanıcı adınızı girin">
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -83,6 +114,14 @@
                                 Giriş Yapılıyor...
                             </span>
                         </button>
+                    </div>
+
+                    <!-- Forgot Password Link -->
+                    <div class="form-group text-center">
+                        <a href="#" id="forgot-password-link" class="forgot-password-link">
+                            <i class="fas fa-key"></i>
+                            Şifremi Unuttum
+                        </a>
                     </div>
                 </form>
 
@@ -155,6 +194,66 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="forgotPasswordModalLabel">
+                            <i class="fas fa-key"></i>
+                            Şifremi Unuttum
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="forgot-password-description">
+                            <i class="fas fa-info-circle"></i>
+                            Şifrenizi sıfırlamak için kullanıcı adınızı girin. İsteğiniz yöneticinize iletilecektir.
+                        </p>
+                        
+                        <!-- Error Message -->
+                        <div id="forgot-password-error" class="alert alert-danger alert-dismissible fade" role="alert" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="forgot-password-error-text"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <!-- Success Message -->
+                        <div id="forgot-password-success" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="forgot-password-success-text"></span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        <form id="forgot-password-form">
+                            <div class="form-group mb-3">
+                                <label for="forgot-username" class="form-label">
+                                    <i class="fas fa-user"></i>
+                                    Kullanıcı Adı
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="forgot-username" placeholder="Kullanıcı adınızı girin" required>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="button" id="forgot-password-submit" class="btn btn-primary">
+                            <span class="btn-text">Gönder</span>
+                            <span class="btn-loading" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Gönderiliyor...
+                            </span>
+                        </button>
                     </div>
                 </div>
             </div>

@@ -609,6 +609,389 @@ body::before {
     }
 }
 
+/* User Selection Toggle */
+.user-selection-toggle {
+    margin-bottom: 1rem;
+}
+
+.toggle-buttons {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 4px;
+    border: 2px solid #e9ecef;
+    transition: var(--transition);
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.toggle-btn:hover {
+    color: var(--text-color);
+    background: rgba(220, 20, 60, 0.1);
+}
+
+.toggle-btn.active {
+    background: var(--gradient-primary);
+    color: var(--white);
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+.toggle-btn i {
+    font-size: 0.8rem;
+}
+
+/* Manual Entry Mode */
+#manual-mode {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+#manual-mode .input-group {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-light);
+    transition: var(--transition);
+}
+
+#manual-mode .input-group:focus-within {
+    box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+    transform: translateY(-1px);
+}
+
+#manual-mode .input-group-text {
+    background: var(--gradient-primary);
+    border: none;
+    color: var(--white);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+}
+
+#manual-mode .form-control {
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    background: var(--white);
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+#manual-mode .form-control:focus {
+    box-shadow: none;
+    background: var(--white);
+    color: var(--text-color);
+}
+
+#manual-mode .form-control::placeholder {
+    color: var(--text-light);
+}
+
+/* Dropdown Loading and Error States */
+.dropdown-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    min-height: 48px;
+}
+
+.dropdown-loading i {
+    color: var(--secondary-color);
+}
+
+.dropdown-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    background: #fff5f5;
+    border: 2px solid #fed7d7;
+    border-radius: 8px;
+    min-height: 48px;
+    text-align: center;
+}
+
+.dropdown-error i {
+    color: #e53e3e;
+    font-size: 1.2rem;
+}
+
+.dropdown-error .btn {
+    font-size: 0.8rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile-specific dropdown improvements */
+@media (max-width: 576px) {
+    .dropdown-loading,
+    .dropdown-error {
+        padding: 0.75rem;
+        font-size: 0.85rem;
+        min-height: 44px;
+    }
+    
+    .dropdown-error .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .toggle-btn {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .toggle-btn i {
+        font-size: 0.75rem;
+    }
+}
+
+/* Forgot Password Link */
+.forgot-password-link {
+    color: var(--text-light);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+.forgot-password-link:hover {
+    color: var(--secondary-color);
+    background: rgba(220, 20, 60, 0.1);
+    border-color: rgba(220, 20, 60, 0.2);
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.forgot-password-link i {
+    font-size: 0.8rem;
+}
+
+/* Forgot Password Modal */
+.forgot-password-description {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.forgot-password-description i {
+    color: var(--secondary-color);
+    font-size: 1rem;
+}
+
+/* Forgot Password Modal Alerts */
+#forgot-password-error,
+#forgot-password-success {
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+#forgot-password-error {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: var(--white);
+}
+
+#forgot-password-success {
+    background: linear-gradient(135deg, #51cf66, #40c057);
+    color: var(--white);
+}
+
+#forgot-password-error i,
+#forgot-password-success i {
+    font-size: 1rem;
+}
+
+/* Forgot Password Form */
+#forgot-password-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+#forgot-password-form .form-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+#forgot-password-form .form-label i {
+    color: var(--secondary-color);
+    font-size: 0.8rem;
+}
+
+#forgot-password-form .input-group {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-light);
+    transition: var(--transition);
+}
+
+#forgot-password-form .input-group:focus-within {
+    box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+    transform: translateY(-1px);
+}
+
+#forgot-password-form .input-group-text {
+    background: var(--gradient-primary);
+    border: none;
+    color: var(--white);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+}
+
+#forgot-password-form .form-control {
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    background: var(--white);
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+#forgot-password-form .form-control:focus {
+    box-shadow: none;
+    background: var(--white);
+    color: var(--text-color);
+}
+
+#forgot-password-form .form-control::placeholder {
+    color: var(--text-light);
+}
+
+/* Forgot Password Modal Footer */
+#forgotPasswordModal .modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1.5rem;
+    background: #f8f9fa;
+}
+
+#forgotPasswordModal .modal-footer .btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+#forgotPasswordModal .modal-footer .btn-secondary {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: var(--white);
+}
+
+#forgotPasswordModal .modal-footer .btn-secondary:hover {
+    background: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-1px);
+}
+
+#forgotPasswordModal .modal-footer .btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    color: var(--white);
+}
+
+#forgotPasswordModal .modal-footer .btn-primary:hover {
+    background: var(--gradient-secondary);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+}
+
+#forgotPasswordModal .modal-footer .btn:disabled {
+    opacity: 0.7;
+    transform: none;
+    cursor: not-allowed;
+}
+
+/* Mobile Responsive */
+@media (max-width: 576px) {
+    .forgot-password-link {
+        font-size: 0.85rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .forgot-password-description {
+        font-size: 0.85rem;
+        padding: 0.75rem;
+    }
+    
+    #forgot-password-form .form-control {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9rem;
+    }
+    
+    #forgot-password-form .input-group-text {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.85rem;
+    }
+    
+    #forgotPasswordModal .modal-footer {
+        padding: 1rem;
+    }
+    
+    #forgotPasswordModal .modal-footer .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.9rem;
+    }
+}
+
 /* High Contrast Support */
 @media (prefers-contrast: high) {
     .login-container {
@@ -616,6 +999,19 @@ body::before {
     }
     
     .btn-login {
+        border: 2px solid var(--text-color);
+    }
+    
+    .dropdown-loading,
+    .dropdown-error {
+        border: 2px solid var(--text-color);
+    }
+    
+    .forgot-password-link {
+        border: 2px solid var(--text-color);
+    }
+    
+    #forgot-password-form .input-group {
         border: 2px solid var(--text-color);
     }
 }

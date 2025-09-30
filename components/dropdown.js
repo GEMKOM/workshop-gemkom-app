@@ -67,14 +67,28 @@ export class ModernDropdown {
     }
     
     bindEvents() {
-        // Toggle dropdown
+        // Toggle dropdown - support both click and touch events for mobile
         this.selectedDisplay.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggle();
         });
         
-        // Close on outside click
+        // Add touch event support for mobile
+        this.selectedDisplay.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.toggle();
+        }, { passive: false });
+        
+        // Close on outside click/touch
         document.addEventListener('click', (e) => {
+            if (!this.dropdown.contains(e.target)) {
+                this.close();
+            }
+        });
+        
+        // Add touch event for outside touch
+        document.addEventListener('touchstart', (e) => {
             if (!this.dropdown.contains(e.target)) {
                 this.close();
             }
@@ -147,6 +161,30 @@ export class ModernDropdown {
         this.menu.style.display = 'block';
         this.menu.style.zIndex = '99999';
         
+        // Mobile-specific positioning improvements
+        const rect = this.dropdown.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const menuHeight = this.options.maxHeight || 300;
+        
+        // Check if dropdown would go off-screen on mobile
+        if (window.innerWidth <= 768) {
+            const spaceBelow = viewportHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            
+            // If not enough space below and more space above, position above
+            if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                this.menu.style.top = 'auto';
+                this.menu.style.bottom = '100%';
+                this.menu.style.borderRadius = '8px 8px 0 0';
+                this.selectedDisplay.style.borderRadius = '0 0 8px 8px';
+            } else {
+                this.menu.style.top = '100%';
+                this.menu.style.bottom = 'auto';
+                this.menu.style.borderRadius = '0 0 8px 8px';
+                this.selectedDisplay.style.borderRadius = '8px 8px 0 0';
+            }
+        }
+        
         // Focus search input if available
         if (this.options.searchable && this.searchInput) {
             setTimeout(() => this.searchInput.focus(), 100);
@@ -160,6 +198,12 @@ export class ModernDropdown {
         this.isOpen = false;
         this.dropdown.classList.remove('open');
         this.selectedDisplay.querySelector('.dropdown-arrow').className = 'fas fa-chevron-down dropdown-arrow';
+        
+        // Reset positioning for next open
+        this.menu.style.top = '100%';
+        this.menu.style.bottom = 'auto';
+        this.menu.style.borderRadius = '0 0 8px 8px';
+        this.selectedDisplay.style.borderRadius = '8px 8px 0 0';
         
         // Hide dropdown after transition completes
         setTimeout(() => {

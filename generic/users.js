@@ -8,10 +8,48 @@ export async function fetchUsers(team = null) {
     if (team) {
         url += `?team=${team}`;
     }
-    const resp = await fetch(url);
-    if (!resp.ok) return [];
-    const data = await resp.json();
-    return extractResultsFromResponse(data);
+    
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
+        const resp = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // Add cache control for mobile networks
+            cache: 'no-cache',
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!resp.ok) {
+            console.error(`Failed to fetch users: ${resp.status} ${resp.statusText}`);
+            throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
+        }
+        
+        const data = await resp.json();
+        const results = extractResultsFromResponse(data);
+        
+        if (!results || results.length === 0) {
+            console.warn('No users returned from API');
+            return [];
+        }
+        
+        return results;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error.name === 'AbortError') {
+            console.error('Request timeout while fetching users');
+            throw new Error('Request timeout - please check your internet connection');
+        }
+        
+        console.error('Error fetching users:', error);
+        throw error;
+    }
 }
 
 export async function fetchTeams() {

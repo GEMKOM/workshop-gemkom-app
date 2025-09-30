@@ -244,3 +244,12 @@ export async function authedFetch(url, options = {}) {
 
     return response;
 }
+
+export async function forgotPassword(username) {
+    const resp = await fetch(`${backendBase}/users/forgot-password/request/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+    });
+    return resp;
+}
