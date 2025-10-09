@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generic Card Component Test</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Generic Card CSS -->
+    <link rel="stylesheet" href="genericCard.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            padding: 2rem 0;
+        }
+        
+        .test-section {
+            margin-bottom: 3rem;
+        }
+        
+        .test-section h2 {
+            color: #8B0000;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #8B0000;
+            padding-bottom: 0.5rem;
+        }
+        
+        .test-section h3 {
+            color: #b40024;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-controls {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .demo-controls label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .demo-controls .form-control,
+        .demo-controls .form-select {
+            margin-bottom: 1rem;
+        }
+        
+        .card-demo-container {
+            min-height: 200px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+        
+        .grid-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .single-card-demo {
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">
+                    <i class="fas fa-layer-group me-3"></i>
+                    Generic Card Component Test
+                </h1>
+                <p class="text-center text-muted mb-5">
+                    Test various configurations and use cases of the Generic Card component
+                </p>
+            </div>
+        </div>
+
+        <!-- Timer Card Demo -->
+        <div class="test-section">
+            <h2><i class="fas fa-clock me-2"></i>Timer Card Examples</h2>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <h3>Completed Timer</h3>
+                    <div class="single-card-demo">
+                        <div id="completed-timer-card"></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h3>Active Timer</h3>
+                    <div class="single-card-demo">
+                        <div id="active-timer-card"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Machine Card Demo -->
+        <div class="test-section">
+            <h2><i class="fas fa-cogs me-2"></i>Machine Card Examples</h2>
+            
+            <div class="row">
+                <div class="col-lg-4">
+                    <h3>Operational Machine</h3>
+                    <div class="single-card-demo">
+                        <div id="operational-machine-card"></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <h3>Maintenance Required</h3>
+                    <div class="single-card-demo">
+                        <div id="maintenance-machine-card"></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <h3>Critical Fault</h3>
+                    <div class="single-card-demo">
+                        <div id="fault-machine-card"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Card Demo -->
+        <div class="test-section">
+            <h2><i class="fas fa-users me-2"></i>User Card Examples</h2>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <h3>Active User</h3>
+                    <div class="single-card-demo">
+                        <div id="active-user-card"></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h3>Offline User</h3>
+                    <div class="single-card-demo">
+                        <div id="offline-user-card"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Card Demo -->
+        <div class="test-section">
+            <h2><i class="fas fa-tasks me-2"></i>Task Card Examples</h2>
+            
+            <div class="row">
+                <div class="col-lg-4">
+                    <h3>Pending Task</h3>
+                    <div class="single-card-demo">
+                        <div id="pending-task-card"></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <h3>In Progress Task</h3>
+                    <div class="single-card-demo">
+                        <div id="progress-task-card"></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <h3>Completed Task</h3>
+                    <div class="single-card-demo">
+                        <div id="completed-task-card"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid Demo -->
+        <div class="test-section">
+            <h2><i class="fas fa-th me-2"></i>Card Grid Examples</h2>
+            
+            <h3>Timer Grid (3 columns)</h3>
+            <div class="grid-demo" id="timer-grid"></div>
+            
+            <h3 class="mt-4">Machine Grid (2 columns)</h3>
+            <div class="grid-demo" id="machine-grid"></div>
+        </div>
+
+        <!-- Interactive Demo -->
+        <div class="test-section">
+            <h2><i class="fas fa-sliders-h me-2"></i>Interactive Demo</h2>
+            
+            <div class="demo-controls">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="card-title">Title</label>
+                        <input type="text" class="form-control" id="card-title" value="Sample Card">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="card-subtitle">Subtitle</label>
+                        <input type="text" class="form-control" id="card-subtitle" value="This is a sample subtitle">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="card-icon">Icon</label>
+                        <select class="form-select" id="card-icon">
+                            <option value="fas fa-info-circle">Info Circle</option>
+                            <option value="fas fa-check-circle">Check Circle</option>
+                            <option value="fas fa-exclamation-triangle">Warning</option>
+                            <option value="fas fa-times-circle">Error</option>
+                            <option value="fas fa-cog">Settings</option>
+                            <option value="fas fa-user">User</option>
+                            <option value="fas fa-clock">Clock</option>
+                            <option value="fas fa-tasks">Tasks</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="card-status">Status</label>
+                        <select class="form-select" id="card-status">
+                            <option value="">No Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Error">Error</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-3">
+                        <label for="status-type">Status Type</label>
+                        <select class="form-select" id="status-type">
+                            <option value="info">Info</option>
+                            <option value="success">Success</option>
+                            <option value="warning">Warning</option>
+                            <option value="danger">Danger</option>
+                            <option value="primary">Primary</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="icon-color">Icon Color</label>
+                        <input type="color" class="form-control" id="icon-color" value="#6c757d">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="icon-bg">Icon Background</label>
+                        <input type="color" class="form-control" id="icon-bg" value="#f8f9fa">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="clickable">Clickable</label>
+                        <select class="form-select" id="clickable">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="single-card-demo">
+                <div id="interactive-card"></div>
+            </div>
+        </div>
+
+        <!-- Button Demo -->
+        <div class="test-section">
+            <h2><i class="fas fa-mouse-pointer me-2"></i>Button Examples</h2>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <h3>Single Button</h3>
+                    <div class="single-card-demo">
+                        <div id="single-button-card"></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h3>Multiple Buttons</h3>
+                    <div class="single-card-demo">
+                        <div id="multiple-buttons-card"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Generic Card JS -->
+    <script type="module">
+        import { GenericCard, createCardGrid } from './genericCard.js';
+
+        // Timer Card Examples
+        new GenericCard(document.getElementById('completed-timer-card'), {
+            title: 'TI-2024-001',
+            subtitle: 'CNC İşleme - Parça A',
+            icon: 'fas fa-check-circle',
+            iconColor: '#28a745',
+            iconBackground: 'linear-gradient(135deg, #28a745, #20c997)',
+            status: 'Tamamlandı',
+            statusType: 'success',
+            details: [
+                { icon: 'fas fa-cog', label: 'Makine:', value: 'CNC-001' },
+                { icon: 'fas fa-user', label: 'Kullanıcı:', value: 'Ahmet Yılmaz' },
+                { icon: 'fas fa-play', label: 'Başlangıç:', value: '09:30' },
+                { icon: 'fas fa-stop', label: 'Bitiş:', value: '11:45' },
+                { icon: 'fas fa-clock', label: 'Süre:', value: '2s 15dk', valueClass: 'duration' },
+                { icon: 'fas fa-hashtag', label: 'İş Emri:', value: 'IE-2024-001' }
+            ],
+            buttons: [
+                { text: 'Detaylar', icon: 'fas fa-eye', class: 'btn-outline-primary', onClick: () => alert('Detaylar gösteriliyor') },
+                { text: 'Rapor', icon: 'fas fa-file-pdf', class: 'btn-outline-success', onClick: () => alert('Rapor oluşturuluyor') }
+            ]
+        });
+
+        new GenericCard(document.getElementById('active-timer-card'), {
+            title: 'TI-2024-002',
+            subtitle: 'Kaynak İşlemi - Parça B',
+            icon: 'fas fa-play-circle',
+            iconColor: '#007bff',
+            iconBackground: 'linear-gradient(135deg, #007bff, #0056b3)',
+            status: 'Devam Ediyor',
+            statusType: 'info',
+            details: [
+                { icon: 'fas fa-cog', label: 'Makine:', value: 'KAYNAK-002' },
+                { icon: 'fas fa-user', label: 'Kullanıcı:', value: 'Mehmet Demir' },
+                { icon: 'fas fa-play', label: 'Başlangıç:', value: '14:20' },
+                { icon: 'fas fa-clock', label: 'Süre:', value: '1s 25dk', valueClass: 'duration' },
+                { icon: 'fas fa-hashtag', label: 'İş Emri:', value: 'IE-2024-002' }
+            ],
+            buttons: [
+                { text: 'Durdur', icon: 'fas fa-stop', class: 'btn-danger', onClick: () => alert('Zamanlayıcı durduruluyor') }
+            ]
+        });
+
+        // Machine Card Examples
+        new GenericCard(document.getElementById('operational-machine-card'), {
+            title: 'CNC-001',
+            subtitle: 'CNC Torna Tezgahı',
+            icon: 'fas fa-check-circle',
+            iconColor: '#28a745',
+            iconBackground: 'linear-gradient(135deg, #28a745, #20c997)',
+            status: 'Çalışır Durumda',
+            statusType: 'success',
+            details: [
+                { icon: 'fas fa-map-marker-alt', label: 'Konum:', value: 'Atölye A' },
+                { icon: 'fas fa-calendar', label: 'Son Bakım:', value: '15.01.2024' },
+                { icon: 'fas fa-clock', label: 'Çalışma Saati:', value: '2,450 saat' },
+                { icon: 'fas fa-user', label: 'Operatör:', value: 'Ahmet Yılmaz' }
+            ],
+            buttons: [
+                { text: 'Detaylar', icon: 'fas fa-info', class: 'btn-outline-primary', onClick: () => alert('Makine detayları') }
+            ]
+        });
+
+        new GenericCard(document.getElementById('maintenance-machine-card'), {
+            title: 'CNC-002',
+            subtitle: 'CNC Freze Tezgahı',
+            icon: 'fas fa-tools',
+            iconColor: '#ffc107',
+            iconBackground: 'linear-gradient(135deg, #ffc107, #e0a800)',
+            status: 'Bakım Gerekli',
+            statusType: 'warning',
+            details: [
+                { icon: 'fas fa-map-marker-alt', label: 'Konum:', value: 'Atölye B' },
+                { icon: 'fas fa-calendar', label: 'Son Bakım:', value: '20.12.2023' },
+                { icon: 'fas fa-exclamation-triangle', label: 'Uyarı:', value: 'Yağ seviyesi düşük' },
+                { icon: 'fas fa-user', label: 'Operatör:', value: 'Mehmet Demir' }
+            ],
+            buttons: [
+                { text: 'Bakım Planla', icon: 'fas fa-calendar-plus', class: 'btn-warning', onClick: () => alert('Bakım planlanıyor') }
+            ]
+        });
+
+        new GenericCard(document.getElementById('fault-machine-card'), {
+            title: 'CNC-003',
+            subtitle: 'CNC Delik Tezgahı',
+            icon: 'fas fa-exclamation-triangle',
+            iconColor: '#dc3545',
+            iconBackground: 'linear-gradient(135deg, #dc3545, #c82333)',
+            status: 'Kritik Arıza',
+            statusType: 'danger',
+            details: [
+                { icon: 'fas fa-map-marker-alt', label: 'Konum:', value: 'Atölye C' },
+                { icon: 'fas fa-calendar', label: 'Arıza Tarihi:', value: '25.01.2024' },
+                { icon: 'fas fa-exclamation-circle', label: 'Hata:', value: 'Motor arızası' },
+                { icon: 'fas fa-user', label: 'Bildiren:', value: 'Ali Veli' }
+            ],
+            buttons: [
+                { text: 'Arıza Bildir', icon: 'fas fa-bug', class: 'btn-danger', onClick: () => alert('Arıza bildiriliyor') },
+                { text: 'Teknik Servis', icon: 'fas fa-wrench', class: 'btn-outline-danger', onClick: () => alert('Teknik servis çağrılıyor') }
+            ]
+        });
+
+        // User Card Examples
+        new GenericCard(document.getElementById('active-user-card'), {
+            title: 'Ahmet Yılmaz',
+            subtitle: 'CNC Operatörü',
+            icon: 'fas fa-user',
+            iconColor: '#28a745',
+            iconBackground: 'linear-gradient(135deg, #28a745, #20c997)',
+            status: 'Aktif',
+            statusType: 'success',
+            details: [
+                { icon: 'fas fa-clock', label: 'Giriş:', value: '08:30' },
+                { icon: 'fas fa-cog', label: 'Makine:', value: 'CNC-001' },
+                { icon: 'fas fa-tasks', label: 'Görev:', value: 'TI-2024-001' },
+                { icon: 'fas fa-phone', label: 'Telefon:', value: '0555 123 4567' }
+            ],
+            buttons: [
+                { text: 'Mesaj Gönder', icon: 'fas fa-envelope', class: 'btn-outline-primary', onClick: () => alert('Mesaj gönderiliyor') }
+            ]
+        });
+
+        new GenericCard(document.getElementById('offline-user-card'), {
+            title: 'Mehmet Demir',
+            subtitle: 'Kaynak Operatörü',
+            icon: 'fas fa-user-slash',
+            iconColor: '#6c757d',
+            iconBackground: 'linear-gradient(135deg, #6c757d, #495057)',
+            status: 'Çevrimdışı',
+            statusType: 'info',
+            details: [
+                { icon: 'fas fa-clock', label: 'Çıkış:', value: '17:00' },
+                { icon: 'fas fa-calendar', label: 'Son Giriş:', value: '24.01.2024' },
+                { icon: 'fas fa-phone', label: 'Telefon:', value: '0555 987 6543' }
+            ],
+            buttons: [
+                { text: 'Ara', icon: 'fas fa-phone', class: 'btn-outline-success', onClick: () => alert('Aranıyor') }
+            ]
+        });
+
+        // Task Card Examples
+        new GenericCard(document.getElementById('pending-task-card'), {
+            title: 'TI-2024-003',
+            subtitle: 'Montaj İşlemi - Parça C',
+            icon: 'fas fa-clock',
+            iconColor: '#ffc107',
+            iconBackground: 'linear-gradient(135deg, #ffc107, #e0a800)',
+            status: 'Beklemede',
+            statusType: 'warning',
+            details: [
+                { icon: 'fas fa-calendar', label: 'Planlanan:', value: '26.01.2024' },
+                { icon: 'fas fa-clock', label: 'Tahmini Süre:', value: '3 saat' },
+                { icon: 'fas fa-user', label: 'Atanan:', value: 'Ali Veli' },
+                { icon: 'fas fa-hashtag', label: 'İş Emri:', value: 'IE-2024-003' }
+            ],
+            buttons: [
+                { text: 'Başlat', icon: 'fas fa-play', class: 'btn-success', onClick: () => alert('Görev başlatılıyor') }
+            ]
+        });
+
+        new GenericCard(document.getElementById('progress-task-card'), {
+            title: 'TI-2024-004',
+            subtitle: 'Kontrol İşlemi - Parça D',
+            icon: 'fas fa-play-circle',
+            iconColor: '#007bff',
+            iconBackground: 'linear-gradient(135deg, #007bff, #0056b3)',
+            status: 'Devam Ediyor',
+            statusType: 'info',
+            details: [
+                { icon: 'fas fa-play', label: 'Başlangıç:', value: '10:15' },
+                { icon: 'fas fa-clock', label: 'Süre:', value: '1s 30dk', valueClass: 'duration' },
+                { icon: 'fas fa-user', label: 'Operatör:', value: 'Ayşe Kaya' },
+                { icon: 'fas fa-hashtag', label: 'İş Emri:', value: 'IE-2024-004' }
+            ],
+            buttons: [
+                { text: 'Durdur', icon: 'fas fa-pause', class: 'btn-warning', onClick: () => alert('Görev duraklatılıyor') },
+                { text: 'Tamamla', icon: 'fas fa-check', class: 'btn-success', onClick: () => alert('Görev tamamlanıyor') }
+            ]
+        });
+
+        new GenericCard(document.getElementById('completed-task-card'), {
+            title: 'TI-2024-005',
+            subtitle: 'Paketleme İşlemi - Parça E',
+            icon: 'fas fa-check-circle',
+            iconColor: '#28a745',
+            iconBackground: 'linear-gradient(135deg, #28a745, #20c997)',
+            status: 'Tamamlandı',
+            statusType: 'success',
+            details: [
+                { icon: 'fas fa-play', label: 'Başlangıç:', value: '14:00' },
+                { icon: 'fas fa-stop', label: 'Bitiş:', value: '16:30' },
+                { icon: 'fas fa-clock', label: 'Süre:', value: '2s 30dk', valueClass: 'duration' },
+                { icon: 'fas fa-user', label: 'Operatör:', value: 'Fatma Öz' }
+            ],
+            buttons: [
+                { text: 'Detaylar', icon: 'fas fa-eye', class: 'btn-outline-primary', onClick: () => alert('Görev detayları') },
+                { text: 'Rapor', icon: 'fas fa-file-pdf', class: 'btn-outline-success', onClick: () => alert('Rapor oluşturuluyor') }
+            ]
+        });
+
+        // Grid Examples
+        const timerGridData = [
+            {
+                title: 'TI-2024-006',
+                subtitle: 'İşleme - Parça F',
+                icon: 'fas fa-check-circle',
+                iconColor: '#28a745',
+                iconBackground: 'linear-gradient(135deg, #28a745, #20c997)',
+                status: 'Tamamlandı',
+                statusType: 'success',
+                details: [
+                    { icon: 'fas fa-clock', label: 'Süre:', value: '1s 45dk', valueClass: 'duration' },
+                    { icon: 'fas fa-user', label: 'Operatör:', value: 'Ahmet Yılmaz' }
+                ]
+            },
+            {
+                title: 'TI-2024-007',
+                subtitle: 'Kontrol - Parça G',
+                icon: 'fas fa-play-circle',
+                iconColor: '#007bff',
+                iconBackground: 'linear-gradient(135deg, #007bff, #0056b3)',
+                status: 'Devam Ediyor',
+                statusType: 'info',
+                details: [
+                    { icon: 'fas fa-clock', label: 'Süre:', value: '45dk', valueClass: 'duration' },
+                    { icon: 'fas fa-user', label: 'Operatör:', value: 'Mehmet Demir' }
+                ]
+            },
+            {
+                title: 'TI-2024-008',
+                subtitle: 'Montaj - Parça H',
+                icon: 'fas fa-clock',
+                iconColor: '#ffc107',
+                iconBackground: 'linear-gradient(135deg, #ffc107, #e0a800)',
+                status: 'Beklemede',
+                statusType: 'warning',
+                details: [
+                    { icon: 'fas fa-calendar', label: 'Planlanan:', value: '27.01.2024' },
+                    { icon: 'fas fa-user', label: 'Atanan:', value: 'Ali Veli' }
+                ]
+            }
+        ];
+
+        createCardGrid(document.getElementById('timer-grid'), timerGridData, { columns: 3 });
+
+        const machineGridData = [
+            {
+                title: 'CNC-004',
+                subtitle: 'CNC Torna',
+                icon: 'fas fa-check-circle',
+                iconColor: '#28a745',
+                iconBackground: 'linear-gradient(135deg, #28a745, #20c997)',
+                status: 'Çalışır',
+                statusType: 'success',
+                details: [
+                    { icon: 'fas fa-map-marker-alt', label: 'Konum:', value: 'Atölye A' },
+                    { icon: 'fas fa-user', label: 'Operatör:', value: 'Ahmet Yılmaz' }
+                ]
+            },
+            {
+                title: 'CNC-005',
+                subtitle: 'CNC Freze',
+                icon: 'fas fa-tools',
+                iconColor: '#ffc107',
+                iconBackground: 'linear-gradient(135deg, #ffc107, #e0a800)',
+                status: 'Bakım',
+                statusType: 'warning',
+                details: [
+                    { icon: 'fas fa-map-marker-alt', label: 'Konum:', value: 'Atölye B' },
+                    { icon: 'fas fa-exclamation-triangle', label: 'Durum:', value: 'Yağ değişimi' }
+                ]
+            }
+        ];
+
+        createCardGrid(document.getElementById('machine-grid'), machineGridData, { columns: 2 });
+
+        // Interactive Demo
+        let interactiveCard = new GenericCard(document.getElementById('interactive-card'), {
+            title: 'Sample Card',
+            subtitle: 'This is a sample subtitle',
+            icon: 'fas fa-info-circle',
+            iconColor: '#6c757d',
+            iconBackground: '#f8f9fa',
+            status: '',
+            statusType: 'info',
+            details: [
+                { icon: 'fas fa-info', label: 'Info:', value: 'Sample detail' },
+                { icon: 'fas fa-calendar', label: 'Date:', value: '25.01.2024' }
+            ],
+            buttons: [
+                { text: 'Action', icon: 'fas fa-play', class: 'btn-primary', onClick: () => alert('Button clicked!') }
+            ],
+            clickable: false,
+            onClick: () => alert('Card clicked!')
+        });
+
+        // Interactive controls
+        const controls = {
+            title: document.getElementById('card-title'),
+            subtitle: document.getElementById('card-subtitle'),
+            icon: document.getElementById('card-icon'),
+            status: document.getElementById('card-status'),
+            statusType: document.getElementById('status-type'),
+            iconColor: document.getElementById('icon-color'),
+            iconBg: document.getElementById('icon-bg'),
+            clickable: document.getElementById('clickable')
+        };
+
+        function updateInteractiveCard() {
+            const newOptions = {
+                title: controls.title.value,
+                subtitle: controls.subtitle.value,
+                icon: controls.icon.value,
+                iconColor: controls.iconColor.value,
+                iconBackground: controls.iconBg.value,
+                status: controls.status.value,
+                statusType: controls.statusType.value,
+                details: [
+                    { icon: 'fas fa-info', label: 'Info:', value: 'Sample detail' },
+                    { icon: 'fas fa-calendar', label: 'Date:', value: '25.01.2024' }
+                ],
+                buttons: [
+                    { text: 'Action', icon: 'fas fa-play', class: 'btn-primary', onClick: () => alert('Button clicked!') }
+                ],
+                clickable: controls.clickable.value === 'true',
+                onClick: () => alert('Card clicked!')
+            };
+
+            interactiveCard.destroy();
+            interactiveCard = new GenericCard(document.getElementById('interactive-card'), newOptions);
+        }
+
+        // Add event listeners to controls
+        Object.values(controls).forEach(control => {
+            control.addEventListener('input', updateInteractiveCard);
+            control.addEventListener('change', updateInteractiveCard);
+        });
+
+        // Button Examples
+        new GenericCard(document.getElementById('single-button-card'), {
+            title: 'Single Button Card',
+            subtitle: 'This card has only one button',
+            icon: 'fas fa-mouse-pointer',
+            iconColor: '#007bff',
+            iconBackground: 'linear-gradient(135deg, #007bff, #0056b3)',
+            status: 'Active',
+            statusType: 'info',
+            details: [
+                { icon: 'fas fa-info', label: 'Type:', value: 'Single Action' },
+                { icon: 'fas fa-calendar', label: 'Created:', value: '25.01.2024' }
+            ],
+            buttons: [
+                { text: 'Primary Action', icon: 'fas fa-play', class: 'btn-primary', onClick: () => alert('Primary action executed!') }
+            ]
+        });
+
+        new GenericCard(document.getElementById('multiple-buttons-card'), {
+            title: 'Multiple Buttons Card',
+            subtitle: 'This card has multiple action buttons',
+            icon: 'fas fa-mouse-pointer',
+            iconColor: '#28a745',
+            iconBackground: 'linear-gradient(135deg, #28a745, #20c997)',
+            status: 'Ready',
+            statusType: 'success',
+            details: [
+                { icon: 'fas fa-info', label: 'Type:', value: 'Multiple Actions' },
+                { icon: 'fas fa-calendar', label: 'Created:', value: '25.01.2024' }
+            ],
+            buttons: [
+                { text: 'View', icon: 'fas fa-eye', class: 'btn-outline-primary', onClick: () => alert('Viewing details...') },
+                { text: 'Edit', icon: 'fas fa-edit', class: 'btn-outline-warning', onClick: () => alert('Editing...') },
+                { text: 'Delete', icon: 'fas fa-trash', class: 'btn-outline-danger', onClick: () => alert('Deleting...') }
+            ]
+        });
+    </script>
+</body>
+</html>

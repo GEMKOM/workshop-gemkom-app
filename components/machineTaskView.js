@@ -1,7 +1,7 @@
 // components/machineTaskView.js
 // Generic machine/task view for machining etc.
 import { extractResultsFromResponse } from '../generic/paginationHelper.js';
-import { ModernDropdown } from './dropdown.js';
+import { ModernDropdown } from './dropdown/dropdown.js';
 
 export async function createMachineTaskView({
     containerId = 'main-view',

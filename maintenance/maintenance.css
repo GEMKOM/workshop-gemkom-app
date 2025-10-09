@@ -116,6 +116,7 @@ body {
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    text-decoration: none;
 }
 
 .tab-button::before {
@@ -1371,5 +1372,103 @@ body {
     
     .fault-item {
         padding: 0.5rem;
+    }
+}
+
+/* ============================================================================
+   CUSTOM EQUIPMENT STYLES
+   ============================================================================ */
+
+#custom-equipment-container,
+#location-container {
+    transition: all 0.3s ease;
+}
+
+#custom-equipment-container .form-control,
+#location-container .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+#custom-equipment-container .form-control:focus,
+#location-container .form-control:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(180, 0, 36, 0.1);
+    outline: none;
+}
+
+#custom-equipment-container .form-label,
+#location-container .form-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#custom-equipment-container .form-label i,
+#location-container .form-label i {
+    color: var(--secondary-color);
+    font-size: 0.9rem;
+}
+
+/* Custom equipment checkbox styling */
+#custom-equipment-checkbox {
+    margin-bottom: 1rem;
+}
+
+#custom-equipment-checkbox + .modern-checkmark {
+    border-color: var(--secondary-color);
+}
+
+#custom-equipment-checkbox:checked + .modern-checkmark {
+    background: var(--gradient-primary);
+    border-color: var(--secondary-color);
+}
+
+#custom-equipment-checkbox:checked + .modern-checkmark:after {
+    display: block;
+}
+
+/* ============================================================================
+   GENERIC CARD INTEGRATION STYLES
+   ============================================================================ */
+
+/* Maintenance request cards using generic card component */
+.maintenance-request-card {
+    margin-bottom: 1rem;
+}
+
+/* Override generic card styles for maintenance requests if needed */
+.maintenance-request-card .generic-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.maintenance-request-card .generic-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Ensure proper spacing in the requests list */
+#requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Responsive adjustments for maintenance request cards */
+@media (max-width: 768px) {
+    .maintenance-request-card {
+        margin-bottom: 0.75rem;
+    }
+    
+    #requests-list {
+        gap: 0.75rem;
     }
 }

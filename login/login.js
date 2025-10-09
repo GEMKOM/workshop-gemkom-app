@@ -1,7 +1,7 @@
 // login/login.js
 import { login, navigateTo, ROUTES, shouldBeOnLoginPage, navigateByTeamIfFreshLogin, forgotPassword } from '../authService.js';
 import { fetchUsers } from '../generic/users.js';
-import { ModernDropdown } from '../components/dropdown.js';
+import { ModernDropdown } from '../components/dropdown/dropdown.js';
 
 // Enhanced error handling and display
 function showError(message) {

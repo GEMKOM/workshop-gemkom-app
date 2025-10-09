@@ -2,9 +2,8 @@ import { initNavbar } from '../components/navbar.js';
 import { guardRoute } from '../authService.js';
 import { authedFetch } from '../authService.js';
 import { backendBase } from '../base.js';
-import { fetchMachines } from '../generic/machines.js';
-import { createMaintenanceRequest, resolveMaintenanceRequest, fetchMachineFaults } from './maintenanceApi.js';
-import { ModernDropdown } from '../components/dropdown.js';
+import { resolveMaintenanceRequest, fetchMachineFaults } from './maintenanceApi.js';
+import { GenericCard, createCardGrid } from '../components/genericCard/genericCard.js';
 import { extractResultsFromResponse } from '../generic/paginationHelper.js';
 
 // ============================================================================
@@ -67,9 +66,6 @@ async function loadTabContent(tabName) {
             case 'view-requests':
                 await loadViewRequestsContent();
                 break;
-            case 'create-request':
-                await loadCreateRequestContent();
-                break;
             case 'equipment-status':
                 await loadEquipmentStatusContent();
                 break;
@@ -102,14 +98,6 @@ async function loadViewRequestsContent() {
     setupResolveModal();
 }
 
-async function loadCreateRequestContent() {
-    const contentContainer = document.getElementById('maintenance-content');
-    contentContainer.innerHTML = createMaintenanceRequestForm();
-    
-    // Setup form first, then load machines
-    setupMaintenanceRequestForm();
-    await loadMachines();
-}
 
 async function loadEquipmentStatusContent() {
     const contentContainer = document.getElementById('maintenance-content');
@@ -487,130 +475,6 @@ function setupRefreshButton() {
 // CONTENT MANAGEMENT
 // ============================================================================
 
-function createMaintenanceRequestForm() {
-    return `
-        <div class="maintenance-section active" id="create-request">
-            <h2><i class="fas fa-plus-circle"></i>Yeni Bakım/Arıza Talebi</h2>
-            <p class="description">Yeni bir bakım veya arıza talebi oluşturun. Detaylı bilgi vererek daha hızlı çözüm sağlayabilirsiniz.</p>
-            
-            <div class="row g-4">
-                <div class="col-lg-8">
-                    <div class="maintenance-card">
-                        <div class="maintenance-card-header">
-                            <div class="maintenance-card-title">
-                                <i class="fas fa-edit"></i>
-                                Talep Bilgileri
-                            </div>
-                            <div class="maintenance-card-subtitle">
-                                <i class="fas fa-info-circle"></i>
-                                Tüm alanları eksiksiz doldurun
-                            </div>
-                        </div>
-                        <div class="maintenance-card-body">
-                            <form id="maintenance-request-form">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="machine-dropdown" class="form-label">
-                                            <i class="fas fa-cogs"></i>
-                                            Makine Seçin
-                                        </label>
-                                        <div id="machine-dropdown"></div>
-                                    </div>
-                                    
-                                    <div class="col-md-6">
-                                        <label for="request-type-dropdown" class="form-label">
-                                            <i class="fas fa-tag"></i>
-                                            Talep Türü
-                                        </label>
-                                        <div id="request-type-dropdown"></div>
-                                    </div>
-                                    
-                                    <div class="col-12" id="fault-operable-container" style="display: none;">
-                                        <div class="maintenance-card" style="margin-bottom: 0;">
-                                            <div class="maintenance-card-body">
-                                                <div class="modern-checkbox-container">
-                                                    <label class="modern-checkbox">
-                                                        <input type="checkbox" id="is-operable" checked>
-                                                        <span class="modern-checkmark"></span>
-                                                        <span class="modern-checkbox-text">
-                                                            <i class="fas fa-check-circle text-success me-2"></i>
-                                                            Makine çalışır durumda
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col-12">
-                                        <label for="description" class="form-label">
-                                            <i class="fas fa-align-left"></i>
-                                            Detaylı Açıklama
-                                        </label>
-                                        <textarea class="form-control" id="description" rows="5" 
-                                                  placeholder="Bakım/arıza detaylarını açıklayın. Mümkün olduğunca detaylı bilgi verin..." required></textarea>
-                                    </div>
-                                </div>
-                                
-                                <div class="maintenance-card-footer">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-paper-plane me-2"></i>
-                                        Talep Oluştur
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-4">
-                    <div class="maintenance-card">
-                        <div class="maintenance-card-header">
-                            <div class="maintenance-card-title">
-                                <i class="fas fa-info-circle"></i>
-                                Bilgilendirme
-                            </div>
-                        </div>
-                        <div class="maintenance-card-body">
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="d-flex align-items-start gap-3">
-                                        <div class="bg-primary bg-opacity-10 p-2 rounded">
-                                            <i class="fas fa-tools text-primary"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-1">Bakım Talepleri</h6>
-                                            <p class="text-muted small mb-0">Planlı bakım işlemleri için kullanılır. Önceden belirlenmiş bakım programlarına göre oluşturulur.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-12">
-                                    <div class="d-flex align-items-start gap-3">
-                                        <div class="bg-warning bg-opacity-10 p-2 rounded">
-                                            <i class="fas fa-exclamation-triangle text-warning"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-1">Arıza Talepleri</h6>
-                                            <p class="text-muted small mb-0">Acil durumlar ve beklenmeyen sorunlar için kullanılır. Hızlı müdahale gerektirir.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-lightbulb me-2"></i>
-                                        <strong>İpucu:</strong> Detaylı açıklama yazarsanız, bakım ekibi daha hızlı ve etkili çözüm sağlayabilir.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
 
 function createViewRequestsSection() {
     return `
@@ -675,8 +539,20 @@ function renderMaintenanceRequests() {
         return;
     }
     
-    const requestsHTML = filteredRequests.map(request => createRequestCard(request)).join('');
-    requestsList.innerHTML = requestsHTML;
+    // Convert requests to card data
+    const cardsData = filteredRequests.map(convertMaintenanceRequestToCardData);
+    
+    // Clear the container
+    requestsList.innerHTML = '';
+    
+    // Create individual card containers and render cards
+    cardsData.forEach((cardData, index) => {
+        const cardContainer = document.createElement('div');
+        cardContainer.className = 'maintenance-request-card';
+        requestsList.appendChild(cardContainer);
+        
+        new GenericCard(cardContainer, cardData);
+    });
 }
 
 function filterRequests(requests, filter) {
@@ -685,7 +561,7 @@ function filterRequests(requests, filter) {
             case 'maintenance':
                 return request.is_maintenance === true && request.resolved_at === null;
             case 'fault':
-                return request.is_maintenance === false && request.resolved_at === null;
+                return request.is_maintenance === false && request.is_breaking === false && request.resolved_at === null;
             case 'breaking':
                 return request.is_breaking === true && request.resolved_at === null;
             case 'completed':
@@ -698,10 +574,9 @@ function filterRequests(requests, filter) {
     });
 }
 
-function createRequestCard(request) {
-    const statusClass = request.resolved_at ? 'resolved' : 'open';
+// Convert maintenance request to generic card data
+function convertMaintenanceRequestToCardData(request) {
     const statusText = request.resolved_at ? 'Çözüldü' : 'Açık';
-    const statusIcon = request.resolved_at ? 'fas fa-check-circle' : 'fas fa-clock';
     
     // Format dates properly
     const reportedAt = new Date(request.reported_at).toLocaleDateString('tr-TR', {
@@ -719,125 +594,87 @@ function createRequestCard(request) {
         minute: '2-digit'
     }) : '-';
     
-    // Create breaking status indicator
-    const breakingStatus = request.is_breaking ? `
-        <div class="status-badge breaking">
-            <i class="fas fa-stop-circle"></i>
-            Makine Duruşta
-        </div>
-    ` : '';
+    // Determine request type icon and color
+    const typeIcon = request.is_maintenance ? 'fas fa-tools' : 'fas fa-exclamation-triangle';
+    const typeText = request.is_maintenance ? 'Bakım Talebi' : 'Arıza Talebi';
     
-    // Create collapsible details section
-    const detailsId = `details-${request.id}`;
+    // Set card icon and colors based on status
+    let cardIcon = typeIcon;
+    let cardIconBackground = request.is_breaking ? 'linear-gradient(135deg,rgb(214, 9, 9),rgb(120, 3, 3))' : (request.is_maintenance ? 'linear-gradient(135deg, #007bff, #0056b3)' : 'linear-gradient(135deg, #ffc107, #e0a800)')
+    const cardIconColor = '#ffffff';
+
+    if (request.resolved_at) {
+        cardIcon = 'fas fa-check-circle';
+        cardIconBackground = 'linear-gradient(135deg, #28a745, #20c997)';
+    }
+    
+    // Create details array
+    const details = [
+        { icon: 'fas fa-calendar', label: 'Bildirilme:', value: reportedAt },
+        { icon: 'fas fa-user', label: 'Bildiren:', value: request.reported_by_username || 'Bilinmiyor' }
+    ];
+    
+    // Add resolution date if resolved
+    if (request.resolved_at) {
+        details.push({ icon: 'fas fa-check-circle', label: 'Çözülme:', value: resolvedAt });
+    }
+    
+    // Add breaking status if applicable
+    if (request.is_breaking) {
+        details.push({ icon: 'fas fa-stop-circle', label: 'Durum:', value: 'Makine Duruşta', valueClass: 'highlight' });
+    }
+    
+    // Create buttons array
+    const buttons = [];
+    
+    // Add resolve button for unresolved requests
+    if (!request.resolved_at) {
+        buttons.push({
+            text: 'Çözüldü Olarak İşaretle',
+            icon: 'fas fa-check',
+            class: 'btn-success',
+            onClick: () => resolveRequest(request.id)
+        });
+    }
+    
+    // Add details button
+    buttons.push({
+        text: 'Detaylar',
+        icon: 'fas fa-info-circle',
+        class: 'btn-outline-primary',
+        onClick: () => showRequestDetails(request)
+    });
+    
+    return {
+        title: request.machine_name || request.asset_name || 'Makine Adı Yok',
+        subtitle: `${typeText} - ${request.reported_by_username || 'Bilinmiyor'} tarafından bildirildi`,
+        icon: cardIcon,
+        iconColor: cardIconColor,
+        iconBackground: cardIconBackground,
+        status: statusText,
+        statusType: request.resolved_at ? 'success' : (request.is_breaking ? 'danger' : 'warning'),
+        details: details,
+        buttons: buttons,
+        clickable: true,
+        onClick: () => showRequestDetails(request)
+    };
+}
+
+// Show request details (placeholder function)
+function showRequestDetails(request) {
+    // Create a modal or expandable section to show full details
     const descriptionContent = request.description || 'Açıklama yok';
     const resolutionContent = request.resolved_at && request.resolution_description ? request.resolution_description : '';
     
-    // Combine description and resolution content
     let detailsContent = `<strong>Açıklama:</strong><br>${descriptionContent}`;
     if (resolutionContent) {
         detailsContent += `<br><br><strong>Çözüm Açıklaması:</strong><br>${resolutionContent}`;
     }
     
-    const collapsibleDetails = `
-        <div class="description-toggle-container">
-            <button class="description-toggle" 
-                    data-bs-toggle="collapse" 
-                    data-bs-target="#${detailsId}" 
-                    aria-expanded="false" 
-                    aria-controls="${detailsId}">
-                <i class="fas fa-info-circle me-2"></i>
-                <strong>Detaylar</strong>
-                <i class="fas fa-chevron-down ms-2"></i>
-            </button>
-            <div class="collapse" id="${detailsId}">
-                <div class="description-content">
-                    ${detailsContent}
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Add resolve button for unresolved requests
-    const resolveButton = !request.resolved_at ? `
-        <button class="btn btn-success" onclick="resolveRequest(${request.id})">
-            <i class="fas fa-check me-2"></i>
-            Çözüldü Olarak İşaretle
-        </button>
-    ` : '';
-    
-    // Determine request type icon and color
-    const requestType = request.is_maintenance ? 'maintenance' : 'fault';
-    const typeIcon = request.is_maintenance ? 'fas fa-tools' : 'fas fa-exclamation-triangle';
-    const typeText = request.is_maintenance ? 'Bakım Talebi' : 'Arıza Talebi';
-    const typeColor = request.is_maintenance ? 'primary' : 'warning';
-    
-    return `
-        <div class="maintenance-card">
-            <div class="maintenance-card-header">
-                <div class="maintenance-card-title">
-                    <i class="${typeIcon}"></i>
-                    ${request.machine_name || 'Makine Adı Yok'}
-                </div>
-                <div class="maintenance-card-subtitle">
-                    <i class="fas fa-user me-1"></i>
-                    ${request.reported_by_username || 'Bilinmiyor'} tarafından bildirildi
-                </div>
-            </div>
-            
-            <div class="maintenance-card-body">
-                <div class="maintenance-card-content">
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-light p-2 rounded">
-                                    <i class="fas fa-calendar text-muted"></i>
-                                </div>
-                                <div>
-                                    <small class="text-muted d-block">Bildirilme</small>
-                                    <strong>${reportedAt}</strong>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="bg-light p-2 rounded">
-                                    <i class="fas fa-check-circle text-muted"></i>
-                                </div>
-                                <div>
-                                    <small class="text-muted d-block">Çözülme</small>
-                                    <strong>${resolvedAt}</strong>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <span class="badge bg-${typeColor} bg-opacity-10 text-${typeColor} border border-${typeColor} border-opacity-25">
-                            <i class="${typeIcon} me-1"></i>
-                            ${typeText}
-                        </span>
-                    </div>
-                    
-                    ${collapsibleDetails}
-                </div>
-            </div>
-            
-            <div class="maintenance-card-footer">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <div class="status-badge ${statusClass}">
-                        <i class="${statusIcon}"></i>
-                        ${statusText}
-                    </div>
-                    ${breakingStatus}
-                </div>
-                
-                <div class="d-flex align-items-center gap-2">
-                    ${resolveButton}
-                </div>
-            </div>
-        </div>
-    `;
+    // For now, show an alert. You can replace this with a proper modal
+    alert(`Detaylar:\n\n${detailsContent.replace(/<br>/g, '\n').replace(/<[^>]*>/g, '')}`);
 }
+
 
 async function loadMaintenanceRequests() {
     try {
@@ -878,146 +715,7 @@ function setupFilterHandlers() {
     });
 }
 
-async function loadMachines() {
-    const machineDropdownContainer = document.getElementById('machine-dropdown');
-    if (!machineDropdownContainer) return;
-    
-    // Show loading state
-    machineDropdownContainer.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><p class="text-muted">Makineler yükleniyor...</p></div>';
-    
-    try {
-        const machines = await fetchMachines({});
-        populateMachinesDropdown(machines);
-    } catch (error) {
-        machineDropdownContainer.innerHTML = '<div class="text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Makine yüklenirken hata oluştu</div>';
-        console.error('Error loading machines:', error);
-    }
-}
 
-function populateMachinesDropdown(machines) {
-    const machineDropdownContainer = document.getElementById('machine-dropdown');
-    if (!machineDropdownContainer) {
-        console.error('Machine dropdown container not found');
-        return;
-    }
-    
-    console.log('Creating machine dropdown with', machines.length, 'machines');
-    
-    // Create modern dropdown for machines
-    const machineDropdown = new ModernDropdown(machineDropdownContainer, {
-        placeholder: 'Makine seçin...',
-        searchable: true
-    });
-    
-    // Convert machines to dropdown items
-    const machineItems = machines.map(machine => ({
-        value: machine.id,
-        text: machine.name || `Makine ${machine.id}`
-    }));
-    
-    machineDropdown.setItems(machineItems);
-    
-    // Store dropdown reference for form submission
-    machineDropdownContainer.dropdownInstance = machineDropdown;
-    
-    console.log('Machine dropdown created successfully');
-}
-
-function setupMaintenanceRequestForm() {
-    const form = document.getElementById('maintenance-request-form');
-    if (!form) return;
-
-    // Remove previous event listeners by replacing the form
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
-
-    // Get new references from the new form
-    const faultOperableContainer = newForm.querySelector('#fault-operable-container');
-    const descriptionInput = newForm.querySelector('#description');
-    const isOperableCheckbox = newForm.querySelector('#is-operable');
-
-    // Setup request type dropdown
-    const requestTypeContainer = newForm.querySelector('#request-type-dropdown');
-    if (requestTypeContainer) {
-        console.log('Creating request type dropdown');
-        const requestTypeDropdown = new ModernDropdown(requestTypeContainer, {
-            placeholder: 'Tür seçin...'
-        });
-        
-        const requestTypeItems = [
-            { value: 'maintenance', text: 'Bakım' },
-            { value: 'fault', text: 'Arıza' }
-        ];
-        
-        requestTypeDropdown.setItems(requestTypeItems);
-        
-        // Handle request type change
-        requestTypeContainer.addEventListener('dropdown:select', (e) => {
-            console.log('Request type changed to:', e.detail.value);
-            if (e.detail.value === 'fault') {
-                faultOperableContainer.style.display = 'block';
-            } else {
-                faultOperableContainer.style.display = 'none';
-            }
-        });
-        
-        // Store dropdown reference for form submission
-        requestTypeContainer.dropdownInstance = requestTypeDropdown;
-        console.log('Request type dropdown created successfully');
-    } else {
-        console.error('Request type dropdown container not found');
-    }
-
-    newForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        // Get values from modern dropdowns
-        const machineDropdown = newForm.querySelector('#machine-dropdown').dropdownInstance;
-        const requestTypeDropdown = newForm.querySelector('#request-type-dropdown').dropdownInstance;
-        
-        const machineId = machineDropdown ? machineDropdown.getValue() : '';
-        const requestType = requestTypeDropdown ? requestTypeDropdown.getValue() : '';
-        const description = descriptionInput ? descriptionInput.value : '';
-        const isOperable = isOperableCheckbox ? isOperableCheckbox.checked : true;
-
-        if (!machineId || !requestType || !description) {
-            alert('Lütfen tüm alanları doldurun.');
-            return;
-        }
-
-        try {
-            await createMaintenanceRequest({
-                machine: machineId,
-                is_maintenance: requestType === 'maintenance',
-                description: description,
-                is_breaking: !isOperable
-            });
-
-            // Reset form
-            newForm.reset();
-            
-            // Reset dropdowns
-            if (machineDropdown) machineDropdown.setValue('');
-            if (requestTypeDropdown) requestTypeDropdown.setValue('');
-            
-            // Hide the operable checkbox after form reset
-            if (faultOperableContainer) {
-                faultOperableContainer.style.display = 'none';
-            }
-            alert('Bakım talebi başarıyla oluşturuldu.');
-
-            // Switch to view requests to see the new request
-            const viewRequestsTab = document.querySelector('[data-tab="view-requests"]');
-            if (viewRequestsTab) {
-                viewRequestsTab.click();
-            }
-
-        } catch (error) {
-            console.error('Error creating maintenance request:', error);
-            alert('Bakım talebi oluşturulurken hata oluştu.');
-        }
-    });
-}
 
 // ============================================================================
 // RESOLVE FUNCTIONALITY

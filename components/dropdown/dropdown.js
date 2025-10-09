@@ -1,4 +1,9 @@
-// components/dropdown.js
+// components/dropdown/dropdown.js
+
+// Global z-index management for dropdowns
+let globalDropdownZIndex = 1000000;
+let allDropdowns = []; // Track all dropdown instances
+
 export class ModernDropdown {
     constructor(container, options = {}) {
         this.container = container;
@@ -15,8 +20,12 @@ export class ModernDropdown {
         this.selectedValue = null;
         this.selectedValues = [];
         this.items = [];
+        this.currentZIndex = 1; // Start with low z-index
         
         this.init();
+        
+        // Register this dropdown instance
+        allDropdowns.push(this);
     }
     
     init() {
@@ -64,31 +73,22 @@ export class ModernDropdown {
         this.dropdown.appendChild(this.selectedDisplay);
         this.dropdown.appendChild(this.menu);
         this.container.appendChild(this.dropdown);
+        
+        // Initialize with low z-index
+        this.container.style.zIndex = '1';
+        this.dropdown.style.zIndex = '1';
+        this.menu.style.zIndex = '1';
     }
     
     bindEvents() {
-        // Toggle dropdown - support both click and touch events for mobile
+        // Toggle dropdown
         this.selectedDisplay.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggle();
         });
         
-        // Add touch event support for mobile
-        this.selectedDisplay.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.toggle();
-        }, { passive: false });
-        
-        // Close on outside click/touch
+        // Close on outside click
         document.addEventListener('click', (e) => {
-            if (!this.dropdown.contains(e.target)) {
-                this.close();
-            }
-        });
-        
-        // Add touch event for outside touch
-        document.addEventListener('touchstart', (e) => {
             if (!this.dropdown.contains(e.target)) {
                 this.close();
             }
@@ -153,37 +153,38 @@ export class ModernDropdown {
     }
     
     open() {
+        // Close all other dropdowns first
+        this.closeAllOtherDropdowns();
+        
+        // Get the next highest z-index for this dropdown
+        globalDropdownZIndex += 1;
+        this.currentZIndex = globalDropdownZIndex;
+        
         this.isOpen = true;
         this.dropdown.classList.add('open');
         this.selectedDisplay.querySelector('.dropdown-arrow').className = 'fas fa-chevron-up dropdown-arrow';
         
-        // Ensure proper positioning and z-index
+        // Ensure dropdown menu is visible
         this.menu.style.display = 'block';
-        this.menu.style.zIndex = '99999';
+        this.menu.style.opacity = '1';
+        this.menu.style.visibility = 'visible';
+        this.menu.style.transform = 'translateY(0)';
+        this.menu.style.maxHeight = '400px';
         
-        // Mobile-specific positioning improvements
-        const rect = this.dropdown.getBoundingClientRect();
-        const viewportHeight = window.innerHeight;
-        const menuHeight = this.options.maxHeight || 300;
+        // Apply dynamic z-index to ensure this dropdown appears above all others
+        this.menu.style.zIndex = this.currentZIndex;
+        this.menu.style.position = 'absolute';
+        this.menu.style.top = '100%';
+        this.menu.style.left = '0';
+        this.menu.style.right = '0';
+        this.menu.style.overflow = 'visible';
+        this.menu.style.pointerEvents = 'auto';
         
-        // Check if dropdown would go off-screen on mobile
-        if (window.innerWidth <= 768) {
-            const spaceBelow = viewportHeight - rect.bottom;
-            const spaceAbove = rect.top;
-            
-            // If not enough space below and more space above, position above
-            if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-                this.menu.style.top = 'auto';
-                this.menu.style.bottom = '100%';
-                this.menu.style.borderRadius = '8px 8px 0 0';
-                this.selectedDisplay.style.borderRadius = '0 0 8px 8px';
-            } else {
-                this.menu.style.top = '100%';
-                this.menu.style.bottom = 'auto';
-                this.menu.style.borderRadius = '0 0 8px 8px';
-                this.selectedDisplay.style.borderRadius = '8px 8px 0 0';
-            }
-        }
+        // Ensure the dropdown container has proper stacking context with dynamic z-index
+        this.container.style.zIndex = this.currentZIndex - 1;
+        this.container.style.position = 'relative';
+        this.dropdown.style.zIndex = this.currentZIndex;
+        this.dropdown.style.position = 'relative';
         
         // Focus search input if available
         if (this.options.searchable && this.searchInput) {
@@ -194,28 +195,39 @@ export class ModernDropdown {
         this.container.dispatchEvent(new CustomEvent('dropdown:open'));
     }
     
+    closeAllOtherDropdowns() {
+        // Close all other dropdown instances
+        allDropdowns.forEach(dropdown => {
+            if (dropdown !== this && dropdown.isOpen) {
+                dropdown.close();
+            }
+        });
+    }
+    
     close() {
         this.isOpen = false;
         this.dropdown.classList.remove('open');
         this.selectedDisplay.querySelector('.dropdown-arrow').className = 'fas fa-chevron-down dropdown-arrow';
         
-        // Reset positioning for next open
-        this.menu.style.top = '100%';
-        this.menu.style.bottom = 'auto';
-        this.menu.style.borderRadius = '0 0 8px 8px';
-        this.selectedDisplay.style.borderRadius = '8px 8px 0 0';
+        // Hide dropdown menu
+        this.menu.style.display = 'none';
+        this.menu.style.opacity = '0';
+        this.menu.style.visibility = 'hidden';
+        this.menu.style.transform = 'translateY(-10px)';
+        this.menu.style.maxHeight = '0';
         
-        // Hide dropdown after transition completes
-        setTimeout(() => {
-            if (!this.isOpen) {
-                this.menu.style.display = 'none';
-            }
-        }, 300); // Match CSS transition duration
+        // Reset z-index to very low values when closed to ensure open dropdowns appear above
+        this.container.style.zIndex = '1';
+        this.dropdown.style.zIndex = '1';
+        this.menu.style.zIndex = '1';
         
         // Clear search if available
         if (this.options.searchable && this.searchInput) {
             this.searchInput.value = '';
-            this.filterItems('');
+            // Only filter if items container exists and has items
+            if (this.itemsContainer && this.itemsContainer.querySelectorAll('.dropdown-item').length > 0) {
+                this.filterItems('');
+            }
         }
         
         // Trigger custom event
@@ -225,6 +237,9 @@ export class ModernDropdown {
     setItems(items) {
         this.items = items;
         this.renderItems();
+        if (this.options.multiple) {
+            this.updateCheckboxes();
+        }
     }
     
     renderItems() {
@@ -259,19 +274,41 @@ export class ModernDropdown {
                         <span class="item-text">${item.text}</span>
                     </label>
                 `;
+                
+                // Handle checkbox change event for multi-select
+                const checkbox = itemElement.querySelector('input[type="checkbox"]');
+                checkbox.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    if (!item.disabled) {
+                        this.selectItem(item, itemElement);
+                    }
+                });
+                
+                // Handle clicks on the entire item area (outside the label)
+                itemElement.addEventListener('click', (e) => {
+                    // Only handle clicks outside the label/checkbox area
+                    if (!e.target.closest('.checkbox-container')) {
+                        e.stopPropagation();
+                        if (!item.disabled) {
+                            const checkbox = itemElement.querySelector('input[type="checkbox"]');
+                            checkbox.checked = !checkbox.checked;
+                            this.selectItem(item, itemElement);
+                        }
+                    }
+                });
             } else {
                 itemElement.innerHTML = `
                     <span class="item-text">${item.text}</span>
                     ${this.selectedValue === item.value ? '<i class="fas fa-check selected-icon"></i>' : ''}
                 `;
+                
+                itemElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!item.disabled) {
+                        this.selectItem(item, itemElement);
+                    }
+                });
             }
-            
-            itemElement.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (!item.disabled) {
-                    this.selectItem(item, itemElement);
-                }
-            });
             
             this.itemsContainer.appendChild(itemElement);
         });
@@ -280,15 +317,18 @@ export class ModernDropdown {
     selectItem(item, element) {
         if (this.options.multiple) {
             const checkbox = element.querySelector('input[type="checkbox"]');
-            const isChecked = checkbox.checked;
             
-            if (isChecked) {
-                this.selectedValues = this.selectedValues.filter(v => v !== item.value);
+            // Use the checkbox state as the source of truth
+            if (checkbox.checked) {
+                // Add to selection if not already selected
+                if (!this.selectedValues.includes(item.value)) {
+                    this.selectedValues.push(item.value);
+                }
             } else {
-                this.selectedValues.push(item.value);
+                // Remove from selection
+                this.selectedValues = this.selectedValues.filter(v => v !== item.value);
             }
             
-            checkbox.checked = !isChecked;
             this.updateMultipleDisplay();
         } else {
             this.selectedValue = item.value;
@@ -307,7 +347,9 @@ export class ModernDropdown {
     
     updateDisplay(text) {
         const selectedText = this.selectedDisplay.querySelector('.selected-text');
-        selectedText.textContent = text || this.options.placeholder;
+        if (selectedText) {
+            selectedText.textContent = text || this.options.placeholder;
+        }
         
         // Update selected state in items
         this.itemsContainer.querySelectorAll('.dropdown-item').forEach(item => {
@@ -325,25 +367,50 @@ export class ModernDropdown {
     }
     
     updateMultipleDisplay() {
+        const selectedTextElement = this.selectedDisplay.querySelector('.selected-text');
+        if (!selectedTextElement) return;
+        
         if (this.selectedValues.length === 0) {
-            this.selectedDisplay.querySelector('.selected-text').textContent = this.options.placeholder;
+            selectedTextElement.textContent = this.options.placeholder;
         } else if (this.selectedValues.length === 1) {
             const item = this.items.find(i => i.value === this.selectedValues[0]);
-            this.selectedDisplay.querySelector('.selected-text').textContent = item ? item.text : this.options.placeholder;
+            selectedTextElement.textContent = item ? item.text : this.options.placeholder;
         } else {
-            this.selectedDisplay.querySelector('.selected-text').textContent = `${this.selectedValues.length} seçenek`;
+            selectedTextElement.textContent = `${this.selectedValues.length} seçenek`;
         }
     }
     
+    updateCheckboxes() {
+        if (!this.options.multiple) return;
+        
+        const checkboxes = this.itemsContainer.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            // Find the parent dropdown item to get the value
+            const dropdownItem = checkbox.closest('.dropdown-item');
+            if (dropdownItem) {
+                const itemValue = dropdownItem.dataset.value;
+                checkbox.checked = this.selectedValues.includes(itemValue);
+            }
+        });
+    }
+    
     filterItems(searchTerm) {
+        if (!this.itemsContainer) return;
+        
         const items = this.itemsContainer.querySelectorAll('.dropdown-item');
         const term = searchTerm.toLowerCase();
         
         items.forEach(item => {
-            const text = item.querySelector('.item-text').textContent.toLowerCase();
-            if (text.includes(term)) {
-                item.style.display = 'block';
+            const textElement = item.querySelector('.item-text');
+            if (textElement && textElement.textContent) {
+                const text = textElement.textContent.toLowerCase();
+                if (text.includes(term)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
             } else {
+                // If no text element found, hide the item
                 item.style.display = 'none';
             }
         });
@@ -355,8 +422,9 @@ export class ModernDropdown {
     
     setValue(value) {
         if (this.options.multiple) {
-            this.selectedValues = Array.isArray(value) ? value : [value];
+            this.selectedValues = Array.isArray(value) ? value : (value ? [value] : []);
             this.updateMultipleDisplay();
+            this.updateCheckboxes();
         } else {
             this.selectedValue = value;
             const item = this.items.find(i => i.value === value);
@@ -368,4 +436,4 @@ export class ModernDropdown {
         this.container.innerHTML = '';
         this.container.className = '';
     }
-} 
+}
