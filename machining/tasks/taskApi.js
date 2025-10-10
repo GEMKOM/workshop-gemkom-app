@@ -62,12 +62,7 @@ export async function startTimer(comment = null) {
     const timerData = {
         issue_key: state.currentIssue.key,
         start_time: getSyncedNow(),
-        machine: state.currentMachine.name,
         machine_fk: state.currentMachine.id,
-        job_no: state.currentIssue.job_no,
-        image_no: state.currentIssue.image_no,
-        position_no: state.currentIssue.position_no,
-        quantity: state.currentIssue.quantity
     }
     
     // Add comment if provided

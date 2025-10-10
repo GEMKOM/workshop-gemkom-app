@@ -442,7 +442,7 @@ async function loadMachines() {
     machineDropdownContainer.innerHTML = '<div class="loading-container"><div class="loading-spinner"></div><p class="text-muted">Makineler yükleniyor...</p></div>';
     
     try {
-        const machinesResponse = await fetchMachines({});
+        const machinesResponse = await fetchMachines({exclude_used_in: "it"});
         const machines = extractResultsFromResponse(machinesResponse);
         state.machines = machines;
         populateMachinesDropdown(machines);
