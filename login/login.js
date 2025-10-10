@@ -1,5 +1,5 @@
 // login/login.js
-import { login, navigateTo, ROUTES, shouldBeOnLoginPage, navigateByTeamIfFreshLogin, forgotPassword } from '../authService.js';
+import { login, navigateTo, ROUTES, forgotPassword, navigateByTeam } from '../authService.js';
 import { fetchUsers } from '../generic/users.js';
 import { ModernDropdown } from '../components/dropdown/dropdown.js';
 
@@ -224,7 +224,7 @@ async function handleLogin(username, password) {
         if (user.must_reset_password) {
             navigateTo(ROUTES.RESET_PASSWORD);
         } else {
-            navigateByTeamIfFreshLogin();
+            navigateByTeam(user);
         }
     } catch (error) {
         console.error('Login error:', error);
@@ -453,12 +453,6 @@ function handleForgotPasswordSubmit() {
 
 // Main initialization
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if user should be on this page
-    if (!shouldBeOnLoginPage()) {
-        navigateByTeamIfFreshLogin();
-        return;
-    }
-
     // Initialize password toggles
     setupPasswordToggle();
     setupAdminPasswordToggle();

@@ -14,7 +14,8 @@ export const ROUTES = {
     ADMIN: '/admin/',
     MACHINING: '/machining/',
     MACHINING_TASKS: '/machining/tasks/',
-    MAINTENANCE: '/maintenance/'
+    MAINTENANCE: '/maintenance/',
+    MAINTENANCE_LIST: '/maintenance/list/'
 };
 
 // Track if we're currently redirecting to prevent loops
@@ -117,8 +118,7 @@ export function navigateTo(path, options = {}) {
     }, 100);
 }
 
-export function navigateByTeam() {
-    const user = JSON.parse(localStorage.getItem('user'));
+export function navigateByTeam(user) {
     if (isAdmin() || user.team === null){
         navigateTo(ROUTES.HOME);
         return;
@@ -126,23 +126,14 @@ export function navigateByTeam() {
     if (user.team === 'machining') {
         navigateTo(ROUTES.MACHINING);
     } else if (user.team === 'maintenance') {
-        navigateTo(ROUTES.MAINTENANCE);
+        navigateTo(ROUTES.MAINTENANCE_LIST);
+    } else {
+        navigateTo(ROUTES.HOME);
     }
 }
 
-// New function to handle team-based navigation only on fresh logins
-// This prevents unwanted redirects when users manually navigate to pages
-export function navigateByTeamIfFreshLogin() {
-    if (isFreshLogin) {
-        isFreshLogin = false; // Reset the flag
-        navigateByTeam();
-    }
-}
 
-// Route guard functions
-export function shouldBeOnLoginPage() {
-    return !isLoggedIn();
-}
+// Route guard function
 
 export function shouldBeOnResetPasswordPage() {
     return isLoggedIn() && mustResetPassword();

@@ -1,4 +1,4 @@
-import { guardRoute, isAdmin, getUser, navigateByTeamIfFreshLogin } from './authService.js';
+import { guardRoute, isAdmin } from './authService.js';
 import { initNavbar } from './components/navbar.js';
 import { TimerWidget } from './components/timerWidget.js';
 import { MenuComponent } from './components/menu/menu.js';
@@ -26,29 +26,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     }
+    setupHomeMenu(user);
 
-    // Handle landing page specific logic
-    if (window.location.pathname === '/') {
-        await handleLandingPage();
-    }
 });
 
-async function handleLandingPage() {
-    try {
-        const user = await getUser();
-        
-        // Setup the menu component
-        setupHomeMenu(user);
-
-        // Only redirect on fresh logins, not manual navigation
-        if (user.team && !isAdmin()) {
-            navigateByTeamIfFreshLogin();
-        }
-
-    } catch (error) {
-        console.error('Error handling landing page:', error);
-    }
-}
 
 function setupHomeMenu(user) {
     // Define all available cards
@@ -122,19 +103,4 @@ function setupHomeMenu(user) {
     
     const menu = new MenuComponent('menu-placeholder', menuConfig);
     menu.render();
-    
-    // Highlight user's team module if they have one
-    if (user.team) {
-        highlightUserTeamCard(user.team);
-    }
-}
-
-function highlightUserTeamCard(team) {
-    // Add a small delay to ensure the menu is rendered
-    setTimeout(() => {
-        const teamCard = document.querySelector(`[onclick*="${team}"]`);
-        if (teamCard) {
-            teamCard.classList.add('user-team-card');
-        }
-    }, 100);
 }
