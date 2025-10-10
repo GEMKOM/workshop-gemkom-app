@@ -1,6 +1,7 @@
 import { guardRoute, isAdmin, getUser, navigateByTeamIfFreshLogin } from './authService.js';
 import { initNavbar } from './components/navbar.js';
 import { TimerWidget } from './components/timerWidget.js';
+import { MenuComponent } from './components/menu/menu.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!guardRoute()) {
@@ -35,14 +36,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function handleLandingPage() {
     try {
         const user = await getUser();
-
-        // Highlight user's team module
-        if (user.team) {
-            const teamCard = document.getElementById(`${user.team}-card`);
-            if (teamCard) {
-                teamCard.classList.add('user-team-card');
-            }
-        }
+        
+        // Setup the menu component
+        setupHomeMenu(user);
 
         // Only redirect on fresh logins, not manual navigation
         if (user.team && !isAdmin()) {
@@ -52,4 +48,60 @@ async function handleLandingPage() {
     } catch (error) {
         console.error('Error handling landing page:', error);
     }
+}
+
+function setupHomeMenu(user) {
+    const menuConfig = {
+        title: 'Çalışma Alanları',
+        subtitle: 'Takımınıza göre ilgili alanı seçin',
+        cards: [
+            {
+                title: 'Talaşlı İmalat',
+                description: 'Makine görevlerini yönetin, zamanlayıcıları kullanın ve üretim süreçlerini takip edin.',
+                icon: 'fas fa-cogs',
+                iconColor: 'primary',
+                link: 'machining/',
+                features: []
+            },
+            {
+                title: 'Bakım',
+                description: 'Bakım taleplerini yönetin, planlı bakımları takip edin ve ekipman durumlarını izleyin.',
+                icon: 'fas fa-tools',
+                iconColor: 'success',
+                link: 'maintenance/',
+                features: [
+                    {
+                        label: 'Yeni Talep Oluştur',
+                        icon: 'fas fa-calendar',
+                        iconColor: 'rgba(139, 0, 0, 1)',
+                        link: 'maintenance/create'
+                    },
+                    {
+                        label: 'Bakım Talepleri',
+                        icon: 'fas fa-wrench',
+                        iconColor: 'rgba(139, 0, 0, 1)',
+                        link: 'maintenance/list'
+                    }
+                ]
+            }
+        ]
+    };
+    
+    const menu = new MenuComponent('menu-placeholder', menuConfig);
+    menu.render();
+    
+    // Highlight user's team module if they have one
+    if (user.team) {
+        highlightUserTeamCard(user.team);
+    }
+}
+
+function highlightUserTeamCard(team) {
+    // Add a small delay to ensure the menu is rendered
+    setTimeout(() => {
+        const teamCard = document.querySelector(`[onclick*="${team}"]`);
+        if (teamCard) {
+            teamCard.classList.add('user-team-card');
+        }
+    }, 100);
 }

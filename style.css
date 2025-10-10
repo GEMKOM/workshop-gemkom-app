@@ -169,24 +169,10 @@ body::after {
    MODULES SECTION ENHANCEMENT
    ============================================================================ */
 
-.modules-section {
-    position: relative;
-    z-index: 2;
-    padding: 4rem 0;
-}
-
-.modules-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(5px);
-    border-radius: 20px;
-    margin: 2rem;
-    z-index: -1;
+/* Main layout styles for home page */
+.main-layout {
+    min-height: calc(100vh - 200px);
+    padding: 2rem 0;
 }
 
 /* ============================================================================

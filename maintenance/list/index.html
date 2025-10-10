@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEMKOM - Bakım Talepleri</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="../../components/navbar.css">
+    <link rel="stylesheet" href="../../components/dropdown/dropdown.css">
+    <link rel="stylesheet" href="../../components/genericCard/genericCard.css">
+    <link rel="stylesheet" href="../../components/refreshButton.css">
+    <link rel="stylesheet" href="../../components/header/header.css">
+    <link rel="stylesheet" href="list.css">
+    <link rel="icon" type="image/png" href="../../images/gemkom.png">
+</head>
+<body>
+    <!-- Navigation -->
+    <div id="navbar-container"></div>
+
+    <!-- Header Component Placeholder -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Content -->
+    <div class="main-layout">
+        <!-- Content Area -->
+        <div class="content-area">
+            <div class="container">
+                <div class="main-container">
+                    <!-- Maintenance Requests List -->
+                    <div id="maintenance-requests-content">
+                        <!-- Content will be dynamically loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" inert>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detailsModalLabel">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Talep Detayları
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="details-modal-body">
+                    <!-- Content will be dynamically loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        Kapat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolve Modal - Fixed in HTML to prevent recreation -->
+    <div class="modal fade" id="resolveModal" tabindex="-1" aria-labelledby="resolveModalLabel" inert>
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resolveModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Talep Çözümü
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="resolve-form">
+                        <div class="mb-3">
+                            <label for="resolution-description" class="form-label">
+                                <i class="fas fa-edit me-2"></i>
+                                Çözüm Açıklaması
+                            </label>
+                            <textarea class="form-control" id="resolution-description" rows="4" 
+                                      placeholder="Talep nasıl çözüldü? Detayları açıklayın..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        İptal
+                    </button>
+                    <button type="button" class="btn btn-success" id="confirm-resolve">
+                        <i class="fas fa-check me-2"></i>
+                        Çözüldü Olarak İşaretle
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../components/refreshButton.js"></script>
+    <script type="module" src="list.js"></script>
+</body>
+</html>

@@ -1,5 +1,41 @@
 /* Menu Component Styling */
 
+/* User Team Card Highlighting */
+.user-team-card {
+    position: relative;
+    transform: scale(1.02);
+    box-shadow: 0 8px 30px rgba(139, 0, 0, 0.3) !important;
+    border: 2px solid rgba(139, 0, 0, 0.3) !important;
+}
+
+.user-team-card::before {
+    content: 'Sizin Takımınız';
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    background: linear-gradient(135deg, #8B0000, #b40024);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 2px 8px rgba(139, 0, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 15px rgba(139, 0, 0, 0.5);
+    }
+    100% {
+        box-shadow: 0 2px 8px rgba(139, 0, 0, 0.3);
+    }
+}
+
 /* Modules Section */
 .modules-section {
     position: relative;

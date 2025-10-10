@@ -1,0 +1,510 @@
+/* ============================================================================
+   CSS VARIABLES
+   ============================================================================ */
+
+:root {
+    --primary-color: #8B0000;
+    --secondary-color: #b40024;
+    --accent-color: #FF4D4D;
+    --text-color: #2c3e50;
+    --light-bg: #f8f9fa;
+    --border-radius: 16px;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --card-hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    --gradient-light: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f9f9f9;
+    color: #333;
+    box-sizing: border-box;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* ============================================================================
+   LAYOUT STYLES
+   ============================================================================ */
+
+.main-layout {
+    min-height: calc(100vh - 200px);
+}
+
+.content-area {
+    padding: 2rem 0;
+}
+
+.main-container {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 2rem;
+    transition: var(--transition);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.main-container:hover {
+    box-shadow: var(--card-hover-shadow);
+    transform: translateY(-2px);
+}
+
+/* ============================================================================
+   MAINTENANCE REQUESTS SECTION STYLES
+   ============================================================================ */
+
+.maintenance-requests-section {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================================
+   FILTER CONTAINER STYLES
+   ============================================================================ */
+
+.filter-container {
+    background: var(--gradient-light);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.filter-btn {
+    background: white;
+    border: 2px solid transparent;
+    color: var(--text-color);
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color);
+}
+
+.filter-btn:hover::before {
+    opacity: 0.1;
+}
+
+.filter-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
+}
+
+.filter-btn.active::before {
+    opacity: 0;
+}
+
+.filter-btn i {
+    font-size: 1rem;
+}
+
+/* ============================================================================
+   BUTTON STYLES
+   ============================================================================ */
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: var(--transition);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    color: white;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+}
+
+.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    color: white;
+}
+
+/* ============================================================================
+   LOADING STYLES
+   ============================================================================ */
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(139, 0, 0, 0.1);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================================================
+   MODAL STYLES
+   ============================================================================ */
+
+.modal-content {
+    border-radius: var(--border-radius);
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border-bottom: none;
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-close-white {
+    filter: invert(1);
+}
+
+/* ============================================================================
+   GENERIC CARD INTEGRATION STYLES
+   ============================================================================ */
+
+/* Maintenance request cards using generic card component */
+.maintenance-request-card {
+    margin-bottom: 1rem;
+}
+
+/* Override generic card styles for maintenance requests if needed */
+.maintenance-request-card .generic-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.maintenance-request-card .generic-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Ensure proper spacing in the requests list */
+#requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* ============================================================================
+   RESPONSIVE STYLES
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .main-layout {
+        min-height: calc(100vh - 300px);
+    }
+    
+    .content-area {
+        padding: 1rem 0;
+    }
+    
+    .main-container {
+        padding: 1.5rem;
+    }
+    
+    .filter-buttons {
+        justify-content: flex-start;
+    }
+    
+    .filter-btn {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .maintenance-request-card {
+        margin-bottom: 0.75rem;
+    }
+    
+    #requests-list {
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    
+    .content-area {
+        padding: 0.5rem 0;
+    }
+    
+    .main-container {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .filter-container {
+        padding: 1rem;
+    }
+    
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* ============================================================================
+   DETAILS MODAL STYLES
+   ============================================================================ */
+
+.request-details {
+    padding: 0.5rem;
+}
+
+.details-header {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 1rem;
+}
+
+.details-header h4 {
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.detail-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 4px solid var(--primary-color);
+    transition: var(--transition);
+}
+
+.detail-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.detail-label i {
+    color: var(--primary-color);
+    width: 16px;
+}
+
+.detail-value {
+    font-size: 1rem;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* Special styling for description and resolution text */
+.description-text,
+.resolution-text {
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    min-height: 2rem;
+}
+
+.resolution-text {
+    color: #28a745;
+}
+
+/* Modal specific styles */
+#detailsModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+#detailsModal .modal-header {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+#detailsModal .modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+#detailsModal .modal-body {
+    padding: 2rem;
+}
+
+#detailsModal .modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1rem 2rem;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+
+/* Badge styles for status */
+.badge.fs-6 {
+    font-size: 0.9rem !important;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+
+/* Responsive adjustments for details modal */
+@media (max-width: 768px) {
+    #detailsModal .modal-body {
+        padding: 1.5rem;
+    }
+    
+    #detailsModal .modal-footer {
+        padding: 1rem 1.5rem;
+    }
+    
+    .detail-item {
+        padding: 0.75rem;
+    }
+    
+}
+
+@media (max-width: 576px) {
+    #detailsModal .modal-body {
+        padding: 1rem;
+    }
+    
+    #detailsModal .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+    
+    .details-header h4 {
+        font-size: 1.25rem;
+    }
+    
+    .detail-item {
+        padding: 0.5rem;
+    }
+    
+}
+
+/* ============================================================================
+   ACCESSIBILITY STYLES
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    .maintenance-request-card,
+    .filter-btn,
+    .btn {
+        transition: none;
+    }
+    
+    .loading-spinner {
+        animation: none;
+    }
+}
+
+.btn:focus,
+.filter-btn:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+@media (prefers-contrast: high) {
+    .filter-btn {
+        border: 2px solid var(--text-color);
+    }
+    
+    .filter-btn.active {
+        border: 2px solid var(--primary-color);
+    }
+}

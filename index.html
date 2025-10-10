@@ -11,72 +11,20 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="components/navbar.css">
     <link rel="stylesheet" href="components/timerWidget.css">
+    <link rel="stylesheet" href="components/menu/menu.css">
     <link rel="icon" type="image/png" href="images/gemkom.png">
-    <link rel="stylesheet" href="pre-auth.css">
 </head>
-<body class="pre-auth">
+<body>
     <!-- Navigation -->
     <div id="navbar-container"></div>
 
-    <!-- Modules Section -->
-    <section class="modules-section py-5">
+    <!-- Main Content -->
+    <div class="main-layout">
         <div class="container">
-            <div class="row">
-                <div class="col-12 text-center mb-5">
-                    <h2 class="section-title">Çalışma Alanları</h2>
-                    <p class="text-muted">Takımınıza göre ilgili alanı seçin</p>
-                </div>
-            </div>
-            
-            <div class="row g-4">
-                <!-- Machining Module -->
-                <div class="col-md-6 col-lg-6">
-                    <div class="module-card clickable" id="machining-card" onclick="window.location.href='/machining'">
-                        <div class="card-icon">
-                            <i class="fas fa-cogs"></i>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Talaşlı İmalat</h5>
-                            <p class="card-text">Makine görevlerini yönetin, zamanlayıcıları kullanın ve üretim süreçlerini takip edin.</p>
-                            <div class="card-features">
-                                <span class="feature-tag"><i class="fas fa-clock"></i> Zamanlayıcı</span>
-                                <span class="feature-tag"><i class="fas fa-tasks"></i> Görev Yönetimi</span>
-                                <span class="feature-tag"><i class="fas fa-chart-line"></i> Raporlama</span>
-                            </div>
-                            <div class="card-action">
-                                <span class="action-text">
-                                    <i class="fas fa-arrow-right me-2"></i>Modüle Git
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Maintenance Module -->
-                <div class="col-md-6 col-lg-6">
-                    <div class="module-card clickable" id="maintenance-card" onclick="window.location.href='/maintenance'">
-                        <div class="card-icon">
-                            <i class="fas fa-tools"></i>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title">Bakım</h5>
-                            <p class="card-text">Bakım taleplerini yönetin, planlı bakımları takip edin ve ekipman durumlarını izleyin.</p>
-                            <div class="card-features">
-                                <span class="feature-tag"><i class="fas fa-wrench"></i> Bakım Talepleri</span>
-                                <span class="feature-tag"><i class="fas fa-calendar"></i> Planlı Bakım</span>
-                                <span class="feature-tag"><i class="fas fa-clipboard-list"></i> Kontrol Listeleri</span>
-                            </div>
-                            <div class="card-action">
-                                <span class="action-text">
-                                    <i class="fas fa-arrow-right me-2"></i>Modüle Git
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Menu Component Placeholder -->
+            <div id="menu-placeholder"></div>
         </div>
-    </section>
+    </div>
 
     <!-- Footer -->
     <footer class="footer-section">

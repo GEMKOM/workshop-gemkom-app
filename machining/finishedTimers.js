@@ -191,9 +191,6 @@ function renderFinishedTimers(timers) {
                         <h5>${timer.issue_key || 'Bilinmeyen İş'}</h5>
                         <p class="timer-subtitle">${timer.issue_name || 'Açıklama yok'}</p>
                     </div>
-                    <div class="timer-status">
-                        <span class="status-badge completed">Tamamlandı</span>
-                    </div>
                 </div>
                 
                 <div class="timer-details">

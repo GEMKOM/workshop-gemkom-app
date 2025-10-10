@@ -6,6 +6,7 @@ import { fetchMachines } from '../../generic/machines.js';
 import { createMaintenanceRequest } from '../maintenanceApi.js';
 import { ModernDropdown } from '../../components/dropdown/dropdown.js';
 import { extractResultsFromResponse } from '../../generic/paginationHelper.js';
+import { HeaderComponent } from '../../components/header/header.js';
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -26,9 +27,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     initNavbar();
+    setupHeader();
     setupRefreshButton();
     loadCreateRequestContent();
 });
+
+// ============================================================================
+// HEADER SETUP
+// ============================================================================
+
+function setupHeader() {
+    const headerConfig = {
+        title: 'Yeni Bakım Talebi',
+        subtitle: 'Yeni bir bakım veya arıza talebi oluşturun. Detaylı bilgi vererek daha hızlı çözüm sağlayabilirsiniz.',
+        icon: 'plus-circle',
+        containerId: 'header-placeholder',
+        showBackButton: 'block',
+        showCreateButton: 'none',
+        showBulkCreateButton: 'none',
+        showExportButton: 'none',
+        showRefreshButton: 'none',
+        backUrl: '../index.html'
+    };
+    
+    new HeaderComponent(headerConfig);
+}
 
 // ============================================================================
 // CONTENT LOADING
