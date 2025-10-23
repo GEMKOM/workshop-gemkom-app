@@ -1,5 +1,5 @@
 // --- finishedTimers.js ---
-import { fetchTimers } from '../generic/timers.js';
+import { fetchTimers } from './cnc_cuttingTimers.js';
 import { Pagination } from '../components/pagination/pagination.js';
 import { formatDateTime, formatDurationFromHoursToMinutes } from '../generic/formatters.js';
 import { HeaderComponent } from '../components/header/header.js';
@@ -162,7 +162,7 @@ async function loadFinishedTimersData(page = 1) {
             iconBackground: '#d4edda',
             details: [
                 {
-                    icon: 'fas fa-cog',
+                    icon: 'fas fa-cut',
                     label: 'Makine:',
                     value: timer.machine_name || 'Bilinmeyen'
                 },
@@ -256,4 +256,4 @@ function bindFinishedTimersEvents() {
 
 
 // Make the function globally accessible
-window.loadFinishedTimersData = loadFinishedTimersData; 
+window.loadFinishedTimersData = loadFinishedTimersData;

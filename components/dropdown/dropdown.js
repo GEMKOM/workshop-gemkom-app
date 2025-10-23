@@ -34,6 +34,11 @@ export class ModernDropdown {
     }
     
     createDropdown() {
+        if (!this.container) {
+            console.error('Dropdown container is null. Cannot create dropdown.');
+            return;
+        }
+        
         this.container.innerHTML = '';
         this.container.className = 'modern-dropdown-container';
         
@@ -81,6 +86,11 @@ export class ModernDropdown {
     }
     
     bindEvents() {
+        if (!this.container || !this.dropdown || !this.selectedDisplay) {
+            console.error('Dropdown elements not properly initialized. Cannot bind events.');
+            return;
+        }
+        
         // Toggle dropdown
         this.selectedDisplay.addEventListener('click', (e) => {
             e.stopPropagation();

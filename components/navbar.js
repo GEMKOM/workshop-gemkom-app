@@ -24,6 +24,9 @@ export function createNavbar() {
                     <li class="nav-item machining-only" style="display: none;">
                         <a class="nav-link" href="/machining">Talaşlı İmalat</a>
                     </li>
+                    <li class="nav-item cnc-cutting-only" style="display: none;">
+                        <a class="nav-link" href="/cnc_cutting">CNC Kesim</a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
@@ -78,6 +81,14 @@ export function createNavbar() {
         machiningTab.style.display = 'block';
     } else {
         machiningTab.style.display = 'none';
+    }
+    
+    // Show CNC cutting tab if user is cnc_cutting team or admin
+    const cncCuttingTab = navbar.querySelector('.cnc-cutting-only');
+    if (isAdmin() || (user && user.team === 'cnc_cutting')) {
+        cncCuttingTab.style.display = 'block';
+    } else {
+        cncCuttingTab.style.display = 'none';
     }
 
     return navbar;
@@ -202,6 +213,12 @@ export function initNavbar() {
                                 <span>Talaşlı İmalat</span>
                             </a>
                         </li>
+                        <li class="nav-item cnc-cutting-only" style="display: none;">
+                            <a class="nav-link" href="/cnc_cutting">
+                                <i class="fas fa-cut me-1"></i>
+                                <span>CNC Kesim</span>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/maintenance">
                                 <i class="fas fa-tools me-1"></i>
@@ -302,6 +319,14 @@ export function initNavbar() {
           machiningTab.style.display = 'block';
       } else {
           machiningTab.style.display = 'none';
+      }
+      
+      // Show CNC cutting tab if user is cnc_cutting team or admin
+      const cncCuttingTab = navbarContainer.querySelector('.cnc-cutting-only');
+      if (isAdmin() || user.team === 'cnc_cutting') {
+          cncCuttingTab.style.display = 'block';
+      } else {
+          cncCuttingTab.style.display = 'none';
       }
     }
     

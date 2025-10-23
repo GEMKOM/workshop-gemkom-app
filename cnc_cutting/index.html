@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GEMKOM - Talaşlı İmalat</title>
+    <title>GEMKOM - CNC Kesim</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../style.css">
-    <link rel="stylesheet" href="machining.css">
+    <link rel="stylesheet" href="cnc_cutting.css">
     <link rel="stylesheet" href="../components/genericCard/genericCard.css">
     <link rel="stylesheet" href="../components/header/header.css">
     <link rel="stylesheet" href="../components/machineTaskView.css">
@@ -31,8 +31,8 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <h1 class="page-title">
-                        <i class="fas fa-cogs me-3"></i>
-                        Talaşlı İmalat
+                        <i class="fas fa-cut me-3"></i>
+                        CNC Kesim
                     </h1>
                     <p class="page-subtitle">Makine görevlerini görüntüleyin ve zamanlayıcıları yönetin. </p>
                 </div>
@@ -55,6 +55,10 @@
                             <i class="fas fa-check-circle me-2"></i>
                             <span class="tab-label">Biten Zamanlayıcılar</span>
                         </button>
+                        <button class="tab-button" data-tab="task-overview">
+                            <i class="fas fa-columns me-2"></i>
+                            <span class="tab-label">Görev Genel Bakış</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -76,8 +80,8 @@
     <!-- Bootstrap JS and Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../components/refreshButton.js"></script>
-    <script type="module" src="machiningService.js"></script>
-    <script type="module" src="machining.js"></script>
+    <script type="module" src="cnc_cuttingService.js"></script>
+    <script type="module" src="cnc_cutting.js"></script>
     <!-- Timer Widget -->
     <script type="module" src="../components/timerWidgetInit.js"></script>
 </body>

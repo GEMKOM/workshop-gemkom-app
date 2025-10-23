@@ -71,6 +71,11 @@ export async function createMachineTaskView({
     const machineDropdownContainer = container.querySelector('#machine-dropdown-container');
     let machineDropdown = null;
     
+    if (!machineDropdownContainer) {
+        console.error('Machine dropdown container not found. Cannot initialize dropdown.');
+        return;
+    }
+    
     // Create dropdown items from machines
     const dropdownItems = machines.map(machine => {
         let label = machine.name;

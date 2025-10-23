@@ -35,7 +35,7 @@ function createActiveTimersHTML() {
             <div class="machine-selection-section">
                 <div class="section-header">
                     <h3 class="section-title">
-                        <i class="fas fa-cogs me-2"></i>
+                        <i class="fas fa-cut me-2"></i>
                         Makine Seçimi
                     </h3>
                     <p class="section-subtitle">Çalışmak istediğiniz makineyi seçin</p>
@@ -130,7 +130,7 @@ function setupSearchInput() {
 async function loadMachinesAndSetupDropdown() {
     try {
         // Load machines
-        const machinesData = await fetchMachines({ used_in: "machining", is_active: true });
+        const machinesData = await fetchMachines({ used_in: "cutting", is_active: true });
         allMachines = machinesData.results || machinesData;
         
         // Setup machine dropdown
@@ -183,7 +183,7 @@ function setupMachineDropdown() {
         const selectedMachine = allMachines.find(m => String(m.id) === String(selectedMachineId));
         if (selectedMachine) {
             // Update URL without page reload
-            const newUrl = `/machining/?machine_id=${encodeURIComponent(selectedMachine.id)}`;
+            const newUrl = `/cnc_cutting/?machine_id=${encodeURIComponent(selectedMachine.id)}`;
             window.history.pushState({ machineId: selectedMachine.id }, '', newUrl);
             
             // Load tasks for the selected machine
@@ -214,7 +214,7 @@ async function loadTasksForMachine(machineId) {
     
     try {
         const { fetchMachineTasks } = await import('../generic/tasks.js');
-        allTasks = await fetchMachineTasks('machining', { machineId, inPlan: true, completionDateIsNull: true, ordering: 'plan_order' });
+        allTasks = await fetchMachineTasks('cnc_cutting', { machineId, inPlan: true, completionDateIsNull: true, ordering: 'plan_order' });
         
         // Display tasks
         filterAndDisplayTasks();
@@ -273,29 +273,39 @@ function formatTasksForResultsTable(tasks) {
     return tasks.map(task => ({
         title: task.key || 'Görev',
         subtitle: task.name || 'Açıklama yok',
-        icon: 'fas fa-cog',
+        icon: 'fas fa-cut',
         iconColor: '#6c757d',
         iconBackground: '#f8f9fa',
         details: [
             {
-                icon: 'fas fa-hashtag',
-                label: 'İş Emri:',
-                value: task.job_no || '-'
+                icon: 'fas fa-layer-group',
+                label: 'Nesting ID:',
+                value: task.nesting_id || '-'
             },
             {
-                icon: 'fas fa-image',
-                label: 'Resim:',
-                value: task.image_no || '-'
+                icon: 'fas fa-cube',
+                label: 'Malzeme:',
+                value: task.material || '-'
             },
             {
-                icon: 'fas fa-map-marker-alt',
-                label: 'Pozisyon:',
-                value: task.position_no || '-'
+                icon: 'fas fa-ruler',
+                label: 'Boyutlar:',
+                value: task.dimensions || '-'
+            },
+            {
+                icon: 'fas fa-ruler-vertical',
+                label: 'Kalınlık:',
+                value: task.thickness_mm ? `${task.thickness_mm} mm` : '-'
             },
             {
                 icon: 'fas fa-cubes',
-                label: 'Adet:',
-                value: task.quantity || '-'
+                label: 'Parça Sayısı:',
+                value: task.parts ? task.parts.length : (task.parts_count || '-')
+            },
+            {
+                icon: 'fas fa-paperclip',
+                label: 'Dosya Sayısı:',
+                value: task.files ? task.files.length : '0'
             },
             ...(task.finish_time ? [{
                 icon: 'fas fa-calendar-alt',
@@ -309,7 +319,7 @@ function formatTasksForResultsTable(tasks) {
             const params = new URLSearchParams(window.location.search);
             const machineId = params.get('machine_id') || resultsTableInstance.getFilterValues()['machine-select'];
             if (task.key && machineId) {
-                window.location.href = `/machining/tasks/?machine_id=${encodeURIComponent(machineId)}&key=${task.key}`;
+                window.location.href = `/cnc_cutting/tasks/?machine_id=${encodeURIComponent(machineId)}&key=${task.key}`;
             }
         }
     }));
@@ -332,4 +342,4 @@ function bindActiveTimersEvents() {
             filterAndDisplayTasks();
         }
     });
-} 
+}

@@ -45,3 +45,33 @@ export function formatDuration(startTime) {
     const s = (elapsed % 60).toString().padStart(2, '0');
     return `${h}:${m}:${s}`;
   }
+
+  /**
+ * Formats a date string to Turkish locale
+ * @param {string} dateString - ISO date string
+ * @returns {string} Formatted date string
+ */
+export function formatDateTime(dateString) {
+    return new Date(dateString).toLocaleString('tr-TR');
+}
+
+/**
+ * Formats duration from hours to a readable string
+ * @param {number} durationHours - Duration in hours
+ * @returns {string} Formatted duration string
+ */
+export function formatDurationFromHoursToMinutes(durationHours) {
+    if (!durationHours || durationHours === 0) {
+        return '0dk';
+    }
+    
+    const totalMinutes = Math.round(durationHours * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0) {
+        return `${hours}s ${minutes}dk`;
+    } else {
+        return `${minutes}dk`;
+    }
+}

@@ -16,6 +16,7 @@ export class GenericCard {
             clickable: false,
             onClick: null,
             className: '',
+            itemsPerRow: 2, // Number of detail items per row
             ...options
         };
         
@@ -106,8 +107,8 @@ export class GenericCard {
         const detailsContainer = document.createElement('div');
         detailsContainer.className = 'generic-card-details';
         
-        // Group details into rows (2 items per row by default)
-        const rows = this.groupDetailsIntoRows(this.options.details);
+        // Group details into rows based on itemsPerRow option
+        const rows = this.groupDetailsIntoRows(this.options.details, this.options.itemsPerRow);
         
         rows.forEach(row => {
             const detailRow = document.createElement('div');
