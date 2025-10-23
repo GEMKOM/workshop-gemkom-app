@@ -219,6 +219,12 @@ export function initNavbar() {
                                 <span>CNC Kesim</span>
                             </a>
                         </li>
+                        <li class="nav-item warehouse-only" style="display: none;">
+                            <a class="nav-link" href="/warehouse">
+                                <i class="fas fa-warehouse me-1"></i>
+                                <span>Depo</span>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/maintenance">
                                 <i class="fas fa-tools me-1"></i>
@@ -327,6 +333,14 @@ export function initNavbar() {
           cncCuttingTab.style.display = 'block';
       } else {
           cncCuttingTab.style.display = 'none';
+      }
+      
+      // Show warehouse tab if user is warehouse team or admin
+      const warehouseTab = navbarContainer.querySelector('.warehouse-only');
+      if (isAdmin() || user.team === 'warehouse') {
+          warehouseTab.style.display = 'block';
+      } else {
+          warehouseTab.style.display = 'none';
       }
     }
     

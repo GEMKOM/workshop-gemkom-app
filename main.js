@@ -45,6 +45,26 @@ function setupHomeMenu(user) {
             visibleTo: ['machining', 'admin']
         },
         {
+            title: 'CNC Kesim',
+            description: 'CNC kesim görevlerini yönetin, zamanlayıcıları kullanın ve kesim süreçlerini takip edin.',
+            icon: 'fas fa-cut',
+            iconColor: 'danger',
+            link: 'cnc_cutting/',
+            features: [],
+            // Only visible to cnc_cutting team or admins
+            visibleTo: ['cnc_cutting', 'admin']
+        },
+        {
+            title: 'Depo',
+            description: 'Stok takibi, malzeme yönetimi ve envanter işlemlerini gerçekleştirin.',
+            icon: 'fas fa-warehouse',
+            iconColor: 'warning',
+            link: 'warehouse/',
+            features: [],
+            // Only visible to warehouse team or admins
+            visibleTo: ['warehouse', 'admin']
+        },
+        {
             title: 'Bakım',
             description: 'Bakım taleplerini yönetin, planlı bakımları takip edin ve ekipman durumlarını izleyin.',
             icon: 'fas fa-tools',
