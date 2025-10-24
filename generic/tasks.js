@@ -98,7 +98,8 @@ export async function fetchAllTasks(module = 'machining') {
     try {
         const data = await fetchTasks({
             module,
-            pageSize: 1000 // Large page size to get all tasks
+            pageSize: 1000, // Large page size to get all tasks
+            completionDateIsNull: true
         });
         
         // Return results array or the data itself if not paginated

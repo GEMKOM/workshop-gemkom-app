@@ -1,5 +1,6 @@
 // --- warehouse.js ---
 import { initNavbar } from '../components/navbar.js';
+import { MenuComponent } from '../components/menu/menu.js';
 
 // ============================================================================
 // INITIALIZATION
@@ -9,24 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize navbar
     initNavbar();
     
-    // Setup refresh button
-    setupRefreshButton();
-    
     // Load initial content
     loadWarehouseContent();
 });
 
-// ============================================================================
-// REFRESH BUTTON SETUP
-// ============================================================================
-
-function setupRefreshButton() {
-    const refreshButton = new RefreshButton('refresh-btn-container', {
-        onRefresh: async () => {
-            loadWarehouseContent();
-        }
-    });
-}
 
 // ============================================================================
 // CONTENT LOADING
@@ -35,44 +22,35 @@ function setupRefreshButton() {
 function loadWarehouseContent() {
     const mainView = document.getElementById('main-view');
     
-    mainView.innerHTML = `
-        <div class="warehouse-view">
-            <div class="row g-4">
-                <!-- Placeholder cards for future features -->
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-boxes"></i>
-                        </div>
-                        <h5>Stok Takibi</h5>
-                        <p class="text-muted">Malzeme ve ürün stoklarını takip edin</p>
-                        <span class="badge bg-warning">Yakında</span>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-dolly"></i>
-                        </div>
-                        <h5>Giriş/Çıkış</h5>
-                        <p class="text-muted">Malzeme giriş ve çıkış işlemlerini yönetin</p>
-                        <span class="badge bg-warning">Yakında</span>
-                    </div>
-                </div>
-                
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
-                        <h5>Envanter</h5>
-                        <p class="text-muted">Envanter sayımı ve raporlama</p>
-                        <span class="badge bg-warning">Yakında</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+    // Define warehouse menu cards
+    const warehouseCards = [
+        {
+            title: 'Ağırlık Düşüşü',
+            description: 'CNC kesim işlemlerinden kaynaklanan ağırlık düşüşlerini takip edin',
+            icon: 'fas fa-weight-hanging',
+            iconColor: 'info',
+            link: 'weight-reduction/',
+            features: []
+        },
+        {
+            title: 'Stok Kontrol',
+            description: 'Mevcut stokları kontrol edin ve stok durumlarını takip edin',
+            icon: 'fas fa-clipboard-check',
+            iconColor: 'success',
+            link: '#',
+            features: []
+        }
+    ];
+    
+    // Create menu config
+    const menuConfig = {
+        title: 'Depo Yönetimi',
+        subtitle: 'Stok takibi, malzeme yönetimi ve envanter işlemleri',
+        cards: warehouseCards
+    };
+    
+    // Create and render menu component
+    const menu = new MenuComponent('main-view', menuConfig);
+    menu.render();
 }
 

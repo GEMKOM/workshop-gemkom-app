@@ -124,12 +124,18 @@ function groupTasksByMachine(tasks) {
             }
         } else {
             // Has machine assigned
-            const machineId = task.machine_fk;
-            if (groups.machines[machineId]) {
-                groups.machines[machineId].push(task);
+            if (task.in_plan === false) {
+                // Even with machine, if not in plan, add to noMachineNotInPlan
+                groups.noMachineNotInPlan.push(task);
             } else {
-                // Machine not in our list, but has tasks
-                groups.machines[machineId] = [task];
+                // Has machine and is in plan
+                const machineId = task.machine_fk;
+                if (groups.machines[machineId]) {
+                    groups.machines[machineId].push(task);
+                } else {
+                    // Machine not in our list, but has tasks
+                    groups.machines[machineId] = [task];
+                }
             }
         }
     });
@@ -501,8 +507,8 @@ function renderPartsTable(parts) {
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
-                        <th>Job No</th>
-                        <th>İmaj No</th>
+                        <th>İş Emri No</th>
+                        <th>Resim No</th>
                         <th>Pozisyon No</th>
                         <th>Ağırlık (kg)</th>
                     </tr>
