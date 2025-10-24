@@ -517,6 +517,932 @@ body {
 }
 
 /* ============================================================================
+   CUSTOM EQUIPMENT WARNING MODAL
+   ============================================================================ */
+
+.custom-equipment-warning-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1060;
+    backdrop-filter: blur(8px);
+    padding: 1rem;
+}
+
+.warning-modal-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    overflow: hidden;
+    animation: warningSlideIn 0.3s ease-out;
+}
+
+@keyframes warningSlideIn {
+    from {
+        transform: scale(0.9) translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.warning-header {
+    padding: 1.5rem 1.5rem 1rem;
+    background: linear-gradient(135deg, #ffc107, #ff8f00);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.warning-icon {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.warning-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.warning-title h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+}
+
+.warning-title p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+}
+
+.warning-body {
+    padding: 1.5rem;
+}
+
+.warning-message p {
+    color: #2c3e50;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.warning-message strong {
+    color: #8B0000;
+    font-weight: 600;
+}
+
+.warning-message ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.warning-message li {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    color: #495057;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.warning-message li i {
+    color: #28a745;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.warning-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    background: #f8f9fa;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.warning-footer .btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.warning-footer .btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+}
+
+.warning-footer .btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
+}
+
+.warning-footer .btn-primary {
+    background: linear-gradient(135deg, #8B0000, #b40024);
+    color: white;
+    border: none;
+}
+
+.warning-footer .btn-primary:hover {
+    background: linear-gradient(135deg, #b40024, #8B0000);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+}
+
+/* Mobile Responsive for Warning Modal */
+@media (max-width: 576px) {
+    .custom-equipment-warning-modal {
+        padding: 0.5rem;
+    }
+    
+    .warning-modal-content {
+        max-width: 100%;
+    }
+    
+    .warning-header {
+        padding: 1.25rem 1.25rem 1rem;
+    }
+    
+    .warning-icon {
+        padding: 0.6rem;
+    }
+    
+    .warning-icon i {
+        font-size: 1.25rem;
+    }
+    
+    .warning-title h4 {
+        font-size: 1.1rem;
+    }
+    
+    .warning-title p {
+        font-size: 0.85rem;
+    }
+    
+    .warning-body {
+        padding: 1.25rem;
+    }
+    
+    .warning-message p {
+        font-size: 0.9rem;
+    }
+    
+    .warning-message li {
+        font-size: 0.85rem;
+    }
+    
+    .warning-footer {
+        padding: 1rem 1.25rem 1.25rem;
+        flex-direction: column;
+    }
+    
+    .warning-footer .btn {
+        justify-content: center;
+        padding: 0.875rem 1.25rem;
+    }
+}
+
+/* ============================================================================
+   MACHINE SELECTION STYLES
+   ============================================================================ */
+
+.selected-machine-display {
+    margin-top: 0.5rem;
+}
+
+.selected-machine-card {
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.02), rgba(180, 0, 36, 0.02));
+    border: 2px solid rgba(139, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.selected-machine-card:hover {
+    border-color: rgba(139, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(139, 0, 0, 0.1);
+}
+
+.selected-machine-info {
+    flex: 1;
+}
+
+.selected-machine-name {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.machine-type-badge {
+    display: inline-block;
+    background: var(--gradient-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 0.5rem;
+}
+
+.machine-code {
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin: 0.25rem 0;
+}
+
+.machine-users {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* Machine Selection Modal - Professional Mobile-First Design */
+.machine-selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    z-index: 1050;
+    backdrop-filter: blur(8px);
+}
+
+.machine-selection-modal-content {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
+    margin: 2rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.machine-selection-header {
+    padding: 1.5rem 1.5rem 1rem;
+    background: linear-gradient(135deg, #8B0000, #b40024);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.header-icon {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.header-text h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+}
+
+.header-text p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 400;
+}
+
+.btn-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.btn-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.btn-close i {
+    font-size: 1.1rem;
+}
+
+.machine-selection-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    background: #f8f9fa;
+}
+
+.search-container {
+    margin-bottom: 1.5rem;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.search-input-wrapper:focus-within {
+    border-color: #8B0000;
+    box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    color: #6c757d;
+    font-size: 1rem;
+    z-index: 1;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    color: #2c3e50;
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: #6c757d;
+    font-weight: 400;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 1rem;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1;
+}
+
+.search-clear-btn:hover {
+    background: #495057;
+    transform: scale(1.1);
+}
+
+.search-clear-btn i {
+    font-size: 0.7rem;
+}
+
+.machine-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Desktop Grid Layout */
+@media (min-width: 1024px) {
+    .machine-selection-modal-content {
+        max-width: 1000px;
+        margin: 2rem auto;
+    }
+    
+    .machine-cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .machine-card {
+        max-width: none;
+    }
+}
+
+/* Large Desktop Screens */
+@media (min-width: 1400px) {
+    .machine-selection-modal-content {
+        max-width: 1200px;
+    }
+    
+    .machine-cards-container {
+        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        gap: 2rem;
+    }
+}
+
+.machine-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+}
+
+.machine-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(139, 0, 0, 0.15);
+    border-color: rgba(139, 0, 0, 0.2);
+}
+
+.machine-card:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.machine-card-header {
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.machine-icon {
+    background: linear-gradient(135deg, #8B0000, #b40024);
+    color: white;
+    border-radius: 10px;
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.machine-icon i {
+    font-size: 1.25rem;
+}
+
+.machine-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.machine-info .machine-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.3;
+}
+
+.machine-info .machine-code {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.machine-type-badge {
+    background: linear-gradient(135deg, #8B0000, #b40024);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.machine-card-body {
+    padding: 1rem 1.25rem;
+}
+
+.assigned-users-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.users-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.users-label i {
+    color: #8B0000;
+    font-size: 0.9rem;
+}
+
+.assigned-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.user-badge {
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.1), rgba(180, 0, 36, 0.1));
+    color: #8B0000;
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid rgba(139, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.no-users {
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+.machine-card-footer {
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.02), rgba(180, 0, 36, 0.02));
+    border-top: 1px solid #f0f0f0;
+}
+
+.select-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #8B0000;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.select-indicator i {
+    font-size: 1rem;
+}
+
+/* No Results Message */
+.no-results-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.no-results-content {
+    max-width: 400px;
+}
+
+.no-results-content i {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.no-results-content h4 {
+    color: #2c3e50;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.no-results-content p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+}
+
+
+/* Tablet and Desktop Responsive Styles */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .machine-selection-modal-content {
+        max-width: 800px;
+        margin: 1.5rem;
+    }
+    
+    .machine-cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+/* Mobile Responsive Styles for Machine Selection */
+@media (max-width: 768px) {
+    .machine-selection-modal-content {
+        max-height: 90vh;
+        border-radius: 16px;
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+    
+    .machine-selection-header {
+        padding: 1.25rem 1.25rem 1rem;
+    }
+    
+    .header-content {
+        gap: 0.75rem;
+    }
+    
+    .header-icon {
+        padding: 0.6rem;
+    }
+    
+    .header-icon i {
+        font-size: 1.25rem;
+    }
+    
+    .header-text h4 {
+        font-size: 1.1rem;
+    }
+    
+    .header-text p {
+        font-size: 0.85rem;
+    }
+    
+    .machine-selection-body {
+        padding: 1.25rem;
+    }
+    
+    .search-container {
+        margin-bottom: 1.25rem;
+    }
+    
+    .search-input {
+        font-size: 0.9rem;
+        padding: 0.875rem 0.875rem 0.875rem 2.75rem;
+    }
+    
+    .search-icon {
+        left: 0.875rem;
+        font-size: 0.9rem;
+    }
+    
+    .search-clear-btn {
+        right: 0.875rem;
+        width: 22px;
+        height: 22px;
+    }
+    
+    .machine-card-header {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+    
+    .machine-icon {
+        padding: 0.6rem;
+    }
+    
+    .machine-icon i {
+        font-size: 1.1rem;
+    }
+    
+    .machine-info .machine-name {
+        font-size: 1rem;
+    }
+    
+    .machine-info .machine-code {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .machine-type-badge {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .machine-card-body {
+        padding: 0.75rem 1rem;
+    }
+    
+    .user-badge {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    .machine-card-footer {
+        padding: 0.75rem 1rem;
+    }
+    
+    .select-indicator {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .machine-selection-modal-content {
+        max-height: 95vh;
+        border-radius: 12px;
+        margin: 0.5rem;
+        max-width: calc(100% - 1rem);
+    }
+    
+    .machine-selection-header {
+        padding: 1rem 1rem 0.75rem;
+    }
+    
+    .header-content {
+        gap: 0.6rem;
+    }
+    
+    .header-icon {
+        padding: 0.5rem;
+    }
+    
+    .header-icon i {
+        font-size: 1.1rem;
+    }
+    
+    .header-text h4 {
+        font-size: 1rem;
+    }
+    
+    .header-text p {
+        font-size: 0.8rem;
+    }
+    
+    .btn-close {
+        width: 36px;
+        height: 36px;
+        padding: 0.6rem;
+    }
+    
+    .machine-selection-body {
+        padding: 1rem;
+    }
+    
+    .search-container {
+        margin-bottom: 1rem;
+    }
+    
+    .search-input {
+        font-size: 0.85rem;
+        padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+    }
+    
+    .search-icon {
+        left: 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .search-clear-btn {
+        right: 0.75rem;
+        width: 20px;
+        height: 20px;
+    }
+    
+    .no-results-content i {
+        font-size: 2.5rem;
+    }
+    
+    .no-results-content h4 {
+        font-size: 1.1rem;
+    }
+    
+    .no-results-content p {
+        font-size: 0.85rem;
+    }
+    
+    .machine-cards-container {
+        gap: 0.75rem;
+    }
+    
+    .machine-card-header {
+        padding: 0.875rem;
+        gap: 0.6rem;
+    }
+    
+    .machine-icon {
+        padding: 0.5rem;
+    }
+    
+    .machine-icon i {
+        font-size: 1rem;
+    }
+    
+    .machine-info .machine-name {
+        font-size: 0.95rem;
+    }
+    
+    .machine-info .machine-code {
+        font-size: 0.75rem;
+        padding: 0.15rem 0.35rem;
+    }
+    
+    .machine-type-badge {
+        font-size: 0.7rem;
+        padding: 0.35rem 0.5rem;
+    }
+    
+    .machine-card-body {
+        padding: 0.6rem 0.875rem;
+    }
+    
+    .users-label {
+        font-size: 0.8rem;
+    }
+    
+    .user-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .machine-card-footer {
+        padding: 0.6rem 0.875rem;
+    }
+    
+    .select-indicator {
+        font-size: 0.8rem;
+    }
+    
+    .selected-machine-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .selected-machine-card .btn {
+        align-self: stretch;
+        text-align: center;
+    }
+}
+
+/* ============================================================================
    ACCESSIBILITY STYLES
    ============================================================================ */
 
