@@ -214,7 +214,7 @@ async function loadTasksForMachine(machineId) {
     
     try {
         const { fetchMachineTasks } = await import('../generic/tasks.js');
-        allTasks = await fetchMachineTasks('cnc_cutting', { machineId,  completionDateIsNull: true, in_plan: true, ordering: 'plan_order' });
+        allTasks = await fetchMachineTasks('cnc_cutting', { machineId,  completionDateIsNull: true, in_plan: true, ordering: 'plan_order', pageSize: 5 });
         
         // Display tasks
         filterAndDisplayTasks();
@@ -271,17 +271,12 @@ function filterTasksBySearch(tasks, searchTerm) {
  */
 function formatTasksForResultsTable(tasks) {
     return tasks.map(task => ({
-        title: task.key || 'Görev',
-        subtitle: task.name || 'Açıklama yok',
+        title: task.nesting_id || 'Görev',
+        subtitle: task.key || 'Açıklama yok',
         icon: 'fas fa-cut',
         iconColor: '#6c757d',
         iconBackground: '#f8f9fa',
         details: [
-            {
-                icon: 'fas fa-layer-group',
-                label: 'Nesting ID:',
-                value: task.nesting_id || '-'
-            },
             {
                 icon: 'fas fa-cube',
                 label: 'Malzeme:',
@@ -301,11 +296,6 @@ function formatTasksForResultsTable(tasks) {
                 icon: 'fas fa-cubes',
                 label: 'Parça Sayısı:',
                 value: task.parts ? task.parts.length : (task.parts_count || '-')
-            },
-            {
-                icon: 'fas fa-paperclip',
-                label: 'Dosya Sayısı:',
-                value: task.files ? task.files.length : '0'
             },
             ...(task.finish_time ? [{
                 icon: 'fas fa-calendar-alt',

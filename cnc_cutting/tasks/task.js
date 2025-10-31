@@ -60,7 +60,7 @@ function initializeTimerPage(issue, activeTimer) {
     // Create timer page component
     timerPageComponent = new TimerPage('timer-page-container', {
         // Header configuration
-        title: issue.key,
+        title: issue.nesting_id,
         subtitle: state.currentMachine.name,
         showBackButton: true,
         backButtonText: 'Geri',
