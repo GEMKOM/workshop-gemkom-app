@@ -129,6 +129,8 @@ export function navigateByTeam(user) {
         navigateTo(ROUTES.MACHINING);
     } else if (user.team === 'maintenance') {
         navigateTo(ROUTES.MAINTENANCE_LIST);
+    } else if (user.team === 'cutting') {
+        navigateTo(ROUTES.CNC_CUTTING);
     } else {
         navigateTo(ROUTES.HOME);
     }

@@ -52,7 +52,7 @@ function setupHomeMenu(user) {
             link: 'cnc_cutting/',
             features: [],
             // Only visible to cnc_cutting team or admins
-            visibleTo: ['cnc_cutting', 'admin']
+            visibleTo: ['cutting', 'admin']
         },
         {
             title: 'Depo',

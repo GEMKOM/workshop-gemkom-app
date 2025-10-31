@@ -140,6 +140,22 @@ function groupTasksByMachine(tasks) {
         }
     });
     
+    // Sort all groups by plan_order (ascending: 1, 2, 3, 4...)
+    // Tasks without plan_order will be placed at the end
+    function sortByPlanOrder(a, b) {
+        const orderA = a.plan_order ?? Infinity;
+        const orderB = b.plan_order ?? Infinity;
+        return orderA - orderB;
+    }
+    
+    groups.noMachineNotInPlan.sort(sortByPlanOrder);
+    groups.noMachineInPlan.sort(sortByPlanOrder);
+    
+    // Sort tasks for each machine
+    Object.keys(groups.machines).forEach(machineId => {
+        groups.machines[machineId].sort(sortByPlanOrder);
+    });
+    
     return groups;
 }
 
@@ -222,8 +238,8 @@ function createTaskCard(task, container) {
     const thickness = task.thickness_mm ? `${task.thickness_mm} mm` : '-';
     
     const cardOptions = {
-        title: task.key,
-        subtitle: nestingId !== '-' ? `Nesting: ${nestingId}` : 'Nesting bilgisi yok',
+        title: nestingId,
+        subtitle: task.key,
         icon: 'fas fa-tasks',
         iconColor: '#3b82f6',
         iconBackground: '#dbeafe',
