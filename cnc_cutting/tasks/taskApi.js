@@ -130,6 +130,19 @@ export async function markTaskAsDone() {
     return response.ok;
 }
 
+export async function markAsWareHouseProcessed(taskKey = null) {
+    const key = taskKey || state.currentIssue.key;
+    const response = await authedFetch(`${backendBase}/cnc_cutting/tasks/warehouse-process/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            key: key
+        })
+    });
+        
+    return response.ok;
+}
+
 
 
 

@@ -5,6 +5,7 @@ import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
 import { fetchTasks, fetchTaskById } from '../../generic/tasks.js';
 import { FileAttachments } from '../../components/file-attachments/file-attachments.js';
 import { FileViewer } from '../../components/file-viewer/file-viewer.js';
+import { markAsWareHouseProcessed } from '../../cnc_cutting/tasks/taskApi.js';
 
 // ============================================================================
 // INITIALIZATION
@@ -82,7 +83,8 @@ async function loadCompletedTasks() {
         // Build query options for completed CNC cutting tasks
         const options = {
             module: 'cnc_cutting',
-            completionDateIsNull: false, // Only completed tasks
+            completionDateIsNull: false,
+            isWarehouseProcessed: false, // Only completed tasks
             ordering: '-completion_date', // Most recent first
             pageSize: 50
         };
@@ -211,6 +213,12 @@ function showTaskDetailsModal(task) {
     
     // Bind modal events
     bindModalEvents();
+    
+    // Store task for later use
+    const modal = document.getElementById('taskDetailsModal');
+    if (modal) {
+        modal.currentTask = task;
+    }
 }
 
 /**
@@ -302,6 +310,9 @@ function createTaskDetailsModalHTML(task) {
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="submit-warehouse-btn">
+                            <i class="fas fa-check me-2"></i>Depo İşlemini Tamamla
+                        </button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
                     </div>
                 </div>
@@ -417,6 +428,12 @@ function bindModalEvents() {
         btn.addEventListener('click', closeTaskDetailsModal);
     });
     
+    // Submit warehouse processed button
+    const submitBtn = modal.querySelector('#submit-warehouse-btn');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', handleWarehouseSubmit);
+    }
+    
     // Click outside to close
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -434,6 +451,60 @@ function bindModalEvents() {
     
     // Store handler for cleanup
     modal.escapeHandler = escapeHandler;
+}
+
+/**
+ * Handle warehouse submit button click
+ */
+async function handleWarehouseSubmit() {
+    const modal = document.getElementById('taskDetailsModal');
+    if (!modal || !modal.currentTask) return;
+    
+    const task = modal.currentTask;
+    const taskKey = task.key;
+    
+    // Show warning confirmation
+    const confirmed = confirm(
+        `Bu görevi (${taskKey}) depo işlemi olarak işaretlemek istediğinizden emin misiniz?\n\n` +
+        `Bu işlem geri alınamaz.`
+    );
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    // Disable button during processing
+    const submitBtn = document.getElementById('submit-warehouse-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
+    }
+    
+    try {
+        const success = await markAsWareHouseProcessed(taskKey);
+        
+        if (success) {
+            alert(`${taskKey} görevi depo işlemi olarak başarıyla işaretlendi.`);
+            closeTaskDetailsModal();
+            // Reload tasks to reflect the change
+            loadCompletedTasks();
+        } else {
+            alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+            // Re-enable button on error
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Depo İşlemi Tamamla';
+            }
+        }
+    } catch (error) {
+        console.error('Error marking as warehouse processed:', error);
+        alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+        // Re-enable button on error
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Depo İşlemi Tamamla';
+        }
+    }
 }
 
 /**

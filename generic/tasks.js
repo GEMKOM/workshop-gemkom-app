@@ -30,6 +30,7 @@ export async function fetchTasks(options = {}) {
         module = 'machining',
         machineId = null,
         completionDateIsNull = null,
+        isWarehouseProcessed = null,
         inPlan = null,
         ordering = null,
         page = 1,
@@ -71,6 +72,10 @@ export async function fetchTasks(options = {}) {
     
     if (status) {
         params.append('status', status);
+    }
+    
+    if (isWarehouseProcessed !== null) {
+        params.append('processed_by_warehouse', isWarehouseProcessed);
     }
 
     try {
