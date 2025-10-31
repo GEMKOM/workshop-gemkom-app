@@ -168,7 +168,7 @@ function createColumnsHTML(taskGroups) {
     // Column 1: No Machine, Not In Plan
     columnsHTML += createColumnHTML(
         'no-machine-not-plan',
-        'Rezerv (Plan Dışı)',
+        'Rezerv',
         'fas fa-exclamation-triangle',
         'warning',
         taskGroups.noMachineNotInPlan
