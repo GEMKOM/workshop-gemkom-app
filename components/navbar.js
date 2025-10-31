@@ -329,7 +329,7 @@ export function initNavbar() {
       
       // Show CNC cutting tab if user is cnc_cutting team or admin
       const cncCuttingTab = navbarContainer.querySelector('.cnc-cutting-only');
-      if (isAdmin() || user.team === 'cnc_cutting') {
+      if (isAdmin() || user.team === 'cutting') {
           cncCuttingTab.style.display = 'block';
       } else {
           cncCuttingTab.style.display = 'none';
