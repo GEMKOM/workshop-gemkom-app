@@ -5,7 +5,7 @@ import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
 import { fetchTasks, fetchTaskById } from '../../generic/tasks.js';
 import { FileAttachments } from '../../components/file-attachments/file-attachments.js';
 import { FileViewer } from '../../components/file-viewer/file-viewer.js';
-import { markAsWareHouseProcessed } from '../../cnc_cutting/tasks/taskApi.js';
+import { markAsWareHouseProcessed } from '../../generic/tasks.js';
 
 // ============================================================================
 // INITIALIZATION
@@ -82,7 +82,6 @@ async function loadCompletedTasks() {
         
         // Build query options for completed CNC cutting tasks
         const options = {
-            module: 'cnc_cutting',
             completionDateIsNull: false,
             isWarehouseProcessed: false, // Only completed tasks
             ordering: '-completion_date', // Most recent first
@@ -90,7 +89,7 @@ async function loadCompletedTasks() {
         };
         
         // Fetch completed tasks
-        const data = await fetchTasks(options);
+        const data = await fetchTasks(options, 'cnc_cutting');
         
         // Transform tasks for display
         const transformedTasks = data.results.map(task => ({

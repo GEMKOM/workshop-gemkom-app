@@ -44,3 +44,83 @@ export async function fetchMachineTypes() {
     const response = await authedFetch(`${backendBase}/machines/types/`);
     return response.json();
 }
+
+/**
+ * Checks if a machine is under maintenance
+ * @param {number|string} machineId - Machine ID to check
+ * @returns {Promise<boolean>} True if machine is under maintenance, false otherwise
+ */
+export async function checkMachineMaintenance(machineId) {
+    const response = await authedFetch(`${backendBase}/machines/${machineId}/`);
+    
+    if (!response.ok) {
+        return false;
+    }
+    
+    const machine = await response.json();
+    return machine ? machine.is_under_maintenance : false;
+}
+
+/**
+ * Creates a maintenance request (fault report)
+ * @param {Object} requestData - Maintenance request data
+ * @returns {Promise<Object>} Created maintenance request
+ */
+export async function createMaintenanceRequest(requestData) {
+    const response = await authedFetch(`${backendBase}/machines/faults/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to create maintenance request');
+    }
+    
+    return response.json();
+}
+
+/**
+ * Resolves a maintenance request
+ * @param {number|string} requestId - Maintenance request ID
+ * @param {string} resolutionDescription - Description of the resolution
+ * @returns {Promise<Object>} Resolved maintenance request
+ */
+export async function resolveMaintenanceRequest(requestId, resolutionDescription) {
+    const response = await authedFetch(`${backendBase}/machines/faults/${requestId}/`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            resolution_description: resolutionDescription
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to resolve maintenance request');
+    }
+    
+    return response.json();
+}
+
+/**
+ * Fetches all machine faults (maintenance requests)
+ * @returns {Promise<Object>} Machine faults data with pagination info
+ */
+export async function fetchMachineFaults() {
+    const response = await authedFetch(`${backendBase}/machines/faults/?page_size=1000`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to fetch machine faults');
+    }
+    
+    return response.json();
+}

@@ -1,9 +1,7 @@
 import { initNavbar } from '../../components/navbar.js';
 import { guardRoute } from '../../authService.js';
-import { authedFetch } from '../../authService.js';
-import { backendBase } from '../../base.js';
 import { fetchMachines } from '../../generic/machines.js';
-import { createMaintenanceRequest } from '../maintenanceApi.js';
+import { createMaintenanceRequest } from '../../generic/machines.js';
 import { ModernDropdown } from '../../components/dropdown/dropdown.js';
 import { extractResultsFromResponse } from '../../generic/paginationHelper.js';
 import { HeaderComponent } from '../../components/header/header.js';

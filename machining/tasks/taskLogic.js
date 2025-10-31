@@ -1,13 +1,14 @@
 // --- taskLogic.js ---
 // Core business logic for task functionality
 
-import { state, stopTimerShared } from '../machiningService.js';
+import { state } from '../machiningService.js';
+import { stopTimerShared, startTimerShared } from '../../generic/timers.js';
 import { updateTimerDisplay, setupTaskDisplay, stopTimerUpdate } from './taskUI.js';
 import { TimerWidget } from '../../components/timerWidget.js';
-import { startTimer } from './taskApi.js';
-import { getSyncedNow } from '../../generic/timeService.js';
+import { getSyncedNow, syncServerTime } from '../../generic/timeService.js';
 import { setCurrentTimerState, setCurrentMachineState } from './taskState.js';
-import { createMaintenanceRequest } from '../../maintenance/maintenanceApi.js';
+import { createMaintenanceRequest } from '../../generic/machines.js';
+import { navigateTo, ROUTES } from '../../authService.js';
 
 // ============================================================================
 // TIMER SETUP
@@ -24,9 +25,41 @@ export function setupTimerHandlers(restoring = false) {
 }
 
 export async function handleStartTimer(comment = null) {
+    if (!state.currentMachine.id || !state.currentIssue.key){
+        alert("Bir sorun oluştu. Sayfa yeniden yükleniyor.");
+        navigateTo(ROUTES.MACHINING);
+        return;
+    }
+    
     try {
+        await syncServerTime();
+        const timerData = {
+            issue_key: state.currentIssue.key,
+            start_time: getSyncedNow(),
+            machine_fk: state.currentMachine.id,
+        }
+        
+        // Add comment if provided
+        if (comment) {
+            timerData.comment = comment;
+        }
+        
+        const timer = await startTimerShared(timerData, 'machining');
+        if (!timer) {
+            alert("Bir sorun oluştu. Sayfa yeniden yükleniyor.");
+            navigateTo(ROUTES.MACHINING);
+            return;
+        }
+        
+        timerData.id = timer.id;
+        setCurrentTimerState(timerData);
+        setCurrentMachineState(state.currentMachine.id);
+        
+        // Start the interval AFTER setting the timer state
         state.intervalId = setInterval(updateTimerDisplay, 1000);
-        await startTimer(comment);
+        // Update display immediately to show 00:00:00 or initial value
+        updateTimerDisplay();
+        
         setupTaskDisplay(true, state.currentIssue.is_hold_task);
         TimerWidget.triggerUpdate();
         console.log(state.currentIssue.key);
@@ -68,7 +101,7 @@ export async function handleStopTimer(save_to_jira=true) {
             timerId: state.currentTimer.id, 
             finishTime: getSyncedNow(),
             syncToJira: save_to_jira
-        });
+        }, 'machining');
         
         if (stopSuccess) {
             // Call stopTimerUpdate to properly reset timer display and button states

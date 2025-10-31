@@ -3,10 +3,7 @@
 
 import { initNavbar } from '../../components/navbar.js';
 import { guardRoute, navigateTo, ROUTES } from '../../authService.js';
-import { 
-    getTaskKeyFromURL, 
-    fetchTaskDetails
-} from './taskApi.js';
+import { getTaskKeyFromURL, fetchTaskDetails } from '../../generic/tasks.js';
 import { 
     setCurrentIssueState,
     setCurrentTimerState,
@@ -37,8 +34,8 @@ async function initializeTaskView() {
         return;
     }
     await setCurrentMachineState();
-    let issue = await fetchTaskDetails(taskKey);
-    const activeTimer = extractFirstResultFromResponse(await fetchTimers(true, state.currentMachine.id, taskKey));
+    let issue = await fetchTaskDetails(taskKey, 'machining');
+    const activeTimer = extractFirstResultFromResponse(await fetchTimers({ is_active: true, machine_id: state.currentMachine.id, issue_key: taskKey }));
     setCurrentIssueState(issue);
     setCurrentTimerState(activeTimer);
     setupTaskDisplay(activeTimer ? true : false, issue.is_hold_task);

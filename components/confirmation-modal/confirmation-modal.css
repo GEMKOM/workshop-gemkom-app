@@ -1,0 +1,230 @@
+/* Confirmation Modal Component Styles */
+/* Using #8B0000 as the primary color scheme */
+
+/* Ensure confirmation modal appears above other modals (which use z-index 9999-10000) */
+.confirmation-modal {
+    z-index: 10050 !important;
+}
+
+.confirmation-modal.show {
+    z-index: 10050 !important;
+}
+
+.confirmation-modal .modal-content {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 10050 !important;
+}
+
+/* Bootstrap modal backdrop override - must be higher than custom modals (9998-10000) */
+/* This ensures the backdrop appears above custom modal overlays but below the confirmation modal */
+.modal-backdrop.show {
+    z-index: 10049 !important;
+}
+
+.confirmation-modal-header {
+    background-color: #8B0000;
+    color: white;
+    border-bottom: none;
+    padding: 1rem 1.5rem;
+}
+
+.confirmation-modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+.confirmation-modal-header .modal-title i {
+    font-size: 1.2rem;
+}
+
+.confirmation-modal-header .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+    opacity: 0.9;
+}
+
+.confirmation-modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.confirmation-modal .modal-body {
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+.confirmation-modal .modal-body:has(.custom-form-content:not([style*="display: none"])) {
+    text-align: left;
+}
+
+.confirmation-icon {
+    font-size: 3rem;
+    color: #8B0000;
+    margin-bottom: 1rem;
+}
+
+.confirmation-message {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.confirmation-description {
+    font-size: 0.95rem;
+    color: #666;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.confirmation-details {
+    margin-top: 1rem;
+    text-align: left;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+
+.confirmation-details strong {
+    color: #8B0000;
+    font-weight: 600;
+}
+
+.confirmation-modal .modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1rem 1.5rem;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.confirmation-modal .modal-footer .btn {
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.confirmation-modal .modal-footer .btn-primary,
+.confirmation-modal .modal-footer .btn-warning,
+.confirmation-modal .modal-footer .btn-danger {
+    background-color: #8B0000;
+    border-color: #8B0000;
+    color: white;
+}
+
+.confirmation-modal .modal-footer .btn-primary:hover,
+.confirmation-modal .modal-footer .btn-warning:hover,
+.confirmation-modal .modal-footer .btn-danger:hover {
+    background-color: #6B0000;
+    border-color: #6B0000;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(139, 0, 0, 0.3);
+}
+
+.confirmation-modal .modal-footer .btn-primary:active,
+.confirmation-modal .modal-footer .btn-warning:active,
+.confirmation-modal .modal-footer .btn-danger:active {
+    background-color: #5A0000;
+    border-color: #5A0000;
+    transform: translateY(0);
+}
+
+.confirmation-modal .modal-footer .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.confirmation-modal .modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    color: white;
+}
+
+/* Loading state */
+.confirmation-modal #confirm-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Center modal on page */
+.confirmation-modal .modal-dialog {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+    margin: 0.5rem auto;
+}
+
+@media (min-width: 576px) {
+    .confirmation-modal .modal-dialog {
+        min-height: calc(100% - 3.5rem);
+        margin: 1.75rem auto;
+    }
+}
+
+/* Animation */
+.confirmation-modal.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out;
+}
+
+.confirmation-modal.modal.show .modal-dialog {
+    transform: none;
+}
+
+/* Custom form content support */
+.confirmation-modal .custom-form-content {
+    margin-top: 1rem;
+}
+
+.confirmation-modal .custom-form-content .form-group {
+    margin-bottom: 1rem;
+}
+
+.confirmation-modal .custom-form-content label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.confirmation-modal .custom-form-content textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.confirmation-modal .custom-form-content textarea:focus {
+    outline: none;
+    border-color: #8B0000;
+    box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .confirmation-modal .modal-dialog {
+        margin: 0.5rem;
+    }
+    
+    .confirmation-modal .modal-body {
+        padding: 1.5rem 1rem;
+    }
+    
+    .confirmation-icon {
+        font-size: 2.5rem;
+    }
+    
+    .confirmation-message {
+        font-size: 1rem;
+    }
+}
+

@@ -137,17 +137,18 @@ async function loadFinishedTimersData(page = 1) {
     }
     
     try {
-        const params = new URLSearchParams();
-        params.append('page', page);
-        params.append('page_size', 20);
-        params.append('ordering', '-finish_time');
-        params.append('is_active', false);
+        const params = {
+            page: page,
+            page_size: 20,
+            ordering: '-finish_time',
+            is_active: false
+        };
         
         // Get filter values from results table
         if (resultsTableInstance) {
             const filterValues = resultsTableInstance.getFilterValues();
-            if (filterValues['start-date']) params.append('start_date', filterValues['start-date']);
-            if (filterValues['end-date']) params.append('end_date', filterValues['end-date']);
+            if (filterValues['start-date']) params.start_date = filterValues['start-date'];
+            if (filterValues['end-date']) params.end_date = filterValues['end-date'];
         }
         
         const apiData = await fetchTimers(params);

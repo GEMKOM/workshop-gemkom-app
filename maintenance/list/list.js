@@ -1,8 +1,6 @@
 import { initNavbar } from '../../components/navbar.js';
 import { guardRoute } from '../../authService.js';
-import { authedFetch } from '../../authService.js';
-import { backendBase } from '../../base.js';
-import { resolveMaintenanceRequest } from '../maintenanceApi.js';
+import { resolveMaintenanceRequest, fetchMachineFaults } from '../../generic/machines.js';
 import { GenericCard } from '../../components/genericCard/genericCard.js';
 import { extractResultsFromResponse } from '../../generic/paginationHelper.js';
 import { HeaderComponent } from '../../components/header/header.js';
@@ -137,34 +135,13 @@ function createViewRequestsSection() {
 }
 
 // ============================================================================
-// API FUNCTIONS
-// ============================================================================
-
-async function fetchMaintenanceRequests() {
-    try {
-        const response = await authedFetch(`${backendBase}/machines/faults/?page_size=1000`);
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch maintenance requests');
-        }
-        
-        const requestsResponse = await response.json();
-        const requests = extractResultsFromResponse(requestsResponse);
-        state.maintenanceRequests = requests;
-        return requests;
-    } catch (error) {
-        console.error('Error fetching maintenance requests:', error);
-        throw error;
-    }
-}
-
-// ============================================================================
 // REQUEST LOADING AND RENDERING
 // ============================================================================
 
 async function loadMaintenanceRequests() {
     try {
-        await fetchMaintenanceRequests();
+        const requestsResponse = await fetchMachineFaults();
+        state.maintenanceRequests = extractResultsFromResponse(requestsResponse);
         renderMaintenanceRequests();
         setupFilterHandlers();
     } catch (error) {
@@ -609,7 +586,8 @@ function setupResolveModal() {
                 currentResolveRequestId = null;
                 
                 // Refresh the requests list without reloading the entire page
-                await fetchMaintenanceRequests();
+                const requestsResponse = await fetchMachineFaults();
+                state.maintenanceRequests = extractResultsFromResponse(requestsResponse);
                 renderMaintenanceRequests();
                 
                 alert('Talep başarıyla çözüldü olarak işaretlendi.');

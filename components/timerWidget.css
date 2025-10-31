@@ -3,19 +3,23 @@
    ============================================================================ */
 
 :root {
-    --primary-color: #8B0000;
-    --secondary-color: #b40024;
-    --accent-color: #FF4D4D;
+    --primary-color: #8b0000;
+    --secondary-color: #a52a2a;
+    --accent-color: #800000;
+    --primary-light: #b40024;
+    --primary-dark: #660000;
     --text-color: #2c3e50;
+    --text-light: #6b7280;
     --light-bg: #f8f9fa;
+    --border-color: #e5e7eb;
     --border-radius: 16px;
-    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    --card-hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    --card-shadow: 0 4px 20px rgba(139, 0, 0, 0.12);
+    --card-hover-shadow: 0 8px 30px rgba(139, 0, 0, 0.18);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --gradient-primary: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    --gradient-light: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    --icon-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    --icon-hover-gradient: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+    --gradient-hover: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+    --success-color: #059669;
+    --success-light: #10b981;
 }
 
 /* ============================================================================
@@ -26,39 +30,40 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 60px;
-    height: 60px;
-    background: var(--icon-gradient);
+    width: 64px;
+    height: 64px;
+    background: #8b0000;
     border-radius: 50%;
-    box-shadow: 0 8px 32px rgba(44, 62, 80, 0.3);
-    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 24px rgba(139, 0, 0, 0.25), 0 4px 12px rgba(139, 0, 0, 0.15);
+    border: 3px solid rgba(255, 255, 255, 0.95);
     z-index: 1000;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     overflow: hidden;
     transition: var(--transition);
     will-change: transform;
-    backdrop-filter: blur(10px);
     cursor: pointer;
 }
 
 .timer-widget.expanded {
-    width: 360px;
+    width: 380px;
     height: auto;
     border-radius: var(--border-radius);
-    min-height: 200px;
-    box-shadow: 0 12px 40px rgba(44, 62, 80, 0.25);
+    min-height: 220px;
+    background: #8b0000;
+    box-shadow: 0 12px 48px rgba(139, 0, 0, 0.2), 0 4px 16px rgba(139, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .timer-widget.dragging {
     transition: none;
-    box-shadow: 0 16px 48px rgba(44, 62, 80, 0.4);
+    box-shadow: 0 16px 56px rgba(139, 0, 0, 0.35), 0 8px 24px rgba(139, 0, 0, 0.2);
     transform: scale(1.05);
 }
 
 .timer-widget:hover {
-    box-shadow: 0 12px 40px rgba(44, 62, 80, 0.35);
-    transform: translateY(-2px);
-    background: var(--icon-hover-gradient);
+    box-shadow: 0 12px 32px rgba(139, 0, 0, 0.3), 0 6px 16px rgba(139, 0, 0, 0.2);
+    transform: translateY(-3px);
+    background: #a52a2a;
 }
 
 .timer-widget-icon {
@@ -67,58 +72,56 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
     color: white;
     position: relative;
     z-index: 2;
     transition: var(--transition);
 }
 
-.timer-widget-icon::before {
-    content: '⏱️';
-    font-size: 28px;
+.timer-widget-icon i {
+    font-size: 26px;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .timer-widget-badge {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: white;
+    top: -6px;
+    right: -6px;
+    background: #ffffff;
+    color: #8b0000;
     border-radius: 50%;
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-    border: 2px solid white;
+    font-size: 11px;
+    font-weight: 700;
+    border: 3px solid #8b0000;
     z-index: 3;
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
     animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
     0% {
         transform: scale(1);
-        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
     }
     50% {
-        transform: scale(1.1);
-        box-shadow: 0 6px 16px rgba(231, 76, 60, 0.6);
+        transform: scale(1.12);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 3px 8px rgba(0, 0, 0, 0.3);
     }
     100% {
         transform: scale(1);
-        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 }
 
 .timer-widget-header {
-    background: var(--icon-gradient);
+    background: #8b0000;
     color: white;
-    padding: 16px 20px;
+    padding: 18px 22px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -136,85 +139,101 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
     pointer-events: none;
 }
 
 .timer-widget-title {
     font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
+    letter-spacing: 0.3px;
     position: relative;
     z-index: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
-.timer-widget-title::before {
-    content: '⏱️';
+.timer-widget-title i {
     font-size: 18px;
+    opacity: 0.95;
 }
 
 .timer-widget-toggle {
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: white;
-    font-size: 18px;
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1;
     cursor: pointer;
     padding: 0;
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 8px;
     transition: var(--transition);
-    backdrop-filter: blur(10px);
     position: relative;
     z-index: 1;
 }
 
 .timer-widget-toggle:hover {
     background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.1) rotate(90deg);
 }
 
 .timer-widget-content {
-    max-height: 320px;
+    max-height: 360px;
     overflow-y: auto;
     padding: 0;
-    background: white;
+    background: #8b0000;
     border-radius: 0 0 var(--border-radius) var(--border-radius);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.timer-widget-loading,
-.timer-widget-empty {
+.timer-widget-loading {
     text-align: center;
-    color: #6b7280;
-    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.9);
+    padding: 48px 24px;
     font-size: 14px;
+    line-height: 1.6;
 }
 
 .timer-widget-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 48px 24px;
+    font-size: 14px;
+    line-height: 1.6;
+    gap: 16px;
+    position: relative;
+    min-height: 120px;
 }
 
 .timer-widget-empty::before {
-    content: '⏰';
-    font-size: 32px;
-    opacity: 0.5;
+    content: '\f017';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 48px;
+    color: rgba(255, 255, 255, 0.2);
+    display: block;
 }
 
 .timer-widget-item {
-    padding: 16px 20px;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     transition: var(--transition);
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    background: transparent;
 }
 
 .timer-widget-item::before {
@@ -222,20 +241,23 @@
     position: absolute;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(44, 62, 80, 0.02) 0%, rgba(52, 73, 94, 0.02) 100%);
+    width: 4px;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
     opacity: 0;
     transition: var(--transition);
+    transform: scaleY(0);
+    transform-origin: top;
 }
 
 .timer-widget-item:hover {
-    background-color: #f9fafb;
-    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.08);
+    padding-left: 26px;
 }
 
 .timer-widget-item:hover::before {
     opacity: 1;
+    transform: scaleY(1);
 }
 
 .timer-widget-item:last-child {
@@ -246,72 +268,81 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    gap: 12px;
 }
 
 .timer-widget-issue {
-    font-weight: 600;
+    font-weight: 700;
     font-size: 15px;
-    color: var(--text-color);
-    background: var(--icon-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #ffffff;
+    letter-spacing: 0.2px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .timer-widget-machine {
-    font-size: 12px;
-    color: #6b7280;
-    background: #f3f4f6;
-    padding: 4px 10px;
+    font-size: 11px;
+    color: #8b0000;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 12px;
     border-radius: 12px;
-    font-weight: 500;
-    border: 1px solid #e5e7eb;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .timer-widget-time {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
-    color: #059669;
-    margin-bottom: 8px;
-    font-family: 'Courier New', monospace;
-    text-shadow: 0 1px 2px rgba(5, 150, 105, 0.1);
+    color: #ffffff;
+    margin: 0;
+    font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+    letter-spacing: 0.5px;
     position: relative;
+    display: inline-block;
+    padding-left: 24px;
 }
 
 .timer-widget-time::before {
     content: '';
     position: absolute;
-    left: -8px;
+    left: 0;
     top: 50%;
     transform: translateY(-50%);
     width: 4px;
-    height: 16px;
-    background: #059669;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.8);
     border-radius: 2px;
-    opacity: 0.6;
+    opacity: 1;
 }
 
 .timer-widget-footer {
-    padding: 16px 20px;
-    border-top: 1px solid #f3f4f6;
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    padding: 18px 22px;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    background: #8b0000;
     border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 .timer-widget-new {
     width: 100%;
-    padding: 12px 20px;
-    background: var(--icon-gradient);
-    color: white;
-    border: none;
+    padding: 13px 20px;
+    background: #ffffff;
+    color: #8b0000;
+    border: 2px solid #ffffff;
     border-radius: 12px;
     font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.3px;
     cursor: pointer;
     transition: var(--transition);
     position: relative;
     overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .timer-widget-new::before {
@@ -321,13 +352,16 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(139, 0, 0, 0.1), transparent);
     transition: left 0.5s ease;
 }
 
 .timer-widget-new:hover {
+    background: #f5f5f5;
+    border-color: #f5f5f5;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(44, 62, 80, 0.3);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    color: #8b0000;
 }
 
 .timer-widget-new:hover::before {
@@ -336,6 +370,7 @@
 
 .timer-widget-new:active {
     transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* ============================================================================
@@ -347,17 +382,17 @@
 }
 
 .timer-widget-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
 }
 
 .timer-widget-content::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #c1c1c1, #a8a8a8);
+    background: rgba(255, 255, 255, 0.4);
     border-radius: 3px;
 }
 
 .timer-widget-content::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #a8a8a8, #8f8f8f);
+    background: rgba(255, 255, 255, 0.6);
 }
 
 /* ============================================================================
@@ -465,22 +500,7 @@
     animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Pulse animation for active timers */
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
-    }
-    70% {
-        box-shadow: 0 0 0 10px rgba(5, 150, 105, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(5, 150, 105, 0);
-    }
-}
-
-.timer-widget-item {
-    animation: pulse 2s infinite;
-}
+/* Pulse animation for active timers - removed to reduce visual noise */
 
 /* ============================================================================
    ACCESSIBILITY
@@ -531,35 +551,48 @@
 
 @media (prefers-color-scheme: dark) {
     .timer-widget {
-        background: #1f2937;
-        border-color: #374151;
+        background: #8b0000;
+        border-color: rgba(255, 255, 255, 0.2);
     }
     
-    .timer-widget-content {
-        background: #1f2937;
-    }
-    
-    .timer-widget-item {
-        border-bottom-color: #374151;
-    }
-    
-    .timer-widget-item:hover {
-        background-color: #374151;
-    }
-    
-    .timer-widget-machine {
-        background: #374151;
-        border-color: #4b5563;
-        color: #d1d5db;
+    .timer-widget-header {
+        background: #8b0000;
     }
     
     .timer-widget-footer {
-        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-        border-top-color: #374151;
+        background: #8b0000;
+    }
+    
+    .timer-widget-content {
+        background: #8b0000;
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .timer-widget-item {
+        background: transparent;
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .timer-widget-item:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.05) 100%);
+    }
+    
+    .timer-widget-issue {
+        color: #fca5a5;
+    }
+    
+    .timer-widget-machine {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
     }
     
     .timer-widget-loading,
     .timer-widget-empty {
-        color: #9ca3af;
+        color: #d1d5db;
+    }
+    
+    .timer-widget-empty::before {
+        opacity: 0.3;
     }
 } 

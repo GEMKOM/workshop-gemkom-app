@@ -4,10 +4,7 @@
 import { initNavbar } from '../../components/navbar.js';
 import { guardRoute, navigateTo, ROUTES } from '../../authService.js';
 import { TimerPage } from '../../components/timer-page/timer-page.js';
-import { 
-    getTaskKeyFromURL, 
-    fetchTaskDetails
-} from './taskApi.js';
+import { getTaskKeyFromURL, fetchTaskDetails } from '../../generic/tasks.js';
 import { 
     setCurrentIssueState,
     setCurrentTimerState,
@@ -20,7 +17,7 @@ import {
     handleBackClick, 
     handleFaultReportClick 
 } from './taskActions.js';
-import { fetchTimers } from '../cnc_cuttingTimers.js';
+import { fetchTimers } from '../../generic/timers.js';
 import { extractFirstResultFromResponse } from '../../generic/paginationHelper.js';
 import { state } from '../cnc_cuttingService.js';
 
@@ -29,6 +26,11 @@ import { state } from '../cnc_cuttingService.js';
 // ============================================================================
 
 let timerPageComponent = null;
+
+// Export timerPageComponent so it can be accessed by taskActions
+export function getTimerPageComponent() {
+    return timerPageComponent;
+}
 
 async function initializeTaskView() {
     if (!guardRoute()) {
@@ -44,10 +46,15 @@ async function initializeTaskView() {
     }
 
     await setCurrentMachineState();
-    let issue = await fetchTaskDetails(taskKey);
-    const activeTimer = extractFirstResultFromResponse(await fetchTimers(true, state.currentMachine.id, taskKey));
+    let issue = await fetchTaskDetails(taskKey, 'cnc_cutting');
+    const activeTimer = extractFirstResultFromResponse(await fetchTimers({ is_active: true, machine_id: state.currentMachine.id, issue_key: taskKey }, 'cnc_cutting'));
     setCurrentIssueState(issue);
     setCurrentTimerState(activeTimer);
+    
+    // Update machine state to reflect active timer
+    if (activeTimer) {
+        state.currentMachine.has_active_timer = true;
+    }
 
     // Initialize timer page component
     initializeTimerPage(issue, activeTimer);
@@ -137,8 +144,14 @@ function initializeTimerPage(issue, activeTimer) {
     });
 
     // Set initial timer state
-    if (hasActiveTimer) {
-        timerPageComponent.startTimer();
+    if (hasActiveTimer && activeTimer.start_time) {
+        // Resume the timer from the server's start time
+        // Convert start_time to milliseconds if it's in seconds
+        const startTime = typeof activeTimer.start_time === 'string' 
+            ? parseInt(activeTimer.start_time) 
+            : activeTimer.start_time;
+        const startTimeMs = startTime > 1000000000000 ? startTime : startTime * 1000;
+        timerPageComponent.resumeTimer(startTimeMs);
     }
 
     // Setup additional handlers
@@ -520,21 +533,6 @@ window.viewFile = function(fileUrl, fileName) {
     });
 };
 
-function showMachineDetails() {
-    timerPageComponent.showMessage('Makine detayları gösteriliyor...', 'info');
-}
-
-function showProductionProgress() {
-    timerPageComponent.showMessage('Üretim ilerlemesi gösteriliyor...', 'info');
-}
-
-function showQualityReport() {
-    timerPageComponent.showMessage('Kalite raporu açılıyor...', 'info');
-}
-
-function showAllAlerts() {
-    timerPageComponent.showMessage('Tüm bildirimler gösteriliyor...', 'info');
-}
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -555,22 +553,6 @@ function getUniqueJobCount(issue) {
     
     const uniqueJobs = new Set(issue.parts.map(part => part.job_no));
     return uniqueJobs.size.toString();
-}
-
-function calculateEstimatedTime(issue) {
-    // Simple calculation based on parts count
-    const baseTime = 30; // minutes per part
-    const totalMinutes = issue.parts_count * baseTime;
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}s ${minutes}dk`;
-}
-
-function calculateProgress(issue) {
-    // Simple progress calculation
-    const completed = Math.floor(Math.random() * issue.parts_count);
-    const percentage = Math.round((completed / issue.parts_count) * 100);
-    return `${percentage}%`;
 }
 
 // ============================================================================

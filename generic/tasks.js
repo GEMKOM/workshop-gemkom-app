@@ -2,6 +2,68 @@ import { backendBase } from "../base.js";
 import { authedFetch } from "../authService.js";
 
 /**
+ * Marks a task as completed
+ * @param {string} taskKey - Task key to mark as done
+ * @param {string} [module='machining'] - Module name: 'machining' or 'cnc_cutting'
+ * @returns {Promise<boolean>} True if successful, false otherwise
+ */
+export async function markTaskAsDoneShared(taskKey, module = 'machining') {
+    const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
+    const response = await authedFetch(`${backendBase}/${modulePath}/tasks/mark-completed/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            key: taskKey
+        })
+    });
+    return response.ok;
+}
+
+/**
+ * Marks a task as processed by warehouse
+ * @param {string} taskKey - Task key to mark as warehouse processed
+ * @param {string} [module='cnc_cutting'] - Module name: 'machining' or 'cnc_cutting'
+ * @returns {Promise<boolean>} True if successful, false otherwise
+ */
+export async function markAsWareHouseProcessed(taskKey, module = 'cnc_cutting') {
+    const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
+    const response = await authedFetch(`${backendBase}/${modulePath}/tasks/warehouse-process/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            key: taskKey
+        })
+    });
+    return response.ok;
+}
+
+/**
+ * Fetches hold tasks (reason codes for putting tasks on hold)
+ * @param {string} [module='machining'] - Module name: 'machining' or 'cnc_cutting'
+ * @returns {Promise<Array>} Array of hold task reason codes
+ */
+export async function fetchHoldTasks(module = 'machining') {
+    const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
+    const response = await authedFetch(`${backendBase}/${modulePath}/hold-tasks/`);
+    
+    if (!response.ok) {
+        throw new Error('Failed to fetch hold tasks');
+    }
+    
+    const data = await response.json();
+    return data.results || data;
+}
+
+/**
+ * Extracts the task key from the URL query parameters
+ * @returns {string|null} Task key from URL, or null if not found
+ */
+export function getTaskKeyFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('key');
+}
+
+/**
  * Fetches a single task by key
  */
 export async function fetchTaskById(taskKey, module = 'machining') {
@@ -12,9 +74,45 @@ export async function fetchTaskById(taskKey, module = 'machining') {
 }
 
 /**
+ * Fetches task details with fallback logic for stored tasks and hold tasks
+ * @param {string|null} taskKey - Task key to fetch, or null to use from URL
+ * @param {string} [module='machining'] - Module name: 'machining' or 'cnc_cutting'
+ * @returns {Promise<Object>} Task details object
+ */
+export async function fetchTaskDetails(taskKey = null, module = 'machining') {
+    const params = new URLSearchParams(window.location.search);
+
+    const storedTaskJSON = sessionStorage.getItem('selectedTask');
+    if (storedTaskJSON) {
+        try {
+            return JSON.parse(storedTaskJSON);
+        } catch (error) {
+            console.error('Error parsing stored task:', error);
+        }
+    }
+    else if(params.get('hold') !== '1'){
+        const task = await fetchTaskById(taskKey, module);
+        if (!task) {
+            throw new Error('Task not found');
+        }
+        return task;
+    } else {
+        return {
+            key: params.get('key'),
+            name: params.get('name') || params.get('key'),                    // Task name
+            job_no: params.get('name') || params.get('key'),           // RM260-01-12
+            image_no: null,         // 8.7211.0005
+            position_no: null,      // 107
+            quantity: null,         // 6
+            machine: null,   // COLLET (optional)
+            is_hold_task: true
+        };
+    }
+}
+
+/**
  * Fetches tasks with flexible filtering options
  * @param {Object} options - Filter options
- * @param {string} options.module - Module name ('machining' or 'cnc_cutting')
  * @param {number} options.machineId - Machine ID filter
  * @param {boolean} options.completionDateIsNull - Filter by completion date
  * @param {boolean} options.inPlan - Filter by plan status
@@ -23,11 +121,12 @@ export async function fetchTaskById(taskKey, module = 'machining') {
  * @param {number} options.pageSize - Items per page
  * @param {string} options.search - Search term
  * @param {string} options.status - Task status filter
+ * @param {boolean} options.isWarehouseProcessed - Filter by warehouse processing status
+ * @param {string} [module='machining'] - Module name ('machining' or 'cnc_cutting')
  * @returns {Promise<Object>} - Tasks data with pagination info
  */
-export async function fetchTasks(options = {}) {
+export async function fetchTasks(options = {}, module = 'machining') {
     const {
-        module = 'machining',
         machineId = null,
         completionDateIsNull = null,
         isWarehouseProcessed = null,
@@ -91,83 +190,5 @@ export async function fetchTasks(options = {}) {
     } catch (error) {
         console.error('Error fetching tasks:', error);
         throw error;
-    }
-}
-
-/**
- * Fetches all tasks for task overview (no pagination)
- * @param {string} module - Module name ('machining' or 'cnc_cutting')
- * @returns {Promise<Array>} - Array of all tasks
- */
-export async function fetchAllTasks(module = 'machining') {
-    try {
-        const data = await fetchTasks({
-            module,
-            pageSize: 1000, // Large page size to get all tasks
-            completionDateIsNull: true
-        });
-        
-        // Return results array or the data itself if not paginated
-        return data.results || data;
-    } catch (error) {
-        console.error('Error fetching all tasks:', error);
-        return [];
-    }
-}
-
-/**
- * Fetches tasks with flexible filtering
- * @param {string} module - Module name
- * @param {Object} filters - Filter options
- * @param {number} filters.machineId - Machine ID (optional)
- * @param {boolean} filters.inPlan - Plan status filter (optional)
- * @param {boolean} filters.completionDateIsNull - Filter by completion date (optional)
- * @param {string} filters.ordering - Ordering field (default: 'plan_order')
- * @param {string} filters.status - Task status filter (optional)
- * @param {string} filters.search - Search term (optional)
- * @param {number} filters.page - Page number (optional)
- * @param {number} filters.pageSize - Items per page (optional)
- * @returns {Promise<Array>} - Array of tasks
- */
-export async function fetchMachineTasks(module, filters = {}) {
-    try {
-        const {
-            ordering = 'plan_order',
-            ...otherFilters
-        } = filters;
-
-        const data = await fetchTasks({
-            module,
-            ordering,
-            ...otherFilters
-        });
-        
-        return data.results || data;
-    } catch (error) {
-        console.error('Error fetching machine tasks:', error);
-        return [];
-    }
-}
-
-/**
- * Fetches unassigned tasks (no machine assigned)
- * @param {string} module - Module name
- * @param {boolean} inPlan - Plan status filter
- * @returns {Promise<Array>} - Array of unassigned tasks
- */
-export async function fetchUnassignedTasks(module, inPlan = null) {
-    try {
-        const data = await fetchTasks({
-            module,
-            machineId: null,
-            completionDateIsNull: true,
-            inPlan,
-            ordering: 'created_at'
-        });
-        
-        return data.results || data;
-    } catch (error) {
-        console.error('Error fetching unassigned tasks:', error);
-        return [];
     }
 }

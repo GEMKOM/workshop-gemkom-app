@@ -1,6 +1,5 @@
 import { guardRoute, isAdmin } from './authService.js';
 import { initNavbar } from './components/navbar.js';
-import { TimerWidget } from './components/timerWidget.js';
 import { MenuComponent } from './components/menu/menu.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -10,22 +9,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     initNavbar();
 
-    // Initialize timer widget for machining team users only
+    // Timer widget initialization is handled by timerWidgetInit.js script
     const user = JSON.parse(localStorage.getItem('user'));
-    if (!isAdmin() && user && user.team === 'machining') {
-        // Check if timer widget already exists
-        if (!window.timerWidget) {
-            console.log('Initializing timer widget on home page...');
-            window.timerWidget = new TimerWidget();
-            
-            // Add global event listener for timer updates
-            window.addEventListener('timerUpdated', async () => {
-                if (window.timerWidget) {
-                    await window.timerWidget.refreshTimerWidget();
-                }
-            });
-        }
-    }
     setupHomeMenu(user);
 
 });
@@ -51,7 +36,7 @@ function setupHomeMenu(user) {
             iconColor: 'danger',
             link: 'cnc_cutting/',
             features: [],
-            // Only visible to cnc_cutting team or admins
+            // Only visible to cutting team or admins
             visibleTo: ['cutting', 'admin']
         },
         {

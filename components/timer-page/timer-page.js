@@ -492,6 +492,29 @@ export class TimerPage {
         }
     }
 
+    /**
+     * Resume a timer from a server-provided start time
+     * This is used when restoring a timer after page refresh
+     * @param {number} serverStartTime - The original start time from the server (timestamp in milliseconds)
+     */
+    resumeTimer(serverStartTime) {
+        if (!serverStartTime) {
+            console.warn('resumeTimer called without serverStartTime');
+            return;
+        }
+        
+        this.state.isRunning = true;
+        // Set startTime to the server's start time so elapsed time is calculated correctly
+        this.state.startTime = serverStartTime;
+        // Reset elapsedTime since we'll calculate from startTime
+        this.state.elapsedTime = 0;
+        this.updateButtonStates();
+        this.updateStatus();
+        this.updateTimerDisplay();
+        
+        // Do NOT call onStart() here - this is a resume, not a new start
+    }
+
     stopTimer() {
         this.state.isRunning = false;
         this.state.elapsedTime += Date.now() - this.state.startTime;

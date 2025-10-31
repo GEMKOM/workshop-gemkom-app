@@ -6,9 +6,9 @@ import { guardRoute, isAdmin } from '../authService.js';
 
 // Initialize timer widget globally
 function initializeTimerWidget() {
-    // Only initialize if user is authenticated, not admin, and is in machining team
+    // Only initialize if user is authenticated, not admin, and is in machining or cutting team
     const user = JSON.parse(localStorage.getItem('user'));
-    if (guardRoute() && !isAdmin() && user && user.team === 'machining') {
+    if (guardRoute() && !isAdmin() && user && (user.team === 'machining' || user.team === 'cutting')) {
         // Check if timer widget already exists
         if (!window.timerWidget) {
             console.log('Initializing timer widget...');

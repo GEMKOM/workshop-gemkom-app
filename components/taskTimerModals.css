@@ -172,73 +172,23 @@
     }
 }
 
-/* Fault Modal Styles */
-.fault-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0,0,0,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-}
+/* Fault Modal Styles - REMOVED: Now using confirmation modal component */
 
-.fault-modal-content {
-    background: #fff;
-    border-radius: 8px;
-    min-width: 320px;
-    max-width: 90vw;
-    box-shadow: 0 2px 16px #0002;
-    position: relative;
-}
-
-.fault-modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #eee;
-}
-
-.fault-modal-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
-    color: #dc3545;
-}
-
-.fault-modal-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #888;
-    position: absolute;
-    top: 8px;
-    right: 8px;
-}
-
-.fault-modal-close:hover {
-    color: #dc3545;
-}
-
-.fault-modal-body {
-    padding: 1.5rem;
-}
-
-.form-group {
+/* Form group styles - scoped to manual-time-modal and comment-modal only */
+.manual-time-modal .form-group,
+.comment-modal .form-group {
     margin-bottom: 1rem;
 }
 
-.form-group label {
+.manual-time-modal .form-group label,
+.comment-modal .form-group label {
     font-weight: 500;
     margin-bottom: 0.5rem;
     display: block;
 }
 
-.form-group textarea {
+.manual-time-modal .form-group textarea,
+.comment-modal .form-group textarea {
     width: 100%;
     border-radius: 5px;
     border: 1px solid #ccc;
@@ -249,49 +199,11 @@
     max-height: 200px;
 }
 
-.form-group textarea:focus {
+.manual-time-modal .form-group textarea:focus,
+.comment-modal .form-group textarea:focus {
     outline: none;
-    border-color: #dc3545;
-    box-shadow: 0 0 0 2px rgba(220,53,69,0.1);
-}
-
-.fault-modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #eee;
-}
-
-.fault-modal-footer .btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.fault-modal-footer .btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-.fault-modal-footer .btn-secondary:hover {
-    background-color: #5a6268;
-}
-
-.fault-modal-footer .btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.fault-modal-footer .btn-danger:hover {
-    background-color: #c82333;
-}
-
-.fault-modal-footer .btn:disabled {
-    background-color: #ccc;
-    color: #888;
-    cursor: not-allowed;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.1);
 } 
 
 /* Comment Modal Styles */
