@@ -103,7 +103,7 @@ export async function handleFaultReportClick() {
     const machineStatus = await showMachineStatusModal();
     
     if (machineStatus === true) {
-        // If yes, show the description modal (modal is already closed)
+        // If yes, show the description modal immediately (same behavior as "No")
         await showNewFaultReportModal(state.currentMachine.id);
     } else if (machineStatus === 'no') {
         // Only show redirect warning if user explicitly clicked "No"
@@ -339,13 +339,32 @@ export async function showNewFaultReportModal(machineId) {
         const handleSubmit = async (formData) => {
             if (isSubmitting) return false; // Prevent closing
             
-            const descriptionInput = document.getElementById('fault-description');
-            if (!descriptionInput) {
-                resolve();
-                return true; // Close modal
+            // Get description from formData (passed by confirmation modal) or directly from DOM
+            let description = '';
+            
+            // First try formData (preferred - collected by confirmation modal)
+            if (formData && typeof formData === 'object') {
+                description = (formData['fault-description'] || '').trim();
             }
             
-            const description = descriptionInput.value.trim();
+            // If not found in formData, try getting it directly from the form
+            if (!description) {
+                const customForm = document.getElementById('confirmation-custom-form');
+                if (customForm) {
+                    const descriptionInput = customForm.querySelector('#fault-description');
+                    if (descriptionInput) {
+                        description = descriptionInput.value.trim();
+                    }
+                }
+                
+                // Fallback to global search (less reliable)
+                if (!description) {
+                    const descriptionInput = document.getElementById('fault-description');
+                    if (descriptionInput) {
+                        description = descriptionInput.value.trim();
+                    }
+                }
+            }
             
             if (!description) {
                 alert("Lütfen arıza açıklaması girin.");
@@ -429,13 +448,8 @@ export async function showMachineStatusModal() {
             cancelText: 'Hayır',
             confirmButtonClass: 'btn-primary',
             showCancelButton: true,
-            onConfirm: async () => {
-                // Wait for modal to close before resolving
-                await new Promise(resolveClose => {
-                    modal.modal.addEventListener('hidden.bs.modal', () => {
-                        resolveClose();
-                    }, { once: true });
-                });
+            onConfirm: () => {
+                // Resolve immediately to allow the flow to continue
                 resolve(true);
             },
             onCancel: (dismissReason) => {
