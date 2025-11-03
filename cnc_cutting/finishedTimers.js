@@ -1,5 +1,5 @@
 // --- finishedTimers.js ---
-import { fetchTimers } from './cnc_cuttingTimers.js';
+import { fetchTimers } from '../generic/timers.js';
 import { Pagination } from '../components/pagination/pagination.js';
 import { formatDateTime, formatDurationFromHoursToMinutes } from '../generic/formatters.js';
 import { HeaderComponent } from '../components/header/header.js';
@@ -137,20 +137,21 @@ async function loadFinishedTimersData(page = 1) {
     }
     
     try {
-        const params = new URLSearchParams();
-        params.append('page', page);
-        params.append('page_size', 20);
-        params.append('ordering', '-finish_time');
-        params.append('is_active', false);
+        const params = {
+            page: page,
+            page_size: 20,
+            ordering: '-finish_time',
+            is_active: false
+        };
         
         // Get filter values from results table
         if (resultsTableInstance) {
             const filterValues = resultsTableInstance.getFilterValues();
-            if (filterValues['start-date']) params.append('start_date', filterValues['start-date']);
-            if (filterValues['end-date']) params.append('end_date', filterValues['end-date']);
+            if (filterValues['start-date']) params.start_date = filterValues['start-date'];
+            if (filterValues['end-date']) params.end_date = filterValues['end-date'];
         }
         
-        const apiData = await fetchTimers(params);
+        const apiData = await fetchTimers(params, 'cnc_cutting');
         const data = apiData.results || apiData;
         
         // Convert timers to ResultsTable format

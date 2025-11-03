@@ -26,8 +26,16 @@ export function getUIElements() {
 }
 
 export function updateTimerDisplay() {
+    // Guard against missing or invalid start_time
+    if (!state.currentTimer || !state.currentTimer.start_time) {
+        document.getElementById('timer-display').textContent = '00:00:00';
+        return;
+    }
+    
     const elapsed = Math.round((getSyncedNow() - state.currentTimer.start_time) / 1000);
-    document.getElementById('timer-display').textContent = formatTime(elapsed);
+    // Prevent negative elapsed time
+    const safeElapsed = Math.max(0, elapsed);
+    document.getElementById('timer-display').textContent = formatTime(safeElapsed);
 }
 
 export function resetTimerDisplay() {

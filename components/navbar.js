@@ -1,6 +1,4 @@
 import { logout, isAdmin, isLoggedIn, getUser, navigateTo, ROUTES } from '../authService.js';
-import { backendBase } from '../base.js';
-import { authedFetch } from '../authService.js';
 
 // Navbar component
 export function createNavbar() {
@@ -83,9 +81,9 @@ export function createNavbar() {
         machiningTab.style.display = 'none';
     }
     
-    // Show CNC cutting tab if user is cnc_cutting team or admin
+    // Show CNC cutting tab if user is cutting team or admin
     const cncCuttingTab = navbar.querySelector('.cnc-cutting-only');
-    if (isAdmin() || (user && user.team === 'cnc_cutting')) {
+    if (isAdmin() || (user && user.team === 'cutting')) {
         cncCuttingTab.style.display = 'block';
     } else {
         cncCuttingTab.style.display = 'none';
@@ -139,12 +137,9 @@ function createUserEditModal(user) {
       const last_name = document.getElementById('user-edit-lastname').value;
       const email = document.getElementById('user-edit-email').value;
       try {
-        const res = await authedFetch(`${backendBase}/users/me/`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ first_name, last_name, email })
-        });
-        if (res.ok) {
+        const { updateCurrentUser } = await import('../generic/users.js');
+        const success = await updateCurrentUser({ first_name, last_name, email });
+        if (success) {
           alert('Bilgiler güncellendi!');
           const user_data = await getUser();
           localStorage.setItem('user', JSON.stringify(user_data));
@@ -327,7 +322,7 @@ export function initNavbar() {
           machiningTab.style.display = 'none';
       }
       
-      // Show CNC cutting tab if user is cnc_cutting team or admin
+      // Show CNC cutting tab if user is cutting team or admin
       const cncCuttingTab = navbarContainer.querySelector('.cnc-cutting-only');
       if (isAdmin() || user.team === 'cutting') {
           cncCuttingTab.style.display = 'block';

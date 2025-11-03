@@ -2,7 +2,7 @@
 // Generic modals for task timer/detail views (manual time, fault report)
 
 import { formatTime, formatJiraDate } from '../generic/formatters.js';
-import { createMaintenanceRequest } from '../maintenance/maintenanceApi.js';
+import { createMaintenanceRequest } from '../generic/machines.js';
 
 export function createManualTimeModal() {
     const modal = document.createElement('div');

@@ -4,7 +4,7 @@
 import { fetchMachines } from '../generic/machines.js';
 import { HeaderComponent } from '../components/header/header.js';
 import { GenericCard } from '../components/genericCard/genericCard.js';
-import { fetchAllTasks, fetchTaskById } from '../generic/tasks.js';
+import { fetchTasks, fetchTaskById } from '../generic/tasks.js';
 import { FileAttachments } from '../components/file-attachments/file-attachments.js';
 import { FileViewer } from '../components/file-viewer/file-viewer.js';
 
@@ -66,7 +66,8 @@ async function loadMachinesAndTasks() {
         allMachines = await fetchMachines({ used_in: "cutting", is_active: true });
         
         // Load tasks using generic function
-        allTasks = await fetchAllTasks('cnc_cutting');
+        const data = await fetchTasks({ pageSize: 1000, completionDateIsNull: true }, 'cnc_cutting');
+        allTasks = data.results || data;
         
         // Render the columns
         renderTaskColumns();

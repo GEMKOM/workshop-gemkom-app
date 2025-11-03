@@ -58,10 +58,14 @@ export class TimerWidget {
         widget.className = 'timer-widget';
         widget.innerHTML = `
             <div class="timer-widget-icon">
+                <i class="fas fa-clock"></i>
                 <div class="timer-widget-badge" id="timer-widget-badge" style="display: none;">0</div>
             </div>
             <div class="timer-widget-header" style="display: none;">
-                <span class="timer-widget-title"></span>
+                <span class="timer-widget-title">
+                    <i class="fas fa-clock"></i>
+                    Aktif Zamanlayıcılar
+                </span>
                 <span class="timer-widget-toggle" id="timer-widget-toggle">×</span>
             </div>
             <div class="timer-widget-content" id="timer-widget-content" style="display: none;">
@@ -76,7 +80,14 @@ export class TimerWidget {
 
         // Add event listeners
         document.getElementById('timer-widget-new').addEventListener('click', () => {
-            navigateTo(ROUTES.MACHINING);
+            // Navigate to the appropriate module based on user's team
+            const user = JSON.parse(localStorage.getItem('user'));
+            const userTeam = user?.team;
+            if (userTeam === 'cutting') {
+                navigateTo(ROUTES.CNC_CUTTING);
+            } else {
+                navigateTo(ROUTES.MACHINING);
+            }
         });
 
         // Make widget draggable and handle icon clicks
@@ -317,8 +328,21 @@ export class TimerWidget {
 
     async loadActiveTimers() {
         try {
-            const response = await fetchTimers(true);
-            this.activeTimers = extractResultsFromResponse(response);
+            // Fetch timers from both modules
+            const [machiningResponse, cncCuttingResponse] = await Promise.all([
+                fetchTimers({ is_active: true }, 'machining'),
+                fetchTimers({ is_active: true }, 'cnc_cutting')
+            ]);
+            
+            const machiningTimers = extractResultsFromResponse(machiningResponse);
+            const cncCuttingTimers = extractResultsFromResponse(cncCuttingResponse);
+            
+            // Mark each timer with its module
+            const machiningTimersWithModule = machiningTimers.map(timer => ({ ...timer, module: 'machining' }));
+            const cncCuttingTimersWithModule = cncCuttingTimers.map(timer => ({ ...timer, module: 'cnc_cutting' }));
+            
+            // Combine timers from both modules
+            this.activeTimers = [...machiningTimersWithModule, ...cncCuttingTimersWithModule];
             return true;
         } catch (error) {
             console.error('Error loading active timers:', error);
@@ -350,16 +374,25 @@ export class TimerWidget {
         }
 
         content.innerHTML = this.activeTimers.map(timer => {
+            // Determine module path - default to machining if not set
+            const module = timer.module || 'machining';
+            const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
+            
             // Build URL with hold parameter if issue_is_hold_task is true
-            let url = `/machining/tasks/?machine_id=${timer.machine_fk}&key=${timer.issue_key}`;
+            let url = `/${modulePath}/tasks/?machine_id=${timer.machine_fk}&key=${timer.issue_key}`;
             if (timer.issue_is_hold_task) {
                 url += '&hold=1';
             }
             
+            // For CNC cutting tasks, show nesting_id if available, otherwise fall back to issue_key
+            const displayKey = module === 'cnc_cutting' && timer.nesting_id 
+                ? timer.nesting_id 
+                : timer.issue_key;
+            
             return `
-                <div class="timer-widget-item" data-timer-id="${timer.id}" onclick="window.location.href='${url}'">
+                <div class="timer-widget-item" data-timer-id="${timer.id}" data-module="${module}" onclick="window.location.href='${url}'">
                     <div class="timer-widget-item-header">
-                        <span class="timer-widget-issue">${timer.issue_key}</span>
+                        <span class="timer-widget-issue">${displayKey}</span>
                         <span class="timer-widget-machine">${timer.machine_name || 'Bilinmeyen'}</span>
                     </div>
                     <div class="timer-widget-time" id="timer-display-${timer.id}">
@@ -411,11 +444,23 @@ export class TimerWidget {
 
     async stopTimer(timerId) {
         try {
+            // Find the timer to get its module
+            const timer = this.activeTimers.find(t => t.id === timerId);
+            if (!timer) {
+                console.error('Timer not found:', timerId);
+                return;
+            }
+            
+            // Determine module path - default to machining if not set
+            const module = timer.module || 'machining';
+            const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
+            
             // Ensure time sync before stopping timer
             await this.ensureTimeSync();
             
-            const response = await authedFetch(`${backendBase}/machining/timers/stop/`, {
+            const response = await authedFetch(`${backendBase}/${modulePath}/timers/stop/`, {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     timer_id: timerId,
                     finish_time: getSyncedNow(),
@@ -476,31 +521,42 @@ export class TimerWidget {
             try {
                 const now = Date.now(); // milliseconds
                 const startAfterTs = Math.floor((now - 24 * 60 * 60 * 1000) / 1000); // 24 hours ago, in seconds
-                const response = await fetchTimers(null, null, null, startAfterTs);
-                if (response.ok) {
-                    const latestTimers = extractResultsFromResponse(response);
-                    // Get current user information
-                    const currentUser = JSON.parse(localStorage.getItem('user'));
-                    
-                    // Check for any timer in this.activeTimers that is missing or finished in latestTimers
-                    for (const timer of this.activeTimers) {
-                        const latest = latestTimers.find(t => t.id === timer.id);
-                        if (!latest || latest.finish_time) {
-                            // Check if the timer was stopped by someone else
-                            const stoppedBySomeoneElse = latest && latest.stopped_by && 
-                                latest.stopped_by !== currentUser?.id && 
-                                latest.stopped_by !== currentUser?.username;
-                            
-                            if (stoppedBySomeoneElse) {
-                                let name = latest.username;
-                                if (latest && (latest.stopped_by_first_name || latest.stopped_by_last_name)) {
-                                    name = `${latest.stopped_by_first_name || ''} ${latest.stopped_by_last_name || ''}`.trim();
-                                }
-                                // Automatically reload the page without confirmation
-                                alert(`Zamanlayıcı ${name} tarafından durduruldu. Sayfa yenileniyor...`);
-                                window.location.reload();
-                                break;
+                
+                // Fetch timers from both modules
+                const [machiningResponse, cncCuttingResponse] = await Promise.all([
+                    fetchTimers({ start_after: startAfterTs }, 'machining'),
+                    fetchTimers({ start_after: startAfterTs }, 'cnc_cutting')
+                ]);
+                
+                // Get current user information
+                const currentUser = JSON.parse(localStorage.getItem('user'));
+                
+                // Combine timers from both modules with their module info
+                const machiningTimers = extractResultsFromResponse(machiningResponse);
+                const cncCuttingTimers = extractResultsFromResponse(cncCuttingResponse);
+                const latestTimers = [
+                    ...machiningTimers.map(t => ({ ...t, module: 'machining' })),
+                    ...cncCuttingTimers.map(t => ({ ...t, module: 'cnc_cutting' }))
+                ];
+                
+                // Check for any timer in this.activeTimers that is missing or finished in latestTimers
+                for (const timer of this.activeTimers) {
+                    const latest = latestTimers.find(t => t.id === timer.id);
+                    if (!latest || latest.finish_time) {
+                        // Check if the timer was stopped by someone else
+                        const stoppedBySomeoneElse = latest && latest.stopped_by && 
+                            latest.stopped_by !== currentUser?.id && 
+                            latest.stopped_by !== currentUser?.username;
+                        
+                        if (stoppedBySomeoneElse) {
+                            let name = latest.username;
+                            if (latest && (latest.stopped_by_first_name || latest.stopped_by_last_name)) {
+                                name = `${latest.stopped_by_first_name || ''} ${latest.stopped_by_last_name || ''}`.trim();
                             }
+                            // Automatically reload the page without confirmation
+                            alert(`Zamanlayıcı ${name} tarafından durduruldu. Sayfa yenileniyor...`);
+                            window.location.reload();
+                            break;
                         }
                     }
                 }

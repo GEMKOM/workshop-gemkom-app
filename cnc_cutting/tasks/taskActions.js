@@ -3,25 +3,55 @@
 
 import { state } from '../cnc_cuttingService.js';
 import { navigateTo, ROUTES } from '../../authService.js';
-import { markTaskAsDone } from './taskApi.js';
+import { markTaskAsDoneShared } from '../../generic/tasks.js';
 import { showCommentModal } from '../../components/taskTimerModals.js';
-import { createMaintenanceRequest } from '../../maintenance/maintenanceApi.js';
-import { checkMachineMaintenance, createManualTimeEntry } from './taskApi.js';
-import { startTimer } from './taskApi.js';
-import { stopTimerShared } from '../cnc_cuttingService.js';
+import { createMaintenanceRequest } from '../../generic/machines.js';
+import { checkMachineMaintenance } from '../../generic/machines.js';
+import { createManualTimeEntryShared } from '../../generic/timers.js';
+import { stopTimerShared, startTimerShared } from '../../generic/timers.js';
+import { getSyncedNow, syncServerTime } from '../../generic/timeService.js';
+import { setCurrentTimerState, setCurrentMachineState } from './taskState.js';
+import { TimerWidget } from '../../components/timerWidget.js';
+import { getTimerPageComponent } from './task.js';
 
 // ============================================================================
 // TIMER FUNCTIONS (IMPLEMENTED FROM DELETED taskLogic.js)
 // ============================================================================
 
 async function handleStartTimer(comment = null) {
+    if (!state.currentMachine.id || !state.currentIssue.key){
+        alert("Bir sorun oluştu. Sayfa yeniden yükleniyor.");
+        navigateTo(ROUTES.CNC_CUTTING);
+        return;
+    }
+    
     try {
-        const timer = await startTimer(comment);
-        if (timer) {
-            // Update machine state to reflect active timer
-            state.currentMachine.has_active_timer = true;
-            return timer;
+        await syncServerTime();
+        const timerData = {
+            issue_key: state.currentIssue.key,
+            start_time: getSyncedNow(),
+            machine_fk: state.currentMachine.id,
         }
+        
+        // Add comment if provided
+        if (comment) {
+            timerData.comment = comment;
+        }
+        
+        const timer = await startTimerShared(timerData, 'cnc_cutting');
+        if (!timer) {
+            alert("Bir sorun oluştu. Sayfa yeniden yükleniyor.");
+            navigateTo(ROUTES.CNC_CUTTING);
+            return;
+        }
+        
+        timerData.id = timer.id;
+        setCurrentTimerState(timerData);
+        setCurrentMachineState(state.currentMachine.id);
+        state.currentMachine.has_active_timer = true;
+        // Trigger timer widget update
+        TimerWidget.triggerUpdate();
+        return timer;
     } catch (error) {
         console.error('Error starting timer:', error);
         alert('Zamanlayıcı başlatılırken bir hata oluştu.');
@@ -39,12 +69,21 @@ async function handleStopTimer(syncToJira = true) {
             timerId: state.currentTimer.id,
             finishTime: Date.now(),
             syncToJira: syncToJira
-        });
+        }, 'cnc_cutting');
         
         if (success) {
             // Clear timer state
             state.currentTimer = { id: null, start_time: null };
             state.currentMachine.has_active_timer = false;
+            
+            // Reset timer display in TimerPage component
+            const timerPageComponent = getTimerPageComponent();
+            if (timerPageComponent) {
+                timerPageComponent.resetTimer();
+            }
+            
+            // Trigger timer widget update
+            TimerWidget.triggerUpdate();
             return true;
         } else {
             alert('Zamanlayıcı durdurulurken bir hata oluştu.');
@@ -95,7 +134,7 @@ export async function handleMarkDoneClick() {
     }
     
     try {
-        const marked = await markTaskAsDone();
+        const marked = await markTaskAsDoneShared(state.currentIssue.key, 'cnc_cutting');
         if (marked) {
             alert('Görev tamamlandı olarak işaretlendi.');
             navigateTo(ROUTES.CNC_CUTTING);
@@ -146,99 +185,6 @@ export async function handleFaultReportClick() {
     // If machineStatus is false (user clicked X or backdrop), do nothing
 }
 
-// Custom confirmation dialog function
-function showCustomConfirm(message, yesText = "Evet", noText = "Hayır") {
-    return new Promise((resolve) => {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        `;
-        
-        modal.innerHTML = `
-            <div style="
-                background: white;
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                max-width: 400px;
-                width: 90%;
-                text-align: center;
-            ">
-                <p style="margin-bottom: 20px; font-size: 16px;">${message}</p>
-                <div style="display: flex; gap: 10px; justify-content: center;">
-                    <button id="confirm-yes" style="
-                        padding: 10px 20px;
-                        background: #007bff;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 14px;
-                    ">${yesText}</button>
-                    <button id="confirm-no" style="
-                        padding: 10px 20px;
-                        background: #6c757d;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 14px;
-                    ">${noText}</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        const yesBtn = modal.querySelector('#confirm-yes');
-        const noBtn = modal.querySelector('#confirm-no');
-        
-        function closeModal(result) {
-            document.body.removeChild(modal);
-            resolve(result);
-        }
-        
-        yesBtn.onclick = () => closeModal(true);
-        noBtn.onclick = () => closeModal(false);
-        
-        // Close on background click
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                closeModal(false);
-            }
-        };
-        
-        // Focus on yes button by default
-        yesBtn.focus();
-        
-        // Handle Enter and Escape keys
-        const handleKeydown = (e) => {
-            if (e.key === 'Enter') {
-                closeModal(true);
-            } else if (e.key === 'Escape') {
-                closeModal(false);
-            }
-        };
-        
-        document.addEventListener('keydown', handleKeydown);
-        
-        // Clean up event listener when modal closes
-        const originalCloseModal = closeModal;
-        closeModal = (result) => {
-            document.removeEventListener('keydown', handleKeydown);
-            originalCloseModal(result);
-        };
-    });
-}
 
 export function handleBackClick() {
     if (state.timerActive) {
@@ -288,7 +234,7 @@ export async function showNewManualTimeModal(comment = null) {
             resolve();
         }
         
-        function handleSubmit() {
+        async function handleSubmit() {
             const startDateTime = document.getElementById('start-datetime').value;
             const endDateTime = document.getElementById('end-datetime').value;
             
@@ -312,7 +258,20 @@ export async function showNewManualTimeModal(comment = null) {
                 }
                 
                 // Create manual time entry
-                createManualTimeEntry(startDate, endDate, comment);
+                if (!state.currentMachine.id || !state.currentIssue.key) {
+                    navigateTo(ROUTES.CNC_CUTTING);
+                    return;
+                }
+                const timerData = {
+                    issue_key: state.currentIssue.key,
+                    start_time: startDate.getTime(),
+                    finish_time: endDate.getTime(),
+                    machine_fk: state.currentMachine.id
+                };
+                if (comment) {
+                    timerData.comment = comment;
+                }
+                await createManualTimeEntryShared(timerData, 'cnc_cutting');
                 closeModal();
                 resolve();
             } catch (error) {

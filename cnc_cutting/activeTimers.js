@@ -213,8 +213,9 @@ async function loadTasksForMachine(machineId) {
     }
     
     try {
-        const { fetchMachineTasks } = await import('../generic/tasks.js');
-        allTasks = await fetchMachineTasks('cnc_cutting', { machineId,  completionDateIsNull: true, in_plan: true, ordering: 'plan_order', pageSize: 5 });
+        const { fetchTasks } = await import('../generic/tasks.js');
+        const data = await fetchTasks({ machineId, completionDateIsNull: true, inPlan: true, ordering: 'plan_order', pageSize: 5 }, 'cnc_cutting');
+        allTasks = data.results || data;
         
         // Display tasks
         filterAndDisplayTasks();

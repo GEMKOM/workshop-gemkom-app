@@ -11,7 +11,8 @@ export async function createMachineTaskView({
     title = '',
     machineLabel = 'Makine Seçimi',
     searchPlaceholder = 'TI numarası ile ara...',
-    taskDetailBasePath = ''
+    taskDetailBasePath = '',
+    module = 'machining'
 }) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -253,11 +254,8 @@ export async function createMachineTaskView({
             const select = document.getElementById('reason-code-select');
             select.innerHTML = '<option>Yükleniyor...</option>';
             try {
-                const backendBase = (await import('../base.js')).backendBase;
-                const { authedFetch } = await import('../authService.js');
-                const resp = await authedFetch(`${backendBase}/machining/hold-tasks/`);
-                const data = await resp.json();
-                const codes = extractResultsFromResponse(data);
+                const { fetchHoldTasks } = await import('../generic/tasks.js');
+                const codes = await fetchHoldTasks(module);
                 select.innerHTML = codes.map(code => `<option value="${code.key}">${code.name || code.job_no}</option>`).join('');
             } catch (err) {
                 select.innerHTML = '<option>Bekletme nedenleri alınamadı</option>';
