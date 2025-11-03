@@ -97,10 +97,12 @@ export async function fetchTaskDetails(taskKey = null, module = 'machining') {
         }
         return task;
     } else {
+        const key = params.get('key');
         return {
-            key: params.get('key'),
-            name: params.get('name') || params.get('key'),                    // Task name
-            job_no: params.get('name') || params.get('key'),           // RM260-01-12
+            key: key,
+            name: params.get('name') || key,                    // Task name
+            nesting_id: key,                                    // For CNC cutting, nesting_id is the same as key
+            job_no: params.get('name') || key,           // RM260-01-12
             image_no: null,         // 8.7211.0005
             position_no: null,      // 107
             quantity: null,         // 6

@@ -62,16 +62,32 @@ async function initializeTaskView() {
 
 function initializeTimerPage(issue, activeTimer) {
     const hasActiveTimer = !!activeTimer;
-    const isHoldTask = issue.is_hold_task;
+    // Ensure is_hold_task is properly detected (check URL param as fallback)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isHoldTask = issue.is_hold_task || urlParams.get('hold') === '1';
 
     // Create timer page component
     timerPageComponent = new TimerPage('timer-page-container', {
         // Header configuration
-        title: issue.nesting_id,
+        title: issue.nesting_id || issue.key || 'Görev',
         subtitle: state.currentMachine.name,
         showBackButton: true,
         backButtonText: 'Geri',
         backButtonIcon: 'fas fa-arrow-left',
+        // Custom header right content - display malzeme and kalinlik instead of status
+        // Only show for non-hold tasks (hold tasks don't have material/thickness)
+        headerRightContent: isHoldTask ? null : `
+            <div class="timer-header-info-badges">
+                <div class="timer-info-badge">
+                    <i class="fas fa-cube"></i>
+                    <span>${issue.material || '-'}</span>
+                </div>
+                <div class="timer-info-badge">
+                    <i class="fas fa-ruler-vertical"></i>
+                    <span>${issue.thickness_mm ? `${issue.thickness_mm} mm` : '-'}</span>
+                </div>
+            </div>
+        `,
 
         // Timer configuration
         timerLabel: 'Geçen Süre',
@@ -123,11 +139,12 @@ function initializeTimerPage(issue, activeTimer) {
         warningIcon: 'fas fa-exclamation-circle',
 
         // Modal configuration
+        // manualTime is false because we use our own modal (same as machining)
         modals: {
-            manualTime: true,
-            faultReport: true,
-            machineStatus: true,
-            redirectWarning: true
+            manualTime: false,
+            faultReport: false,
+            machineStatus: false,
+            redirectWarning: false
         },
 
         // Event handlers

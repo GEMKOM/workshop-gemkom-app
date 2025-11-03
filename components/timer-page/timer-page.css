@@ -135,6 +135,37 @@
     font-size: 0.9rem;
 }
 
+.timer-header-info-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.timer-info-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-weight: 500;
+    transition: var(--timer-transition);
+    white-space: nowrap;
+}
+
+.timer-info-badge:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.timer-info-badge i {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
 /* ============================================================================
    TIMER SECTION
    ============================================================================ */
@@ -858,6 +889,19 @@ textarea.form-control {
     
     .timer-header-right {
         align-self: flex-end;
+    }
+    
+    .timer-header-info-badges {
+        gap: 0.5rem;
+    }
+    
+    .timer-info-badge {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+    }
+    
+    .timer-info-badge i {
+        font-size: 0.8rem;
     }
     
     .timer-display {

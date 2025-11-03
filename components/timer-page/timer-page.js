@@ -22,6 +22,8 @@ export class TimerPage {
             showBackButton: true,
             backButtonText: 'Geri',
             backButtonIcon: 'fas fa-arrow-left',
+            // Custom header right content (if provided, replaces status badge)
+            headerRightContent: null,
             
             // Timer configuration
             timerLabel: 'Geçen Süre',
@@ -157,10 +159,12 @@ export class TimerPage {
                                     </div>
                                 </div>
                                 <div class="timer-header-right">
-                                    <div class="timer-status-badge" id="timer-status">
-                                        <i class="fas fa-clock"></i>
-                                        <span>Beklemede</span>
-                                    </div>
+                                    ${this.config.headerRightContent || `
+                                        <div class="timer-status-badge" id="timer-status">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Beklemede</span>
+                                        </div>
+                                    `}
                                 </div>
                             </div>
                         </div>
@@ -369,11 +373,18 @@ export class TimerPage {
         if (this.config.buttons.startStop.enabled) {
             const startStopBtn = document.getElementById('timer-start-stop');
             if (startStopBtn) {
-                startStopBtn.addEventListener('click', () => {
+                startStopBtn.addEventListener('click', async () => {
                     if (this.state.isRunning) {
                         this.stopTimer();
                     } else {
-                        this.startTimer();
+                        // If there's an onStart callback, ONLY call it (don't call startTimer)
+                        // The callback should handle starting the timer server-side and updating state
+                        if (this.config.onStart) {
+                            await this.config.onStart();
+                        } else {
+                            // No callback, use default behavior (local timer only)
+                            this.startTimer();
+                        }
                     }
                 });
             }
@@ -383,7 +394,11 @@ export class TimerPage {
             const manualBtn = document.getElementById('timer-manual-button');
             if (manualBtn) {
                 manualBtn.addEventListener('click', () => {
-                    this.showModal('timer-manual-time-modal');
+                    if (this.config.onManual) {
+                        this.config.onManual();
+                    } else {
+                        this.showModal('timer-manual-time-modal');
+                    }
                 });
             }
         }
@@ -403,7 +418,11 @@ export class TimerPage {
             const faultBtn = document.getElementById('timer-fault-button');
             if (faultBtn) {
                 faultBtn.addEventListener('click', () => {
-                    this.showModal('timer-fault-modal');
+                    if (this.config.onFault) {
+                        this.config.onFault();
+                    } else {
+                        this.showModal('timer-fault-modal');
+                    }
                 });
             }
         }
@@ -426,12 +445,14 @@ export class TimerPage {
                 if (cancelBtn) cancelBtn.addEventListener('click', () => this.hideModal('timer-manual-time-modal'));
                 if (backdrop) backdrop.addEventListener('click', () => this.hideModal('timer-manual-time-modal'));
 
-                // Submit button
-                const submitBtn = document.getElementById('timer-manual-time-modal-submit');
-                if (submitBtn) {
-                    submitBtn.addEventListener('click', () => {
-                        this.handleManualTimeSubmit();
-                    });
+                // Submit button - only attach if no custom onManual handler (custom handlers manage their own submission)
+                if (!this.config.onManual) {
+                    const submitBtn = document.getElementById('timer-manual-time-modal-submit');
+                    if (submitBtn) {
+                        submitBtn.addEventListener('click', () => {
+                            this.handleManualTimeSubmit();
+                        });
+                    }
                 }
 
                 // Time preview
@@ -469,12 +490,14 @@ export class TimerPage {
                 if (cancelBtn) cancelBtn.addEventListener('click', () => this.hideModal('timer-fault-modal'));
                 if (backdrop) backdrop.addEventListener('click', () => this.hideModal('timer-fault-modal'));
 
-                // Submit button
-                const submitBtn = document.getElementById('timer-fault-modal-submit');
-                if (submitBtn) {
-                    submitBtn.addEventListener('click', () => {
-                        this.handleFaultSubmit();
-                    });
+                // Submit button - only attach if no custom onFault handler (custom handlers manage their own submission)
+                if (!this.config.onFault) {
+                    const submitBtn = document.getElementById('timer-fault-modal-submit');
+                    if (submitBtn) {
+                        submitBtn.addEventListener('click', () => {
+                            this.handleFaultSubmit();
+                        });
+                    }
                 }
             }
         }
@@ -482,14 +505,19 @@ export class TimerPage {
 
     // Timer functionality
     startTimer() {
+        // Only use this for local-only timers (when no server-side callback is provided)
+        // If onStart callback exists, it should handle everything (showing modals, starting server timer, etc.)
+        if (this.config.onStart) {
+            // Don't set local state - let the callback handle everything
+            this.config.onStart();
+            return;
+        }
+        
+        // Default behavior: local timer only (for demo/testing)
         this.state.isRunning = true;
         this.state.startTime = Date.now();
         this.updateButtonStates();
         this.updateStatus();
-        
-        if (this.config.onStart) {
-            this.config.onStart();
-        }
     }
 
     /**
@@ -603,6 +631,10 @@ export class TimerPage {
     }
 
     updateStatus() {
+        // Only update status if headerRightContent is not provided (status badge is visible)
+        if (this.config.headerRightContent) {
+            return;
+        }
         const status = document.getElementById('timer-status');
         if (status) {
             if (this.state.isRunning) {

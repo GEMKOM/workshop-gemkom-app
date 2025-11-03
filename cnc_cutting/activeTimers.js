@@ -271,7 +271,80 @@ function filterTasksBySearch(tasks, searchTerm) {
  * Formats tasks for the ResultsTable component
  */
 function formatTasksForResultsTable(tasks) {
-    return tasks.map(task => ({
+    // First, add the placeholder task card for "out of the ordinary tasks"
+    const placeholderTask = {
+        title: 'Diğer İşler',
+        subtitle: 'Makineyi bekletme (Arıza, fabrika işleri, malzeme bekleme, yemek molası, izin, vs) için tıklayın',
+        icon: 'fas fa-pause-circle',
+        iconColor: '#8b0000',
+        iconBackground: '#fff5f5',
+        details: [],
+        clickable: true,
+        onClick: async () => {
+            // Show modal to select reason_code
+            let modal = document.getElementById('hold-task-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'hold-task-modal';
+                modal.innerHTML = `
+                <div class="modal fade" tabindex="-1" id="hold-task-modal-inner">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-pause-circle me-2"></i>
+                            Bekletme Nedeni Seç
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                      </div>
+                      <div class="modal-body">
+                        <p class="text-muted mb-3">Makineyi bekletme nedenini seçin:</p>
+                        <select id="reason-code-select" class="form-select">
+                            <option>Yükleniyor...</option>
+                        </select>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>İptal
+                        </button>
+                        <button type="button" class="btn btn-primary" id="select-reason-code-btn">
+                            <i class="fas fa-play me-2"></i>Devam
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                document.body.appendChild(modal);
+            }
+            
+            // Fetch reason codes
+            const select = document.getElementById('reason-code-select');
+            select.innerHTML = '<option>Yükleniyor...</option>';
+            try {
+                const { fetchHoldTasks } = await import('../generic/tasks.js');
+                const codes = await fetchHoldTasks('cnc_cutting');
+                select.innerHTML = codes.map(code => `<option value="${code.key}">${code.name || code.job_no}</option>`).join('');
+            } catch (err) {
+                select.innerHTML = '<option>Bekletme nedenleri alınamadı</option>';
+            }
+            
+            // Show modal
+            const bsModal = new bootstrap.Modal(document.getElementById('hold-task-modal-inner'));
+            bsModal.show();
+            document.getElementById('select-reason-code-btn').onclick = () => {
+                const reasonCode = select.value;
+                const reasonName = select.options[select.selectedIndex]?.text || reasonCode;
+                if (!reasonCode) return;
+                const params = new URLSearchParams(window.location.search);
+                const machineId = params.get('machine_id');
+                // Go to tasks page with reason_code as issue_key and pass name
+                window.location.href = `/cnc_cutting/tasks/?machine_id=${encodeURIComponent(machineId)}&key=${encodeURIComponent(reasonCode)}&name=${encodeURIComponent(reasonName)}&hold=1`;
+            };
+        }
+    };
+    
+    // Then map regular tasks
+    const regularTasks = tasks.map(task => ({
         title: task.nesting_id || 'Görev',
         subtitle: task.key || 'Açıklama yok',
         icon: 'fas fa-cut',
@@ -314,6 +387,9 @@ function formatTasksForResultsTable(tasks) {
             }
         }
     }));
+    
+    // Return placeholder task first, then regular tasks
+    return [placeholderTask, ...regularTasks];
 }
 
 /**
