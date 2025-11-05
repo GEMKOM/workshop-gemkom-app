@@ -32,3 +32,39 @@ export async function createRemnantPlate(remnantData) {
         throw error;
     }
 }
+
+/**
+ * Get all remnant plates (list view)
+ * @param {URLSearchParams|Object} [params] - Optional search params (URLSearchParams or plain object)
+ * @returns {Promise<Array|Object>} Array of remnant plates or paginated response
+ */
+export async function getRemnantPlates(params = undefined) {
+    try {
+        let query = '';
+        if (params) {
+            const searchParams = params instanceof URLSearchParams ? params : new URLSearchParams(params);
+            const qs = searchParams.toString();
+            query = qs ? `?${qs}` : '';
+        }
+        const url = `${backendBase}/cnc_cutting/remnants/${query}`;
+        const response = await authedFetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch remnant plates: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // Handle both direct array response and paginated response
+        if (data.results && Array.isArray(data.results)) {
+            return data; // Return the full paginated response
+        } else if (Array.isArray(data)) {
+            return data; // Return the direct array
+        } else {
+            throw new Error('Unexpected response format');
+        }
+    } catch (error) {
+        console.error('Error fetching remnant plates:', error);
+        throw error;
+    }
+}

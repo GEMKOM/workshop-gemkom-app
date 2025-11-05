@@ -1582,3 +1582,104 @@ html {
         width: 100%;
     }
 }
+
+/* ============================================================================
+   FIRE SACLAR VIEW STYLES
+   ============================================================================ */
+
+.fire-saclar-view {
+    width: 100%;
+    padding: 1rem 0;
+}
+
+.section-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-toggle-form {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.fire-saclar-form-container {
+    margin-top: 1.5rem;
+    animation: slideDown 0.3s ease-out;
+}
+
+.fire-saclar-grid {
+    margin-top: 2rem;
+}
+
+.fire-saclar-card-grid {
+    margin-top: 1rem;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.loading-state p {
+    margin-top: 1rem;
+    color: #6c757d;
+    font-size: 1rem;
+}
+
+.error-state {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+/* Responsive grid for fire saclar cards */
+@media (max-width: 1200px) {
+    .fire-saclar-card-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .fire-saclar-card-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .fire-saclar-view {
+        padding: 0.5rem 0;
+    }
+    
+    .section-header {
+        margin-bottom: 1rem;
+    }
+    
+    .section-header-content {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn-toggle-form {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    
+    .fire-saclar-form-container {
+        margin-top: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn-submit,
+    .btn-reset,
+    .btn-cancel {
+        width: 100%;
+    }
+}
