@@ -214,7 +214,7 @@ async function loadTasksForMachine(machineId) {
     
     try {
         const { fetchTasks } = await import('../generic/tasks.js');
-        const data = await fetchTasks({ machineId, completionDateIsNull: true, inPlan: true, ordering: 'plan_order', pageSize: 5 }, 'cnc_cutting');
+        const data = await fetchTasks({ machineId, completionDateIsNull: true, inPlan: true, ordering: 'plan_order', pageSize: 10 }, 'cnc_cutting');
         allTasks = data.results || data;
         
         // Display tasks
@@ -370,6 +370,11 @@ function formatTasksForResultsTable(tasks) {
                 icon: 'fas fa-cubes',
                 label: 'Parça Sayısı:',
                 value: task.parts ? task.parts.length : (task.parts_count || '-')
+            },
+            {
+                icon: 'fas fa-hashtag',
+                label: 'Adet:',
+                value: task.quantity ? task.quantity.toString() : '-'
             },
             ...(task.finish_time ? [{
                 icon: 'fas fa-calendar-alt',
