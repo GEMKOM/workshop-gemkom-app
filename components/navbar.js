@@ -226,6 +226,12 @@ export function initNavbar() {
                                 <span>Bakım</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/department-requests">
+                                <i class="fas fa-clipboard-list me-1"></i>
+                                <span>Departman Talepleri</span>
+                            </a>
+                        </li>
                     </ul>
                     
                     <ul class="navbar-nav ms-auto align-items-center">

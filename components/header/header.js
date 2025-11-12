@@ -35,6 +35,9 @@ export class HeaderComponent {
             // Default back navigation
             backUrl: null,
             
+            // Create button URL
+            createUrl: null,
+            
             ...config
         };
         
@@ -152,6 +155,8 @@ export class HeaderComponent {
                 e.preventDefault();
                 if (this.config.onCreateClick) {
                     this.config.onCreateClick();
+                } else if (this.config.createUrl) {
+                    window.location.href = this.config.createUrl;
                 }
             });
         }
