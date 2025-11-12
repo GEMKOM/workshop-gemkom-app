@@ -6,6 +6,8 @@ import { fetchTasks, fetchTaskById } from '../../generic/tasks.js';
 import { FileAttachments } from '../../components/file-attachments/file-attachments.js';
 import { FileViewer } from '../../components/file-viewer/file-viewer.js';
 import { markAsWareHouseProcessed } from '../../generic/tasks.js';
+import { calculatePlateWeight } from './plate-weight-calculator.js';
+import { showExportModal } from './parts-export.js';
 
 // ============================================================================
 // INITIALIZATION
@@ -217,6 +219,16 @@ function showTaskDetailsModal(task) {
     const modal = document.getElementById('taskDetailsModal');
     if (modal) {
         modal.currentTask = task;
+        
+        // Bind export button if parts exist
+        if (task.parts && task.parts.length > 0) {
+            const exportBtn = document.getElementById('export-parts-btn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    showExportModal(task.parts);
+                });
+            }
+        }
     }
 }
 
@@ -224,6 +236,79 @@ function showTaskDetailsModal(task) {
  * Creates the HTML for task details modal
  */
 function createTaskDetailsModalHTML(task) {
+    // Calculate plate weight if dimensions and thickness are available
+    let plateWeight = null;
+    let plateWeightError = null;
+    
+    if (task.dimensions && task.thickness_mm) {
+        try {
+            // Parse dimensions (format: "300X550", "300x550", "300*550", "300 X 550", etc.)
+            const dimensionsStr = String(task.dimensions).trim();
+            
+            // Try splitting by common separators
+            let width = null;
+            let length = null;
+            
+            // Try splitting by asterisk, x, X, or ×
+            const separators = ['*', 'x', 'X', '×'];
+            for (const sep of separators) {
+                if (dimensionsStr.includes(sep)) {
+                    const parts = dimensionsStr.split(sep).map(p => p.trim());
+                    if (parts.length === 2) {
+                        width = parseFloat(parts[0]);
+                        length = parseFloat(parts[1]);
+                        if (!isNaN(width) && !isNaN(length)) {
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If splitting didn't work, try regex as fallback
+            if (width === null || length === null || isNaN(width) || isNaN(length)) {
+                const dimensionsMatch = dimensionsStr.match(/(\d+(?:\.\d+)?)\s*[*xX×]\s*(\d+(?:\.\d+)?)/);
+                if (dimensionsMatch && dimensionsMatch.length >= 3) {
+                    width = parseFloat(dimensionsMatch[1]);
+                    length = parseFloat(dimensionsMatch[2]);
+                }
+            }
+            
+            if (width !== null && length !== null && !isNaN(width) && !isNaN(length) && width > 0 && length > 0) {
+                const thickness = parseFloat(task.thickness_mm);
+                
+                console.log('Calculating plate weight:', { 
+                    dimensions: task.dimensions, 
+                    dimensionsStr,
+                    width, 
+                    length, 
+                    thickness 
+                });
+                
+                if (!isNaN(thickness) && thickness > 0) {
+                    plateWeight = calculatePlateWeight(width, length, thickness);
+                    console.log('Plate weight calculated:', plateWeight);
+                } else {
+                    plateWeightError = 'Geçersiz kalınlık değeri';
+                    console.warn('Invalid thickness:', thickness);
+                }
+            } else {
+                plateWeightError = 'Boyut formatı tanınmadı';
+                console.warn('Could not parse dimensions:', { 
+                    original: task.dimensions, 
+                    trimmed: dimensionsStr,
+                    width,
+                    length
+                });
+            }
+        } catch (error) {
+            plateWeightError = 'Hesaplama hatası';
+            console.error('Could not calculate plate weight:', error);
+        }
+    } else {
+        plateWeightError = 'Boyut veya kalınlık bilgisi eksik';
+        console.warn('Missing dimensions or thickness:', { dimensions: task.dimensions, thickness: task.thickness_mm });
+    }
+    
     return `
         <div class="modal fade show" id="taskDetailsModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -279,6 +364,14 @@ function createTaskDetailsModalHTML(task) {
                                 </div>
                                 <div class="col-md-3 col-sm-6">
                                     <div class="detail-item-compact">
+                                        <span class="detail-label-compact">Levha Ağırlığı:</span>
+                                        <span class="detail-value-compact fw-bold">
+                                            ${plateWeight !== null ? plateWeight.toFixed(2) + ' kg' : (plateWeightError || '-')}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="detail-item-compact">
                                         <span class="detail-label-compact">Tahmini:</span>
                                         <span class="detail-value-compact">${task.estimated_hours ? task.estimated_hours + ' sa' : '-'}</span>
                                     </div>
@@ -302,9 +395,16 @@ function createTaskDetailsModalHTML(task) {
                         
                         <!-- Section 3: Parts Table -->
                         <div class="parts-table-section">
-                            <h6 class="section-title mb-3">
-                                <i class="fas fa-cubes me-2"></i>Parçalar (${task.parts_count || 0})
-                            </h6>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="section-title mb-0">
+                                    <i class="fas fa-cubes me-2"></i>Parçalar (${task.parts_count || 0})
+                                </h6>
+                                ${task.parts && task.parts.length > 0 ? `
+                                <button type="button" class="btn btn-sm btn-outline-success" id="export-parts-btn">
+                                    <i class="fas fa-file-csv me-2"></i>CSV Dışa Aktar
+                                </button>
+                                ` : ''}
+                            </div>
                             <div id="task-parts-table"></div>
                         </div>
                     </div>
@@ -377,25 +477,28 @@ function renderPartsTable(parts) {
                         <th>Resim No</th>
                         <th>Pozisyon No</th>
                         <th>Ağırlık (kg)</th>
+                        <th>Miktar</th>
+                        <th><strong>Düşülecek Ağırlık (kg)</strong></th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${parts.map((part, index) => `
+                    ${parts.map((part, index) => {
+                        const weight = parseFloat(part.weight_kg) || 0;
+                        const quantity = parseInt(part.quantity) || 0;
+                        const weightToReduce = weight * quantity;
+                        return `
                         <tr>
                             <td>${index + 1}</td>
                             <td>${part.job_no || '-'}</td>
                             <td>${part.image_no || '-'}</td>
                             <td>${part.position_no || '-'}</td>
-                            <td>${part.weight_kg ? parseFloat(part.weight_kg).toFixed(2) : '-'}</td>
+                            <td>${weight > 0 ? weight.toFixed(2) : '-'}</td>
+                            <td>${quantity > 0 ? quantity : '-'}</td>
+                            <td><strong>${weightToReduce > 0 ? weightToReduce.toFixed(2) : '-'}</strong></td>
                         </tr>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </tbody>
-                <tfoot class="table-light">
-                    <tr>
-                        <th colspan="4" class="text-end">Toplam Ağırlık:</th>
-                        <th>${calculateTotalWeight(parts)} kg</th>
-                    </tr>
-                </tfoot>
             </table>
         </div>
     `;
@@ -410,6 +513,18 @@ function calculateTotalWeight(parts) {
     const total = parts.reduce((sum, part) => {
         const weight = parseFloat(part.weight_kg) || 0;
         return sum + weight;
+    }, 0);
+    return total.toFixed(2);
+}
+
+/**
+ * Calculate total weight to reduce (quantity × weight for each part)
+ */
+function calculateTotalWeightToReduce(parts) {
+    const total = parts.reduce((sum, part) => {
+        const weight = parseFloat(part.weight_kg) || 0;
+        const quantity = parseInt(part.quantity) || 0;
+        return sum + (weight * quantity);
     }, 0);
     return total.toFixed(2);
 }
