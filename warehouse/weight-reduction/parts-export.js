@@ -75,12 +75,12 @@ function createExportModalHTML(exportData) {
                             <table class="table table-bordered table-hover table-sm" id="export-preview-table">
                                 <thead class="table-light sticky-top">
                                     <tr>
-                                        <th style="width: 15%;">Sütun 1</th>
+                                        <th style="width: 15%;">Stok Kodu</th>
                                         <th style="width: 10%;">Sütun 2</th>
                                         <th style="width: 15%;">Toplam Ağırlık</th>
-                                        <th style="width: 15%;">Sütun 4</th>
+                                        <th style="width: 15%;">Boş Bırak</th>
                                         <th style="width: 25%;">İş Emri No</th>
-                                        <th style="width: 10%;">Sütun 6</th>
+                                        <th style="width: 10%;">Depo</th>
                                     </tr>
                                 </thead>
                                 <tbody id="export-preview-tbody">
@@ -237,20 +237,27 @@ function exportToCSV(modal) {
         csvData.push(rowData);
     });
     
-    // Convert to CSV format
+    // Convert to CSV format with semicolon delimiter (Excel-friendly)
     const csvContent = csvData.map(row => {
-        // Escape values that contain commas or quotes
+        // Escape values that contain semicolons, commas, or quotes
         return row.map(cell => {
             const value = String(cell || '');
-            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+            // If value contains semicolon, comma, quote, or newline, wrap in quotes
+            if (value.includes(';') || value.includes(',') || value.includes('"') || value.includes('\n')) {
                 return `"${value.replace(/"/g, '""')}"`;
             }
             return value;
-        }).join(',');
-    }).join('\n');
+        }).join(';'); // Use semicolon as delimiter for Excel compatibility
+    }).join('\r\n'); // Use Windows line endings (CRLF) for Excel
     
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Add UTF-8 BOM for Excel compatibility
+    const BOM = '\uFEFF';
+    const csvWithBOM = BOM + csvContent;
+    
+    // Create download link with proper encoding
+    const blob = new Blob([csvWithBOM], { 
+        type: 'text/csv;charset=utf-8;' 
+    });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     
