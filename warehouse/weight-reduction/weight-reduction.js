@@ -209,8 +209,49 @@ function showTaskDetailsModal(task) {
     // Initialize file attachments component
     initializeFileAttachments(task);
     
-    // Render parts table
-    renderPartsTable(task.parts || []);
+    // Calculate plate weight for remnant calculations
+    let plateWeight = null;
+    if (task.dimensions && task.thickness_mm) {
+        try {
+            const dimensionsStr = String(task.dimensions).trim();
+            const separators = ['*', 'x', 'X', '×'];
+            let width = null;
+            let length = null;
+            
+            for (const sep of separators) {
+                if (dimensionsStr.includes(sep)) {
+                    const parts = dimensionsStr.split(sep).map(p => p.trim());
+                    if (parts.length === 2) {
+                        width = parseFloat(parts[0]);
+                        length = parseFloat(parts[1]);
+                        if (!isNaN(width) && !isNaN(length)) {
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (width === null || length === null || isNaN(width) || isNaN(length)) {
+                const dimensionsMatch = dimensionsStr.match(/(\d+(?:\.\d+)?)\s*[*xX×]\s*(\d+(?:\.\d+)?)/);
+                if (dimensionsMatch && dimensionsMatch.length >= 3) {
+                    width = parseFloat(dimensionsMatch[1]);
+                    length = parseFloat(dimensionsMatch[2]);
+                }
+            }
+            
+            if (width !== null && length !== null && !isNaN(width) && !isNaN(length) && width > 0 && length > 0) {
+                const thickness = parseFloat(task.thickness_mm);
+                if (!isNaN(thickness) && thickness > 0) {
+                    plateWeight = calculatePlateWeight(width, length, thickness);
+                }
+            }
+        } catch (error) {
+            console.warn('Could not calculate plate weight for remnants:', error);
+        }
+    }
+    
+    // Render parts table with plate weight for remnant calculation
+    renderPartsTable(task.parts || [], plateWeight);
     
     // Bind modal events
     bindModalEvents();
@@ -452,9 +493,58 @@ function initializeFileAttachments(task) {
 }
 
 /**
+ * Calculate remnants for parts
+ * @param {Array} parts - Array of part objects
+ * @param {number} plateWeight - Total plate weight in kg
+ * @returns {Array} Array of remnant values for each part
+ */
+function calculateRemnants(parts, plateWeight) {
+    if (!parts || parts.length === 0 || !plateWeight || plateWeight <= 0) {
+        return parts.map(() => 0);
+    }
+    
+    // Calculate total weight of all parts (quantity × weight)
+    let totalPartsWeight = 0;
+    const partWeights = parts.map(part => {
+        const weight = parseFloat(part.weight_kg) || 0;
+        const quantity = parseInt(part.quantity) || 0;
+        const totalWeight = weight * quantity;
+        totalPartsWeight += totalWeight;
+        return totalWeight;
+    });
+    
+    // Calculate initial remnants (10% of each part's total weight)
+    const initialRemnants = partWeights.map(weight => weight * 0.1);
+    const totalInitialRemnants = initialRemnants.reduce((sum, rem) => sum + rem, 0);
+    
+    // Calculate total with initial remnants
+    const totalWithRemnants = totalPartsWeight + totalInitialRemnants;
+    
+    // If total exceeds plate weight, scale down remnants proportionally
+    if (totalWithRemnants > plateWeight) {
+        // Calculate available weight for remnants
+        const availableRemnantWeight = plateWeight - totalPartsWeight;
+        
+        // If we can't fit even the parts, return zero remnants
+        if (availableRemnantWeight <= 0) {
+            return parts.map(() => 0);
+        }
+        
+        // Calculate scale factor
+        const scaleFactor = availableRemnantWeight / totalInitialRemnants;
+        
+        // Scale down all remnants
+        return initialRemnants.map(rem => rem * scaleFactor);
+    }
+    
+    // If total doesn't exceed, return initial 10% remnants
+    return initialRemnants;
+}
+
+/**
  * Render parts table
  */
-function renderPartsTable(parts) {
+function renderPartsTable(parts, plateWeight = null) {
     const container = document.getElementById('task-parts-table');
     
     if (!parts || parts.length === 0) {
@@ -466,6 +556,9 @@ function renderPartsTable(parts) {
         `;
         return;
     }
+    
+    // Calculate remnants
+    const remnants = calculateRemnants(parts, plateWeight);
     
     const tableHTML = `
         <div class="table-responsive">
@@ -479,6 +572,7 @@ function renderPartsTable(parts) {
                         <th>Ağırlık (kg)</th>
                         <th>Miktar</th>
                         <th><strong>Düşülecek Ağırlık (kg)</strong></th>
+                        <th>Artık (kg)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -486,6 +580,7 @@ function renderPartsTable(parts) {
                         const weight = parseFloat(part.weight_kg) || 0;
                         const quantity = parseInt(part.quantity) || 0;
                         const weightToReduce = weight * quantity;
+                        const remnant = remnants[index] || 0;
                         return `
                         <tr>
                             <td>${index + 1}</td>
@@ -495,6 +590,7 @@ function renderPartsTable(parts) {
                             <td>${weight > 0 ? weight.toFixed(2) : '-'}</td>
                             <td>${quantity > 0 ? quantity : '-'}</td>
                             <td><strong>${weightToReduce > 0 ? weightToReduce.toFixed(2) : '-'}</strong></td>
+                            <td>${remnant > 0 ? remnant.toFixed(2) : '-'}</td>
                         </tr>
                     `;
                     }).join('')}
