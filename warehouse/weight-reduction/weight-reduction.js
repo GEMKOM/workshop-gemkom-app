@@ -2,6 +2,7 @@
 import { initNavbar } from '../../components/navbar.js';
 import { HeaderComponent } from '../../components/header/header.js';
 import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
+import { TableComponent } from '../../components/table/table.js';
 import { fetchTasks, fetchTaskById } from '../../generic/tasks.js';
 import { FileAttachments } from '../../components/file-attachments/file-attachments.js';
 import { FileViewer } from '../../components/file-viewer/file-viewer.js';
@@ -177,21 +178,6 @@ function formatDate(dateString) {
     });
 }
 
-function formatDuration(seconds) {
-    if (!seconds) return 'Bilinmiyor';
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-        return `${hours}s ${minutes}dk ${secs}sn`;
-    } else if (minutes > 0) {
-        return `${minutes}dk ${secs}sn`;
-    } else {
-        return `${secs}sn`;
-    }
-}
 
 // ============================================================================
 // TASK DETAILS MODAL FUNCTIONS
@@ -260,16 +246,6 @@ function showTaskDetailsModal(task) {
     const modal = document.getElementById('taskDetailsModal');
     if (modal) {
         modal.currentTask = task;
-        
-        // Bind export button if parts exist
-        if (task.parts && task.parts.length > 0) {
-            const exportBtn = document.getElementById('export-parts-btn');
-            if (exportBtn) {
-                exportBtn.addEventListener('click', () => {
-                    showExportModal(task.parts);
-                });
-            }
-        }
     }
 }
 
@@ -436,16 +412,6 @@ function createTaskDetailsModalHTML(task) {
                         
                         <!-- Section 3: Parts Table -->
                         <div class="parts-table-section">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="section-title mb-0">
-                                    <i class="fas fa-cubes me-2"></i>Parçalar (${task.parts_count || 0})
-                                </h6>
-                                ${task.parts && task.parts.length > 0 ? `
-                                <button type="button" class="btn btn-sm btn-outline-success" id="export-parts-btn">
-                                    <i class="fas fa-file-csv me-2"></i>CSV Dışa Aktar
-                                </button>
-                                ` : ''}
-                            </div>
                             <div id="task-parts-table"></div>
                         </div>
                     </div>
@@ -547,6 +513,11 @@ function calculateRemnants(parts, plateWeight) {
 function renderPartsTable(parts, plateWeight = null) {
     const container = document.getElementById('task-parts-table');
     
+    if (!container) return;
+    
+    // Clear container
+    container.innerHTML = '';
+    
     if (!parts || parts.length === 0) {
         container.innerHTML = `
             <div class="text-center text-muted py-3">
@@ -560,70 +531,75 @@ function renderPartsTable(parts, plateWeight = null) {
     // Calculate remnants
     const remnants = calculateRemnants(parts, plateWeight);
     
-    const tableHTML = `
-        <div class="table-responsive">
-            <table class="table table-hover table-bordered table-sm">
-                <thead class="table-light">
-                    <tr>
-                        <th>#</th>
-                        <th>İş Emri No</th>
-                        <th>Resim No</th>
-                        <th>Pozisyon No</th>
-                        <th>Ağırlık (kg)</th>
-                        <th>Miktar</th>
-                        <th><strong>Düşülecek Ağırlık (kg)</strong></th>
-                        <th>Artık (kg)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${parts.map((part, index) => {
-                        const weight = parseFloat(part.weight_kg) || 0;
-                        const quantity = parseInt(part.quantity) || 0;
-                        const weightToReduce = weight * quantity;
-                        const remnant = remnants[index] || 0;
-                        return `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${part.job_no || '-'}</td>
-                            <td>${part.image_no || '-'}</td>
-                            <td>${part.position_no || '-'}</td>
-                            <td>${weight > 0 ? weight.toFixed(2) : '-'}</td>
-                            <td>${quantity > 0 ? quantity : '-'}</td>
-                            <td><strong>${weightToReduce > 0 ? weightToReduce.toFixed(2) : '-'}</strong></td>
-                            <td>${remnant > 0 ? remnant.toFixed(2) : '-'}</td>
-                        </tr>
-                    `;
-                    }).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-    
-    container.innerHTML = tableHTML;
-}
-
-/**
- * Calculate total weight of parts
- */
-function calculateTotalWeight(parts) {
-    const total = parts.reduce((sum, part) => {
-        const weight = parseFloat(part.weight_kg) || 0;
-        return sum + weight;
-    }, 0);
-    return total.toFixed(2);
-}
-
-/**
- * Calculate total weight to reduce (quantity × weight for each part)
- */
-function calculateTotalWeightToReduce(parts) {
-    const total = parts.reduce((sum, part) => {
+    // Prepare data for table
+    const tableData = parts.map((part, index) => {
         const weight = parseFloat(part.weight_kg) || 0;
         const quantity = parseInt(part.quantity) || 0;
-        return sum + (weight * quantity);
-    }, 0);
-    return total.toFixed(2);
+        const weightToReduce = weight * quantity;
+        const remnant = remnants[index] || 0;
+        
+        return {
+            index: index + 1,
+            job_no: part.job_no || '-',
+            image_no: part.image_no || '-',
+            position_no: part.position_no || '-',
+            weight: weight > 0 ? weight.toFixed(2) : '-',
+            quantity: quantity > 0 ? quantity : '-',
+            weightToReduce: weightToReduce > 0 ? weightToReduce.toFixed(2) : '-',
+            remnant: remnant > 0 ? remnant.toFixed(2) : '-',
+            _rawWeight: weight,
+            _rawQuantity: quantity,
+            _rawWeightToReduce: weightToReduce,
+            _rawRemnant: remnant
+        };
+    });
+    
+    // Initialize table component
+    const partsTable = new TableComponent('task-parts-table', {
+        title: `Parçalar (${parts.length})`,
+        icon: 'fas fa-cubes',
+        columns: [
+            { field: 'index', label: '#', sortable: false },
+            { field: 'job_no', label: 'İş Emri No', sortable: true },
+            { field: 'image_no', label: 'Resim No', sortable: true },
+            { field: 'position_no', label: 'Pozisyon No', sortable: true },
+            { field: 'weight', label: 'Ağırlık (kg)', sortable: true },
+            { field: 'remnant', label: 'Fire (kg)', sortable: true },
+            { field: 'quantity', label: 'Miktar', sortable: true },
+            { 
+                field: 'weightToReduce', 
+                label: 'Düşülecek Ağırlık (kg)', 
+                sortable: true,
+                formatter: (value) => `<strong>${value}</strong>`
+            },
+            
+        ],
+        data: tableData,
+        sortable: true,
+        bordered: true,
+        small: true,
+        tableClass: 'table table-hover table-bordered table-sm',
+        emptyMessage: 'Henüz parça eklenmemiş',
+        emptyIcon: 'fas fa-inbox',
+        headerButtons: parts && parts.length > 0 ? [
+            {
+                id: 'export-parts-btn',
+                label: 'CSV Dışa Aktar',
+                icon: 'fas fa-file-csv',
+                class: 'btn btn-sm btn-outline-success',
+                onClick: () => {
+                    showExportModal(parts);
+                }
+            }
+        ] : []
+    });
+    
+    // Store table instance for potential cleanup
+    if (container) {
+        container.partsTable = partsTable;
+    }
 }
+
 
 /**
  * Bind modal events

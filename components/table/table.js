@@ -61,6 +61,9 @@ export class TableComponent {
             refreshable: false,
             onRefresh: null,
             
+            // Header buttons (custom buttons in header)
+            headerButtons: [], // Array of button configs: [{id, label, icon, class, onClick}]
+            
             // Custom row attributes
             rowAttributes: null, // Function that returns attributes for each row
             
@@ -109,6 +112,7 @@ export class TableComponent {
                                 <i class="fas fa-download me-1"></i>Dışa Aktar
                             </button>
                         ` : ''}
+                        ${this.renderHeaderButtons()}
                     </div>
                 </div>
                 <div class="card-body">
@@ -129,6 +133,29 @@ export class TableComponent {
         
         // Re-setup event listeners after rendering
         this.setupEventListeners();
+    }
+    
+    renderHeaderButtons() {
+        if (!this.options.headerButtons || this.options.headerButtons.length === 0) {
+            return '';
+        }
+        
+        // Store button IDs for event listener setup
+        this.headerButtonIds = [];
+        
+        return this.options.headerButtons.map((button, index) => {
+            const buttonId = button.id || `${this.containerId}-header-btn-${index}`;
+            this.headerButtonIds.push(buttonId);
+            const buttonClass = button.class || 'btn btn-sm btn-outline-secondary';
+            const icon = button.icon ? `<i class="${button.icon} me-1"></i>` : '';
+            const label = button.label || '';
+            
+            return `
+                <button class="${buttonClass}" type="button" id="${buttonId}">
+                    ${icon}${label}
+                </button>
+            `;
+        }).join('');
     }
     
     buildTableClass() {
@@ -581,6 +608,21 @@ export class TableComponent {
                     this.exportData('excel');
                 });
             }
+        }
+        
+        // Header buttons
+        if (this.options.headerButtons && this.options.headerButtons.length > 0 && this.headerButtonIds) {
+            this.options.headerButtons.forEach((button, index) => {
+                const buttonId = this.headerButtonIds[index];
+                if (buttonId) {
+                    const buttonElement = this.container.querySelector(`#${buttonId}`);
+                    if (buttonElement && button.onClick) {
+                        buttonElement.addEventListener('click', (e) => {
+                            button.onClick(e, this.options.data);
+                        });
+                    }
+                }
+            });
         }
         
         // Row click events
