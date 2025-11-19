@@ -3,6 +3,8 @@
  * Handles CSV export of parts table with preview and editing capabilities
  */
 
+import { formatDecimalTurkish } from '../../generic/formatters.js';
+
 // ============================================================================
 // EXPORT MODAL FUNCTIONS
 // ============================================================================
@@ -34,16 +36,22 @@ export function showExportModal(parts) {
  */
 function transformPartsToExportFormat(parts) {
     return parts.map((part, index) => {
-        const weight = parseFloat(part.weight_kg) || 0;
-        const quantity = parseInt(part.quantity) || 0;
-        const totalWeight = (weight * quantity).toFixed(2);
+        // Use weightToReduce if available (includes remnant), otherwise calculate from weight * quantity
+        let totalWeight;
+        if (part.weightToReduce !== undefined && part.weightToReduce !== null) {
+            totalWeight = formatDecimalTurkish(part.weightToReduce, 2);
+        } else {
+            const weight = parseFloat(part.weight_kg) || 0;
+            const quantity = parseInt(part.quantity) || 0;
+            totalWeight = formatDecimalTurkish(weight * quantity, 2);
+        }
         
         return {
             id: part.id || index,
             originalPart: part,
             col1: '', // Empty
             col2: 'C',
-            col3: totalWeight, // Total weight (quantity × weight)
+            col3: totalWeight, // Total weight (weightToReduce if available, otherwise quantity × weight) - formatted with comma
             col4: '', // Empty
             col5: part.job_no || '', // Job no
             col6: '2'

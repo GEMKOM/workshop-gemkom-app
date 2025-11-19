@@ -9,6 +9,7 @@ import { FileViewer } from '../../components/file-viewer/file-viewer.js';
 import { markAsWareHouseProcessed } from '../../generic/tasks.js';
 import { calculatePlateWeight } from './plate-weight-calculator.js';
 import { showExportModal } from './parts-export.js';
+import { formatDecimalTurkish } from '../../generic/formatters.js';
 
 // ============================================================================
 // INITIALIZATION
@@ -383,7 +384,7 @@ function createTaskDetailsModalHTML(task) {
                                     <div class="detail-item-compact">
                                         <span class="detail-label-compact">Levha Ağırlığı:</span>
                                         <span class="detail-value-compact fw-bold">
-                                            ${plateWeight !== null ? plateWeight.toFixed(2) + ' kg' : (plateWeightError || '-')}
+                                            ${plateWeight !== null ? formatDecimalTurkish(plateWeight, 2) + ' kg' : (plateWeightError || '-')}
                                         </span>
                                     </div>
                                 </div>
@@ -396,7 +397,7 @@ function createTaskDetailsModalHTML(task) {
                                 <div class="col-md-3 col-sm-6">
                                     <div class="detail-item-compact">
                                         <span class="detail-label-compact">Harcanan:</span>
-                                        <span class="detail-value-compact">${task.total_hours_spent ? task.total_hours_spent.toFixed(2) + ' sa' : '0 sa'}</span>
+                                        <span class="detail-value-compact">${task.total_hours_spent ? formatDecimalTurkish(task.total_hours_spent, 2) + ' sa' : '0 sa'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -535,18 +536,18 @@ function renderPartsTable(parts, plateWeight = null) {
     const tableData = parts.map((part, index) => {
         const weight = parseFloat(part.weight_kg) || 0;
         const quantity = parseInt(part.quantity) || 0;
-        const weightToReduce = weight * quantity;
         const remnant = remnants[index] || 0;
+        const weightToReduce = (weight * quantity) + remnant;
         
         return {
             index: index + 1,
             job_no: part.job_no || '-',
             image_no: part.image_no || '-',
             position_no: part.position_no || '-',
-            weight: weight > 0 ? weight.toFixed(2) : '-',
+            weight: weight > 0 ? formatDecimalTurkish(weight, 2) : '-',
             quantity: quantity > 0 ? quantity : '-',
-            weightToReduce: weightToReduce > 0 ? weightToReduce.toFixed(2) : '-',
-            remnant: remnant > 0 ? remnant.toFixed(2) : '-',
+            weightToReduce: weightToReduce > 0 ? formatDecimalTurkish(weightToReduce, 2) : '-',
+            remnant: remnant > 0 ? formatDecimalTurkish(remnant, 2) : '-',
             _rawWeight: weight,
             _rawQuantity: quantity,
             _rawWeightToReduce: weightToReduce,
@@ -588,7 +589,18 @@ function renderPartsTable(parts, plateWeight = null) {
                 icon: 'fas fa-file-csv',
                 class: 'btn btn-sm btn-outline-success',
                 onClick: () => {
-                    showExportModal(parts);
+                    // Append weightToReduce to each part before exporting
+                    const partsWithWeightToReduce = parts.map((part, index) => {
+                        const weight = parseFloat(part.weight_kg) || 0;
+                        const quantity = parseInt(part.quantity) || 0;
+                        const remnant = remnants[index] || 0;
+                        const weightToReduce = (weight * quantity) + remnant;
+                        return {
+                            ...part,
+                            weightToReduce: weightToReduce
+                        };
+                    });
+                    showExportModal(partsWithWeightToReduce);
                 }
             }
         ] : []

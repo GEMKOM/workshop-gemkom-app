@@ -75,3 +75,21 @@ export function formatDurationFromHoursToMinutes(durationHours) {
         return `${minutes}dk`;
     }
 }
+
+/**
+ * Formats a decimal number with Turkish locale (comma as decimal separator)
+ * @param {number} value - Number to format
+ * @param {number} decimals - Number of decimal places (default: 2)
+ * @returns {string} Formatted number string with comma as decimal separator
+ */
+export function formatDecimalTurkish(value, decimals = 2) {
+    if (value === null || value === undefined || isNaN(value)) {
+        return '-';
+    }
+    
+    // Use toLocaleString with Turkish locale for proper formatting
+    return value.toLocaleString('tr-TR', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
