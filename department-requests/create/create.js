@@ -5,6 +5,19 @@ import { ModernDropdown } from '../../components/dropdown/dropdown.js';
 import { HeaderComponent } from '../../components/header/header.js';
 
 // ============================================================================
+// CONSTANTS
+// ============================================================================
+
+export const UNIT_CHOICES = [
+    { value: 'adet', label: 'Adet' },
+    { value: 'kg', label: 'KG' },
+    { value: 'metre', label: 'Metre' },
+    { value: 'litre', label: 'Litre' },
+    { value: 'paket', label: 'Paket' },
+    { value: 'kutu', label: 'Kutu' }
+];
+
+// ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
 
@@ -339,8 +352,7 @@ function addItem() {
                     <i class="fas fa-ruler"></i>
                     Birim
                 </label>
-                <input type="text" class="form-control item-unit" data-item-id="${itemId}"
-                       placeholder="Örn: Adet, Kg, Litre" required>
+                <div id="unit-dropdown-${itemId}" data-item-id="${itemId}"></div>
             </div>
             <div class="col-12">
                 <label class="form-label">
@@ -354,6 +366,28 @@ function addItem() {
     `;
 
     itemsContainer.appendChild(itemCard);
+
+    // Initialize unit dropdown
+    const unitDropdownContainer = document.getElementById(`unit-dropdown-${itemId}`);
+    const unitDropdown = new ModernDropdown(unitDropdownContainer, {
+        placeholder: 'Birim seçin...',
+        searchable: true,
+        maxHeight: 200
+    });
+
+    const unitItems = UNIT_CHOICES.map(unit => ({
+        value: unit.value,
+        text: unit.label
+    }));
+
+    unitDropdown.setItems(unitItems);
+    unitDropdown.setValue('adet'); // Set default value
+    unitDropdownContainer.dropdownInstance = unitDropdown;
+
+    // Add dropdown change listener
+    unitDropdownContainer.addEventListener('dropdown:select', () => {
+        updateItemInState(itemId);
+    });
 
     // Add remove button listener
     const removeBtn = itemCard.querySelector('.remove-item-btn');
@@ -395,12 +429,12 @@ function updateItemInState(itemId) {
 
     const nameInput = document.querySelector(`.item-name[data-item-id="${itemId}"]`);
     const quantityInput = document.querySelector(`.item-quantity[data-item-id="${itemId}"]`);
-    const unitInput = document.querySelector(`.item-unit[data-item-id="${itemId}"]`);
+    const unitDropdownContainer = document.getElementById(`unit-dropdown-${itemId}`);
     const descriptionInput = document.querySelector(`.item-description[data-item-id="${itemId}"]`);
 
     item.name = nameInput ? nameInput.value : '';
     item.quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-    item.unit = unitInput ? unitInput.value : '';
+    item.unit = unitDropdownContainer?.dropdownInstance ? unitDropdownContainer.dropdownInstance.getValue() : '';
     item.description = descriptionInput ? descriptionInput.value : '';
 }
 
