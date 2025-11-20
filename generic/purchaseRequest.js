@@ -6,7 +6,7 @@ import { authedFetch } from "../authService.js";
  */
 export async function createDepartmentRequest(requestData) {
     try {
-        const response = await authedFetch(`${backendBase}/procurement/department-requests/`, {
+        const response = await authedFetch(`${backendBase}/planning/department-requests/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ export async function getDepartmentRequests(filters = {}) {
             }
         });
 
-        const url = `${backendBase}/procurement/department-requests/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const url = `${backendBase}/planning/department-requests/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
         const response = await authedFetch(url);
 
         if (!response.ok) {
@@ -79,7 +79,7 @@ export async function getMyDepartmentRequests(filters = {}) {
             }
         });
 
-        const url = `${backendBase}/procurement/department-requests/my_requests/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        const url = `${backendBase}/planning/department-requests/my_requests/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
         const response = await authedFetch(url);
 
         if (!response.ok) {
@@ -99,7 +99,7 @@ export async function getMyDepartmentRequests(filters = {}) {
  */
 export async function getDepartmentRequest(requestId) {
     try {
-        const response = await authedFetch(`${backendBase}/procurement/department-requests/${requestId}/`);
+        const response = await authedFetch(`${backendBase}/planning/department-requests/${requestId}/`);
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -118,7 +118,7 @@ export async function getDepartmentRequest(requestId) {
  */
 export async function submitDepartmentRequest(requestId) {
     try {
-        const response = await authedFetch(`${backendBase}/procurement/department-requests/${requestId}/submit/`, {
+        const response = await authedFetch(`${backendBase}/planning/department-requests/${requestId}/submit/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -142,7 +142,7 @@ export async function submitDepartmentRequest(requestId) {
  */
 export async function updateDepartmentRequest(requestId, requestData) {
     try {
-        const response = await authedFetch(`${backendBase}/procurement/department-requests/${requestId}/`, {
+        const response = await authedFetch(`${backendBase}/planning/department-requests/${requestId}/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ export async function updateDepartmentRequest(requestId, requestData) {
  */
 export async function deleteDepartmentRequest(requestId) {
     try {
-        const response = await authedFetch(`${backendBase}/procurement/department-requests/${requestId}/`, {
+        const response = await authedFetch(`${backendBase}/planning/department-requests/${requestId}/`, {
             method: 'DELETE'
         });
 
