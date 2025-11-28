@@ -64,7 +64,7 @@
     border: 1px solid rgba(0, 0, 0, 0.05);
     margin-bottom: 1.5rem;
     transition: var(--transition);
-    overflow: hidden;
+    overflow: visible;
     position: relative;
 }
 
@@ -120,6 +120,7 @@
 
 .department-card-body {
     padding: 1.5rem;
+    overflow: visible;
 }
 
 .department-card-footer {
@@ -157,6 +158,23 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+#request-type-dropdown,
+#priority-dropdown {
+    position: relative;
+    z-index: 100;
+}
+
+#request-type-helper {
+    display: none;
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(139, 0, 0, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid var(--primary-color);
 }
 
 /* ============================================================================

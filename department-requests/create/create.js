@@ -17,6 +17,30 @@ export const UNIT_CHOICES = [
     { value: 'kutu', label: 'Kutu' }
 ];
 
+export const REQUEST_TYPE_CHOICES = [
+    { 
+        value: '730.06.004', 
+        label: 'Fabrika Bakım Onarım',
+        description: 'Atölye bakımı için gerekli giderler, ekipmanlar, malzemeler, parçalar'
+    },
+    { 
+        value: '730.06.005', 
+        label: 'Makine Bakım Onarım',
+        description: 'Belirli bir makinenin/ekipmanın bakımı için gerekli giderler, ekipmanlar, parçalar'
+    },
+    { 
+        value: '730.10.004', 
+        label: 'Makine Kiralama',
+        description: 'Kiralanması gereken makineler (vinç, kaynak ekipmanı vb.)'
+    }
+];
+
+export const ITEM_CODE_NAMES = {
+    '730.06.004': 'FABRİKA BAKIM ONARIM GİDERLERİ',
+    '730.06.005': 'FABRİKA MAKİNE BAKIM ONARIM GİDERİ',
+    '730.10.004': 'MAKİNA KİRALAMA GİDERİ'
+};
+
 // ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
@@ -148,6 +172,15 @@ function createDepartmentRequestForm() {
                                     </div>
 
                                     <div class="col-12">
+                                        <label class="form-label">
+                                            <i class="fas fa-clipboard-list"></i>
+                                            Talep Tipi <span class="text-danger">*</span>
+                                        </label>
+                                        <div id="request-type-dropdown"></div>
+                                        <small class="text-muted" id="request-type-helper"></small>
+                                    </div>
+
+                                    <div class="col-12">
                                         <label for="description" class="form-label">
                                             <i class="fas fa-align-left"></i>
                                             Detaylı Açıklama
@@ -239,6 +272,18 @@ function createDepartmentRequestForm() {
                                 </div>
                             </div>
 
+                            <div class="info-card-item">
+                                <div class="info-icon-wrapper">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <div class="info-text">
+                                    <h6>Talep Tipleri</h6>
+                                    <p><strong>Fabrika Bakım Onarım:</strong> Atölye bakımı için malzemeler<br>
+                                       <strong>Makine Bakım Onarım:</strong> Belirli makine bakımı<br>
+                                       <strong>Makine Kiralama:</strong> Kiralanacak ekipmanlar</p>
+                                </div>
+                            </div>
+
                             <div class="alert alert-info">
                                 <i class="fas fa-lightbulb me-2"></i>
                                 <strong>İpucu:</strong> Detaylı ürün açıklamaları yazarak, tedarik sürecini hızlandırabilirsiniz.
@@ -275,6 +320,32 @@ function setupDepartmentRequestForm() {
     priorityDropdown.setItems(priorityItems);
     priorityDropdown.setValue('normal'); // Set default
     priorityContainer.dropdownInstance = priorityDropdown;
+
+    // Setup request type dropdown
+    const requestTypeContainer = document.getElementById('request-type-dropdown');
+    const requestTypeDropdown = new ModernDropdown(requestTypeContainer, {
+        placeholder: 'Talep tipini seçin...',
+        searchable: true
+    });
+
+    const requestTypeItems = REQUEST_TYPE_CHOICES.map(type => ({
+        value: type.value,
+        text: type.label
+    }));
+
+    requestTypeDropdown.setItems(requestTypeItems);
+    requestTypeContainer.dropdownInstance = requestTypeDropdown;
+
+    // Update helper text when request type is selected
+    const requestTypeHelper = document.getElementById('request-type-helper');
+    requestTypeContainer.addEventListener('dropdown:select', (e) => {
+        const selectedType = REQUEST_TYPE_CHOICES.find(type => type.value === e.detail.value);
+        if (selectedType) {
+            requestTypeHelper.innerHTML = `<i class="fas fa-info-circle me-1"></i>${selectedType.description}`;
+            requestTypeHelper.style.display = 'block';
+            requestTypeHelper.style.marginTop = '0.5rem';
+        }
+    });
 
     // Set default needed date to today
     const neededDateInput = document.getElementById('needed-date');
@@ -475,6 +546,16 @@ async function handleFormSubmit() {
     const description = document.getElementById('description').value;
     const priorityDropdown = document.getElementById('priority-dropdown').dropdownInstance;
     const priority = priorityDropdown ? priorityDropdown.getValue() : 'normal';
+    
+    // Get request type
+    const requestTypeDropdown = document.getElementById('request-type-dropdown').dropdownInstance;
+    const itemCode = requestTypeDropdown ? requestTypeDropdown.getValue() : null;
+    
+    // Validate request type
+    if (!itemCode) {
+        alert('Lütfen talep tipini seçin.');
+        return;
+    }
 
     // Prepare request data
     const requestData = {
@@ -483,10 +564,12 @@ async function handleFormSubmit() {
         description: description,
         priority: priority,
         items: state.items.map(item => ({
-            name: item.name,
+            name: ITEM_CODE_NAMES[itemCode],
+            item_code: itemCode,
+            item_description: item.name,
             quantity: item.quantity,
             unit: item.unit,
-            description: item.description
+            item_specifications: item.description
         }))
     };
 
@@ -497,7 +580,6 @@ async function handleFormSubmit() {
         const originalText = submitBtn.innerHTML;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Oluşturuluyor...';
-
         // Create request
         const createdRequest = await createDepartmentRequest(requestData);
 
