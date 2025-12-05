@@ -110,6 +110,40 @@ export async function getInventoryAllocations(planningRequestId) {
 }
 
 /**
+ * Update inventory found quantities for planning request items
+ * Updates quantity_from_inventory and quantity_to_purchase for each item based on found quantities.
+ * Only accessible by warehouse team and superusers.
+ * 
+ * @param {number} planningRequestId - Planning request ID
+ * @param {Object} data - Update data
+ * @param {Array} data.items - Array of items with found quantities
+ * @param {number} data.items[].planning_request_item_id - Planning request item ID
+ * @param {string} data.items[].quantity_found - Quantity found in inventory (e.g., "10.00")
+ * @returns {Promise<Object>} Response with updated count and planning request
+ */
+export async function updateInventoryQuantities(planningRequestId, data) {
+    try {
+        const response = await authedFetch(`${PLANNING_BASE_URL}/requests/${planningRequestId}/update_inventory_quantities/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || errorData.error || 'Envanter miktarları güncellenirken hata oluştu');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating inventory quantities:', error);
+        throw error;
+    }
+}
+
+/**
  * Mark inventory control as completed for a planning request
  * After allocating inventory (either manually or via auto_allocate_inventory),
  * call this endpoint to finalize the inventory control process.

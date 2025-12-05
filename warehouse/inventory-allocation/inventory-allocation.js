@@ -3,7 +3,7 @@ import { initNavbar } from '../../components/navbar.js';
 import { HeaderComponent } from '../../components/header/header.js';
 import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
 import { TableComponent } from '../../components/table/table.js';
-import { getPlanningRequests, allocateInventory, completeInventoryControl } from '../../generic/warehouse.js';
+import { getPlanningRequests, updateInventoryQuantities, completeInventoryControl } from '../../generic/warehouse.js';
 import { formatDecimalTurkish } from '../../generic/formatters.js';
 
 // ============================================================================
@@ -320,14 +320,14 @@ function createInventoryAllocationModalHTML(request) {
                             </h6>
                             <div class="alert alert-info">
                                 <i class="fas fa-info-circle me-2"></i>
-                                Her ürün için envanterde mevcut olan miktarı girin. Boş bırakılan alanlar 0 olarak işlenecektir.
+                                Her ürün için envanterde bulunan miktarı girin. Sistem otomatik olarak stoktan alınacak ve satın alınacak miktarları hesaplayacaktır.
                             </div>
                             <div id="items-table-container"></div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" id="submit-allocation-btn">
-                            <i class="fas fa-check me-2"></i>Envanter Tahsisini Tamamla
+                            <i class="fas fa-check me-2"></i>Envanter Miktarlarını Güncelle
                         </button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
                     </div>
@@ -365,46 +365,40 @@ function initializeItemsTable(request) {
     const tableHTML = `
         <div class="table-responsive">
             <table class="table table-bordered table-hover" id="items-allocation-table">
-                <thead class="table-dark">
-                    <tr>
-                        <th style="width: 5%;">#</th>
-                        <th style="width: 30%;">Ürün</th>
-                        <th style="width: 15%;">Talep Edilen Miktar</th>
-                        <th style="width: 10%;">Birim</th>
-                        <th style="width: 20%;">Envanter Miktarı</th>
-                        <th style="width: 20%;">Notlar</th>
-                    </tr>
-                </thead>
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 35%;">Ürün</th>
+                                        <th style="width: 20%;">Talep Edilen Miktar</th>
+                                        <th style="width: 10%;">Birim</th>
+                                        <th style="width: 30%;">Bulunan Miktar</th>
+                                    </tr>
+                                </thead>
                 <tbody>
-                    ${items.map((item, index) => `
-                        <tr data-item-id="${item.id}">
-                            <td class="text-center">${index + 1}</td>
-                            <td>
-                                <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
-                                ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
-                                ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
-                                ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
-                            </td>
-                            <td class="text-end fw-bold">${formatDecimalTurkish(item.quantity || 0, 2)}</td>
-                            <td>${item.item_unit || item.unit || 'Adet'}</td>
-                            <td>
-                                <input type="number" 
-                                       class="form-control allocation-input" 
-                                       data-item-id="${item.id}"
-                                       data-requested-quantity="${item.quantity || 0}"
-                                       step="0.01"
-                                       min="0"
-                                       max="${item.quantity || 0}"
-                                       placeholder="0.00">
-                            </td>
-                            <td>
-                                <input type="text" 
-                                       class="form-control allocation-notes" 
-                                       data-item-id="${item.id}"
-                                       placeholder="İsteğe bağlı not">
-                            </td>
-                        </tr>
-                    `).join('')}
+                                    ${items.map((item, index) => `
+                                        <tr data-item-id="${item.id}">
+                                            <td class="text-center">${index + 1}</td>
+                                            <td>
+                                                <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
+                                                ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
+                                                ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
+                                                ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
+                                            </td>
+                                            <td class="text-end fw-bold">${formatDecimalTurkish(item.quantity || 0, 2)}</td>
+                                            <td>${item.item_unit || item.unit || 'Adet'}</td>
+                                            <td>
+                                                <input type="number" 
+                                                       class="form-control quantity-found-input" 
+                                                       data-item-id="${item.id}"
+                                                       data-requested-quantity="${item.quantity || 0}"
+                                                       step="0.01"
+                                                       min="0"
+                                                       max="${item.quantity || 0}"
+                                                       placeholder="0.00"
+                                                       value="0">
+                                            </td>
+                                        </tr>
+                                    `).join('')}
                 </tbody>
             </table>
         </div>
@@ -448,37 +442,33 @@ async function handleAllocationSubmit(request) {
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
         }
         
-        // Collect allocation data from inputs
-        const allocationInputs = document.querySelectorAll('.allocation-input');
-        const allocations = [];
+        // Collect quantity found data from inputs
+        const quantityInputs = document.querySelectorAll('.quantity-found-input');
+        const items = [];
         
-        allocationInputs.forEach(input => {
+        quantityInputs.forEach(input => {
             const itemId = input.getAttribute('data-item-id');
-            const allocatedQuantity = parseFloat(input.value) || 0;
-            const notesInput = document.querySelector(`.allocation-notes[data-item-id="${itemId}"]`);
-            const notes = notesInput ? notesInput.value.trim() : '';
+            const quantityFound = parseFloat(input.value) || 0;
             
-            // Only include items with allocated quantity > 0
-            if (allocatedQuantity > 0) {
-                allocations.push({
-                    planning_request_item_id: parseInt(itemId),
-                    allocated_quantity: allocatedQuantity.toFixed(2),
-                    notes: notes || undefined
-                });
-            }
+            // Include all items (even with 0 quantity)
+            items.push({
+                planning_request_item_id: parseInt(itemId),
+                quantity_found: quantityFound.toFixed(2)
+            });
         });
         
         // Prepare data for API
-        const allocationData = {
-            allocations: allocations
+        const updateData = {
+            items: items
         };
         
-        // Call complete inventory control endpoint
-        // This will create allocations and complete the inventory control process
-        const response = await completeInventoryControl(request.id, allocationData);
+        console.log('Updating inventory quantities:', updateData);
+        
+        // Call update inventory quantities endpoint
+        const response = await updateInventoryQuantities(request.id, updateData);
         
         // Show success message
-        alert(`Envanter tahsisi başarıyla tamamlandı!\n\nDurum: ${response.status}\nTam Envanter: ${response.fully_from_inventory ? 'Evet' : 'Hayır'}`);
+        alert(`Envanter miktarları başarıyla güncellendi!\n\n${response.updated_count} ürün güncellendi.`);
         
         // Close modal
         closeModal();
@@ -487,14 +477,14 @@ async function handleAllocationSubmit(request) {
         loadPendingInventoryRequests();
         
     } catch (error) {
-        console.error('Error submitting allocation:', error);
-        alert('Envanter tahsisi yapılırken bir hata oluştu: ' + error.message);
+        console.error('Error updating inventory quantities:', error);
+        alert('Envanter miktarları güncellenirken bir hata oluştu: ' + error.message);
         
         // Re-enable submit button
         const submitBtn = document.getElementById('submit-allocation-btn');
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Envanter Tahsisini Tamamla';
+            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Envanter Miktarlarını Güncelle';
         }
     }
 }
