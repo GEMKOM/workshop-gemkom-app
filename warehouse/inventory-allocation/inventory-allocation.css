@@ -17,6 +17,14 @@
    ============================================================================ */
 
 /* Modal backdrop and container */
+#inventoryAllocationModal {
+    z-index: 9999 !important; /* Lower than confirmation modal (10050) */
+}
+
+#inventoryAllocationModal.modal-backdrop {
+    z-index: 9998 !important;
+}
+
 .modal.show {
     display: flex !important;
     align-items: center;
@@ -55,6 +63,7 @@
     border-bottom: none;
     border-radius: 12px 12px 0 0;
     padding: 1.5rem;
+    z-index: 1;
 }
 
 .modal-title {
@@ -130,36 +139,80 @@
 }
 
 /* ============================================================================
-   TABLE STYLES
+   RESPONSIVE ITEMS LAYOUT (Table on Desktop, Cards on Mobile)
    ============================================================================ */
 
-.table-responsive {
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
 }
 
-.table {
-    margin-bottom: 0;
-}
-
-.table thead th {
-    background: linear-gradient(135deg, #2c3e50, #34495e);
-    color: white;
-    border: none;
-    font-weight: 600;
-    padding: 1rem 0.75rem;
-    vertical-align: middle;
-}
-
-.table tbody td {
-    padding: 0.75rem;
-    vertical-align: middle;
-    border-color: #e9ecef;
-}
-
-.table tbody tr:hover {
-    background-color: #f8f9fa;
+/* Desktop: Table-like layout */
+@media (min-width: 769px) {
+    .items-container {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        background: white;
+    }
+    
+    .item-row {
+        display: grid;
+        grid-template-columns: 60px 1fr 180px 100px 200px;
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.2s ease;
+    }
+    
+    /* Header row styling */
+    .header-row {
+        background: linear-gradient(135deg, #2c3e50, #34495e);
+        color: white;
+        font-weight: 600;
+    }
+    
+    .header-row .desktop-label {
+        display: block;
+        color: white;
+    }
+    
+    /* Data rows */
+    .item-row:not(.header-row):hover {
+        background-color: #f8f9fa;
+    }
+    
+    .item-row:not(.header-row) .desktop-label {
+        display: none;
+    }
+    
+    .item-col {
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        border-right: 1px solid #e9ecef;
+    }
+    
+    .item-col:last-child {
+        border-right: none;
+    }
+    
+    .item-number {
+        justify-content: center;
+    }
+    
+    .item-quantity .item-value,
+    .item-unit .item-value {
+        width: 100%;
+        display: block;
+    }
+    
+    .item-input {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .mobile-label {
+        display: none;
+    }
 }
 
 /* ============================================================================
@@ -167,20 +220,48 @@
    ============================================================================ */
 
 .allocation-input,
-.allocation-notes {
-    font-size: 0.9rem;
+.allocation-notes,
+.quantity-found-input {
+    font-size: 1rem;
+    min-height: 44px; /* Minimum touch target size for mobile */
+    padding: 0.75rem;
 }
 
 .allocation-input:focus,
-.allocation-notes:focus {
+.allocation-notes:focus,
+.quantity-found-input:focus {
     border-color: #8b0000;
     box-shadow: 0 0 0 0.2rem rgba(139, 0, 0, 0.25);
 }
 
 /* Highlight input when value is entered */
-.allocation-input:not(:placeholder-shown) {
+.allocation-input:not(:placeholder-shown),
+.quantity-found-input:not(:placeholder-shown) {
     background-color: #e8f5e9;
     border-color: #4caf50;
+    font-weight: 600;
+}
+
+/* Validation states */
+.quantity-found-input.is-invalid,
+.allocation-input.is-invalid {
+    border-color: #dc3545;
+    border-width: 2px;
+    background-color: #fff5f5;
+    animation: shake 0.5s;
+}
+
+.quantity-found-input.is-invalid:focus,
+.allocation-input.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Shake animation for invalid fields */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
 }
 
 /* ============================================================================
@@ -196,6 +277,37 @@
 .alert-info {
     background-color: #e3f2fd;
     color: #0d47a1;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+/* ============================================================================
+   PROGRESS INDICATOR
+   ============================================================================ */
+
+#progress-indicator {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+}
+
+#progress-text {
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.progress {
+    background-color: #e9ecef;
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width 0.4s ease, background-color 0.3s ease;
 }
 
 /* ============================================================================
@@ -237,6 +349,7 @@
     padding: 0.75rem 1.5rem;
     font-weight: 600;
     transition: all 0.3s ease;
+    min-height: 44px; /* Touch-friendly */
 }
 
 .btn-primary:hover {
@@ -252,11 +365,27 @@
 .btn-primary:disabled {
     background: #6c757d;
     opacity: 0.65;
+    transform: none;
 }
 
 .btn-secondary {
     padding: 0.75rem 1.5rem;
     font-weight: 600;
+    min-height: 44px; /* Touch-friendly */
+}
+
+/* Prevent zoom on input focus for iOS */
+@supports (-webkit-touch-callout: none) {
+    input[type="number"] {
+        font-size: 16px !important;
+    }
+}
+
+/* Mobile labels hidden on desktop */
+@media (min-width: 769px) {
+    .item-row:not(:first-child) .desktop-label {
+        display: none;
+    }
 }
 
 /* ============================================================================
@@ -264,33 +393,347 @@
    ============================================================================ */
 
 @media (max-width: 768px) {
+    /* Ensure inventory modal stays below confirmation modal */
+    #inventoryAllocationModal {
+        z-index: 9999 !important;
+    }
+    
+    /* Full screen modal on mobile */
     .modal-dialog {
-        margin: 0.5rem;
-        max-width: calc(100vw - 1rem);
+        margin: 0;
+        max-width: 100vw;
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+    }
+    
+    .modal-dialog-scrollable {
+        max-height: 100vh;
+    }
+    
+    .modal-dialog-scrollable .modal-content {
+        max-height: 100vh;
+        border-radius: 0;
+    }
+    
+    .modal-content {
+        border-radius: 0;
+        height: 100vh;
+    }
+    
+    .modal-header {
+        border-radius: 0;
+        padding: 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 100; /* Local z-index within modal */
+    }
+    
+    .modal-title {
+        font-size: 1rem;
     }
     
     .modal-body {
         padding: 1rem;
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-footer {
+        border-radius: 0;
+        padding: 1rem;
+        position: sticky;
+        bottom: 0;
+        background: white;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 100; /* Local z-index within modal */
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.1rem;
+        min-height: 50px;
     }
     
     .request-details-section,
     .items-table-section {
         padding: 1rem;
-    }
-    
-    .detail-item-compact {
         margin-bottom: 1rem;
     }
     
-    .table thead th,
-    .table tbody td {
-        padding: 0.5rem;
-        font-size: 0.85rem;
+    .section-title {
+        font-size: 1rem;
+    }
+    
+    /* Mobile: Card layout */
+    .items-container {
+        gap: 1rem;
+    }
+    
+    /* Hide header row on mobile */
+    .header-row {
+        display: none !important;
+    }
+    
+    .item-row {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .item-row.has-error {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    
+    /* Item number as circle badge */
+    .item-number {
+        order: -1;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .item-number .item-value {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        background: #2c3e50;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .item-details {
+        order: -1;
+        flex: 1;
+        display: block;
+        padding: 0;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .item-details .fw-bold {
+        font-size: 1rem;
+        color: #2c3e50;
+    }
+    
+    .item-quantity,
+    .item-unit {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0;
+    }
+    
+    .item-col {
+        padding: 0;
+    }
+    
+    .mobile-label {
+        display: block;
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+    
+    .desktop-label {
+        display: none;
+    }
+    
+    .item-quantity,
+    .item-unit {
+        margin-bottom: 0.75rem;
+    }
+    
+    .item-quantity {
+        grid-column: 1;
+    }
+    
+    .item-unit {
+        grid-column: 2;
+    }
+    
+    /* Create a grid for quantity and unit */
+    .item-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    
+    .item-number,
+    .item-details,
+    .item-input {
+        grid-column: 1 / -1;
+    }
+    
+    .item-quantity .item-value,
+    .item-unit .item-value {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+    
+    .item-input {
+        margin-top: 0;
+    }
+    
+    .item-input label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+    
+    .item-input .quantity-found-input {
+        width: 100%;
+        font-size: 1.25rem;
+        min-height: 56px;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+        text-align: center;
+        font-weight: 600;
+    }
+    
+    .item-input .quantity-found-input:focus {
+        border-color: #8b0000;
+        box-shadow: 0 0 0 0.25rem rgba(139, 0, 0, 0.15);
+    }
+    
+    .item-input .quantity-found-input:not(:placeholder-shown) {
+        border-color: #4caf50;
+        background-color: #e8f5e9;
+    }
+    
+    .item-input .quantity-found-input.is-invalid {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    
+    /* Larger touch targets for mobile */
+    .detail-item-compact {
+        margin-bottom: 0.75rem;
+    }
+    
+    .detail-label-compact {
+        font-size: 0.75rem;
+    }
+    
+    .detail-value-compact {
+        font-size: 0.95rem;
+    }
+    
+    /* Alert styling for mobile */
+    .alert {
+        font-size: 0.9rem;
+        padding: 0.75rem;
+    }
+    
+    .alert strong {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Progress indicator - sticky on mobile */
+    #progress-indicator {
+        position: sticky;
+        top: 0;
+        z-index: 90; /* Below header but above content */
+        background: white;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-bottom: 3px solid #e9ecef;
+        border-radius: 0;
+    }
+    
+    #progress-text {
+        font-size: 1rem;
+    }
+    
+    .progress {
+        height: 6px;
+    }
+    
+    /* Confirmation modal adjustments for mobile */
+    .confirmation-modal .modal-dialog {
+        margin: 1rem !important;
+        max-width: calc(100vw - 2rem) !important;
+        width: calc(100vw - 2rem) !important;
+        height: auto !important;
+        max-height: calc(100vh - 2rem) !important;
+    }
+    
+    .confirmation-modal .modal-content {
+        border-radius: 12px !important;
+        max-height: calc(100vh - 2rem);
+        height: auto !important;
+    }
+    
+    .confirmation-modal .modal-body {
+        padding: 1.5rem 1rem;
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+    
+    .confirmation-modal .modal-footer {
+        padding: 1rem;
+        position: relative !important;
+    }
+    
+    .confirmation-modal .modal-footer .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        padding: 0.875rem;
+        font-size: 1rem;
+        min-height: 48px;
+    }
+    
+    .confirmation-modal .modal-footer .btn:last-child {
+        margin-bottom: 0;
+    }
+    
+    .confirmation-message {
+        font-size: 1rem !important;
+    }
+    
+    .confirmation-details {
+        font-size: 0.9rem;
+    }
+}
+
+/* Tablets and medium screens */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .modal-dialog {
+        max-width: 95vw;
+        width: 95vw;
     }
     
     .allocation-input,
-    .allocation-notes {
-        font-size: 0.85rem;
+    .allocation-notes,
+    .quantity-found-input {
+        font-size: 1rem;
+        min-height: 48px;
     }
 }
 
@@ -319,8 +762,26 @@
 }
 
 .allocation-input,
-.allocation-notes {
+.allocation-notes,
+.quantity-found-input {
     transition: all 0.2s ease;
+}
+
+.item-row {
+    transition: all 0.3s ease;
+}
+
+.item-row.has-error {
+    animation: shake 0.5s;
+}
+
+/* Smooth scrolling for the entire page */
+html {
+    scroll-behavior: smooth;
+}
+
+.modal-body {
+    scroll-behavior: smooth;
 }
 
 /* ============================================================================

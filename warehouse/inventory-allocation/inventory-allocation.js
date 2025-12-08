@@ -5,10 +5,14 @@ import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
 import { TableComponent } from '../../components/table/table.js';
 import { getPlanningRequests, updateInventoryQuantities, completeInventoryControl } from '../../generic/warehouse.js';
 import { formatDecimalTurkish } from '../../generic/formatters.js';
+import { ConfirmationModal } from '../../components/confirmation-modal/confirmation-modal.js';
 
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
+
+// Global confirmation modal instance
+let confirmationModal;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize navbar
@@ -19,6 +23,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize results table
     initializeResultsTable();
+    
+    // Initialize confirmation modal
+    confirmationModal = new ConfirmationModal('confirmation-modal-container', {
+        title: 'Onay',
+        icon: 'fas fa-exclamation-triangle',
+        confirmText: 'Evet',
+        cancelText: 'İptal',
+        confirmButtonClass: 'btn-primary'
+    });
     
     // Load pending inventory requests
     loadPendingInventoryRequests();
@@ -246,81 +259,23 @@ function createInventoryAllocationModalHTML(request) {
                         <button type="button" class="btn-close" data-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <!-- Section 1: Request Details -->
-                        <div class="request-details-section mb-3">
-                            <h6 class="section-title mb-2">
-                                <i class="fas fa-info-circle me-2"></i>Talep Bilgileri
-                            </h6>
-                            <div class="row g-2">
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Talep No:</span>
-                                        <span class="detail-value-compact fw-bold">${request.request_number || '-'}</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Başlık:</span>
-                                        <span class="detail-value-compact">${request.title || '-'}</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Departman Talebi:</span>
-                                        <span class="detail-value-compact">${request.department_request_number || '-'}</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Öncelik:</span>
-                                        <span class="detail-value-compact ${getPriorityClass(request.priority)}">${formatPriority(request.priority)}</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Durum:</span>
-                                        <span class="detail-value-compact">${getStatusText(request.status)}</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Oluşturulma:</span>
-                                        <span class="detail-value-compact">${request.created_at ? formatDate(request.created_at) : '-'}</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Oluşturan:</span>
-                                        <span class="detail-value-compact">${request.created_by_full_name || request.created_by_username || '-'}</span>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-sm-6">
-                                    <div class="detail-item-compact">
-                                        <span class="detail-label-compact">Gerekli Tarih:</span>
-                                        <span class="detail-value-compact">${request.needed_date ? formatDate(request.needed_date) : '-'}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        ${request.description ? `
-                        <!-- Section 2: Description -->
-                        <div class="request-details-section mb-3">
-                            <h6 class="section-title mb-2">
-                                <i class="fas fa-align-left me-2"></i>Açıklama
-                            </h6>
-                            <p class="mb-0">${request.description}</p>
-                        </div>
-                        ` : ''}
-                        
-                        <!-- Section 3: Items Table -->
+                        <!-- Items Table -->
                         <div class="items-table-section">
                             <h6 class="section-title mb-3">
                                 <i class="fas fa-boxes me-2"></i>Ürünler ve Envanter Miktarları
                             </h6>
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                Her ürün için envanterde bulunan miktarı girin. Sistem otomatik olarak stoktan alınacak ve satın alınacak miktarları hesaplayacaktır.
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Önemli:</strong> Her ürün için envanterde bulunan miktarı girmeniz zorunludur. Hiç bulunamayanlar için "0" yazın.
+                            </div>
+                            <div id="progress-indicator" class="mb-3" style="display: none;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-muted"><i class="fas fa-tasks me-2"></i>İlerleme</span>
+                                    <span class="fw-bold" id="progress-text">0 / 0</span>
+                                </div>
+                                <div class="progress" style="height: 8px; border-radius: 4px;">
+                                    <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+                                </div>
                             </div>
                             <div id="items-table-container"></div>
                         </div>
@@ -329,7 +284,6 @@ function createInventoryAllocationModalHTML(request) {
                         <button type="button" class="btn btn-primary" id="submit-allocation-btn">
                             <i class="fas fa-check me-2"></i>Envanter Miktarlarını Güncelle
                         </button>
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Kapat</button>
                     </div>
                 </div>
             </div>
@@ -361,50 +315,136 @@ function initializeItemsTable(request) {
         return;
     }
     
-    // Create table HTML
-    const tableHTML = `
-        <div class="table-responsive">
-            <table class="table table-bordered table-hover" id="items-allocation-table">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th style="width: 5%;">#</th>
-                                        <th style="width: 35%;">Ürün</th>
-                                        <th style="width: 20%;">Talep Edilen Miktar</th>
-                                        <th style="width: 10%;">Birim</th>
-                                        <th style="width: 30%;">Bulunan Miktar</th>
-                                    </tr>
-                                </thead>
-                <tbody>
-                                    ${items.map((item, index) => `
-                                        <tr data-item-id="${item.id}">
-                                            <td class="text-center">${index + 1}</td>
-                                            <td>
-                                                <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
-                                                ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
-                                                ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
-                                                ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
-                                            </td>
-                                            <td class="text-end fw-bold">${formatDecimalTurkish(item.quantity || 0, 2)}</td>
-                                            <td>${item.item_unit || item.unit || 'Adet'}</td>
-                                            <td>
-                                                <input type="number" 
-                                                       class="form-control quantity-found-input" 
-                                                       data-item-id="${item.id}"
-                                                       data-requested-quantity="${item.quantity || 0}"
-                                                       step="0.01"
-                                                       min="0"
-                                                       max="${item.quantity || 0}"
-                                                       placeholder="0.00"
-                                                       value="0">
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                </tbody>
-            </table>
+    // Create responsive item cards (styled as table on desktop, cards on mobile)
+    const itemsHTML = `
+        <div class="items-container">
+            <!-- Header row for desktop table view -->
+            <div class="item-row header-row">
+                <div class="item-col item-number">
+                    <span class="desktop-label">#</span>
+                </div>
+                <div class="item-col item-details">
+                    <span class="desktop-label">Ürün</span>
+                </div>
+                <div class="item-col item-quantity">
+                    <span class="desktop-label">Talep Edilen Miktar</span>
+                </div>
+                <div class="item-col item-unit">
+                    <span class="desktop-label">Birim</span>
+                </div>
+                <div class="item-col item-input">
+                    <span class="desktop-label">Bulunan Miktar</span>
+                </div>
+            </div>
+            ${items.map((item, index) => `
+                <div class="item-row" data-item-id="${item.id}">
+                    <div class="item-col item-number">
+                        <span class="desktop-label">#</span>
+                        <span class="item-value">${index + 1}</span>
+                    </div>
+                    <div class="item-col item-details">
+                        <span class="desktop-label">Ürün</span>
+                        <div class="item-value">
+                            <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
+                            ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
+                            ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
+                            ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
+                        </div>
+                    </div>
+                    <div class="item-col item-quantity">
+                        <span class="mobile-label">Talep Edilen</span>
+                        <span class="desktop-label">Talep Edilen Miktar</span>
+                        <span class="item-value text-end fw-bold">${formatDecimalTurkish(item.quantity || 0, 2)}</span>
+                    </div>
+                    <div class="item-col item-unit">
+                        <span class="mobile-label">Birim</span>
+                        <span class="desktop-label">Birim</span>
+                        <span class="item-value">${item.item_unit || item.unit || 'Adet'}</span>
+                    </div>
+                    <div class="item-col item-input">
+                        <label for="qty-${item.id}" class="mobile-label">
+                            <i class="fas fa-box me-2"></i>Bulunan Miktar
+                        </label>
+                        <span class="desktop-label">Bulunan Miktar</span>
+                        <input type="number" 
+                               id="qty-${item.id}"
+                               class="form-control quantity-found-input" 
+                               data-item-id="${item.id}"
+                               data-requested-quantity="${item.quantity || 0}"
+                               step="0.01"
+                               min="0"
+                               max="${item.quantity || 0}"
+                               placeholder="Miktar girin"
+                               inputmode="decimal"
+                               required>
+                    </div>
+                </div>
+            `).join('')}
         </div>
     `;
     
-    container.innerHTML = tableHTML;
+    container.innerHTML = itemsHTML;
+    
+    // Add event listeners to remove validation errors and update progress
+    setTimeout(() => {
+        const inputs = document.querySelectorAll('.quantity-found-input');
+        const totalItems = inputs.length;
+        
+        // Show progress indicator if there are items
+        if (totalItems > 0) {
+            const progressIndicator = document.getElementById('progress-indicator');
+            if (progressIndicator) {
+                progressIndicator.style.display = 'block';
+            }
+        }
+        
+        // Function to update progress
+        const updateProgress = () => {
+            let filledCount = 0;
+            inputs.forEach(input => {
+                if (input.value && input.value.trim() !== '') {
+                    filledCount++;
+                }
+            });
+            
+            const progressPercent = (filledCount / totalItems) * 100;
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            
+            if (progressBar) {
+                progressBar.style.width = progressPercent + '%';
+                // Change color based on progress
+                if (progressPercent === 100) {
+                    progressBar.className = 'progress-bar bg-success';
+                } else if (progressPercent >= 50) {
+                    progressBar.className = 'progress-bar bg-info';
+                } else {
+                    progressBar.className = 'progress-bar bg-warning';
+                }
+            }
+            
+            if (progressText) {
+                progressText.textContent = `${filledCount} / ${totalItems}`;
+            }
+        };
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+                // Remove error from item row
+                const itemRow = this.closest('.item-row');
+                if (itemRow) {
+                    itemRow.classList.remove('has-error');
+                }
+                
+                // Update progress
+                updateProgress();
+            });
+        });
+        
+        // Initial progress update
+        updateProgress();
+    }, 100);
 }
 
 /**
@@ -436,19 +476,41 @@ function setupModalEventListeners(request) {
  */
 async function handleAllocationSubmit(request) {
     try {
-        const submitBtn = document.getElementById('submit-allocation-btn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
-        }
+        console.log('handleAllocationSubmit called');
+        console.log('confirmationModal:', confirmationModal);
         
         // Collect quantity found data from inputs
         const quantityInputs = document.querySelectorAll('.quantity-found-input');
         const items = [];
+        let totalWithInventory = 0;
+        let totalWithoutInventory = 0;
+        let emptyFields = [];
         
         quantityInputs.forEach(input => {
             const itemId = input.getAttribute('data-item-id');
-            const quantityFound = parseFloat(input.value) || 0;
+            const value = input.value.trim();
+            
+            // Check if field is empty
+            if (value === '' || value === null || value === undefined) {
+                emptyFields.push(input);
+                return;
+            }
+            
+            const quantityFound = parseFloat(value);
+            
+            // Validate that it's a valid number
+            if (isNaN(quantityFound)) {
+                emptyFields.push(input);
+                return;
+            }
+            
+            const requestedQuantity = parseFloat(input.getAttribute('data-requested-quantity')) || 0;
+            
+            if (quantityFound > 0) {
+                totalWithInventory++;
+            } else {
+                totalWithoutInventory++;
+            }
             
             // Include all items (even with 0 quantity)
             items.push({
@@ -456,6 +518,101 @@ async function handleAllocationSubmit(request) {
                 quantity_found: quantityFound.toFixed(2)
             });
         });
+        
+        // Check if there are empty fields
+        if (emptyFields.length > 0) {
+            // Highlight empty fields with visual feedback only
+            emptyFields.forEach((input, index) => {
+                input.classList.add('is-invalid');
+                
+                // Mark parent item row as having error
+                const itemRow = input.closest('.item-row');
+                if (itemRow) {
+                    itemRow.classList.add('has-error');
+                }
+                
+                // Focus on the first empty field
+                if (index === 0) {
+                    input.focus();
+                    // Scroll to the first invalid field
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+            
+            return;
+        }
+        
+        // Remove any previous validation classes
+        quantityInputs.forEach(input => {
+            input.classList.remove('is-invalid');
+            // Remove error from item row
+            const itemRow = input.closest('.item-row');
+            if (itemRow) {
+                itemRow.classList.remove('has-error');
+            }
+        });
+        
+        // Prepare summary for confirmation
+        const totalItems = items.length;
+        const detailsHTML = `
+            <div class="text-start">
+                <p class="mb-2"><strong>Talep No:</strong> ${request.request_number || '-'}</p>
+                <p class="mb-2"><strong>Toplam Ürün:</strong> ${totalItems}</p>
+                <p class="mb-2"><strong>Envanterde Bulunan:</strong> ${totalWithInventory} ürün</p>
+                <p class="mb-0"><strong>Envanterde Bulunmayan:</strong> ${totalWithoutInventory} ürün</p>
+            </div>
+        `;
+        
+        console.log('About to show confirmation modal');
+        console.log('Items to update:', items.length);
+        
+        // Check if confirmation modal is available
+        if (!confirmationModal) {
+            console.error('Confirmation modal not initialized!');
+            alert('Confirmation modal is not available. Please refresh the page.');
+            return;
+        }
+        
+        // Show confirmation modal
+        console.log('Showing confirmation modal...');
+        await confirmationModal.show({
+            title: 'Envanter Miktarlarını Güncelle',
+            message: 'Bu işlemi onaylıyor musunuz?',
+            description: 'Envanter miktarları güncellenecek ve sistem otomatik olarak stoktan alınacak ve satın alınacak miktarları hesaplayacaktır.',
+            details: detailsHTML,
+            confirmText: 'Güncelle',
+            cancelText: 'İptal',
+            confirmButtonClass: 'btn-primary',
+            onConfirm: async () => {
+                // This will be executed when user confirms
+                console.log('User confirmed, performing update...');
+                return await performInventoryUpdate(request, items);
+            },
+            onCancel: (reason) => {
+                console.log('User cancelled, reason:', reason);
+            }
+        });
+        
+        console.log('Confirmation modal show completed');
+        
+    } catch (error) {
+        console.error('Error in allocation submit:', error);
+        console.error('Error stack:', error.stack);
+        alert('Bir hata oluştu: ' + error.message);
+    }
+}
+
+/**
+ * Perform the actual inventory update after confirmation
+ */
+async function performInventoryUpdate(request, items) {
+    try {
+        // Disable the confirm button in the confirmation modal
+        const confirmBtn = document.getElementById('confirm-action-btn');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
+        }
         
         // Prepare data for API
         const updateData = {
@@ -470,22 +627,28 @@ async function handleAllocationSubmit(request) {
         // Show success message
         alert(`Envanter miktarları başarıyla güncellendi!\n\n${response.updated_count} ürün güncellendi.`);
         
-        // Close modal
+        // Close modals
         closeModal();
         
         // Reload the list
         loadPendingInventoryRequests();
         
+        // Return true to allow confirmation modal to close
+        return true;
+        
     } catch (error) {
         console.error('Error updating inventory quantities:', error);
         alert('Envanter miktarları güncellenirken bir hata oluştu: ' + error.message);
         
-        // Re-enable submit button
-        const submitBtn = document.getElementById('submit-allocation-btn');
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>Envanter Miktarlarını Güncelle';
+        // Re-enable confirm button
+        const confirmBtn = document.getElementById('confirm-action-btn');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Güncelle';
         }
+        
+        // Return false to keep modal open on error
+        return false;
     }
 }
 
