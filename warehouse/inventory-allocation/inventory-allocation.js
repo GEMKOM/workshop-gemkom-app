@@ -3,7 +3,7 @@ import { initNavbar } from '../../components/navbar.js';
 import { HeaderComponent } from '../../components/header/header.js';
 import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
 import { TableComponent } from '../../components/table/table.js';
-import { getPlanningRequests, updateInventoryQuantities, completeInventoryControl } from '../../generic/warehouse.js';
+import { getPlanningRequests, getPlanningRequest, updateInventoryQuantities, completeInventoryControl } from '../../generic/warehouse.js';
 import { formatDecimalTurkish } from '../../generic/formatters.js';
 import { ConfirmationModal } from '../../components/confirmation-modal/confirmation-modal.js';
 
@@ -186,14 +186,17 @@ async function loadPendingInventoryRequests() {
 // ============================================================================
 
 async function showInventoryAllocationModal(requestData) {
-    const request = requestData.originalData || requestData;
+    const requestSummary = requestData.originalData || requestData;
     
     try {
         // Show loading modal first
         showLoadingModal();
         
-        // Fetch full request details if needed
-        // For now, we'll use the data we have
+        // Fetch full request details from the API
+        console.log('Fetching full request details for ID:', requestSummary.id);
+        const request = await getPlanningRequest(requestSummary.id);
+        
+        console.log('Received full request data:', request);
         
         // Create and show the modal
         const modalHTML = createInventoryAllocationModalHTML(request);
@@ -216,6 +219,12 @@ async function showInventoryAllocationModal(requestData) {
     } catch (error) {
         console.error('Error showing inventory allocation modal:', error);
         alert('Modal açılırken bir hata oluştu: ' + error.message);
+        
+        // Remove loading modal on error
+        const loadingModal = document.getElementById('inventoryAllocationModal');
+        if (loadingModal) {
+            loadingModal.remove();
+        }
     }
 }
 

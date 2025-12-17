@@ -57,6 +57,39 @@ export async function getPlanningRequests(filters = {}) {
 }
 
 /**
+ * Get a single planning request by ID
+ * @param {number} planningRequestId - Planning request ID
+ * @returns {Promise<Object>} Planning request details with items
+ */
+export async function getPlanningRequest(planningRequestId) {
+    try {
+        const url = `${PLANNING_BASE_URL}/requests/${planningRequestId}/`;
+        
+        console.log('Fetching planning request from:', url);
+        
+        const response = await authedFetch(url);
+
+        if (!response.ok) {
+            let errorMessage = 'Planlama talebi yüklenirken hata oluştu';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.detail || errorData.error || errorMessage;
+            } catch (e) {
+                errorMessage = `${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('Planning request response:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching planning request:', error);
+        throw error;
+    }
+}
+
+/**
  * Manually allocate specific quantities of inventory to planning request items
  * @param {number} planningRequestId - Planning request ID
  * @param {Object} allocationData - Allocation data
