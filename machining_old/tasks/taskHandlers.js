@@ -1,5 +1,5 @@
 // --- taskHandlers.js ---
-// Event handler setup for operation functionality
+// Event handler setup for task functionality
 
 import { handleStartStopClick, handleMarkDoneClick, handleManualLogClick, handleBackClick, handleFaultReportClick } from './taskActions.js';
 import { setupTimerHandlers } from './taskLogic.js';
@@ -66,6 +66,4 @@ export function setupAllHandlers(restoring = false) {
     setupManualLogHandler();
     setupMarkDoneHandler();
     setupFaultReportHandler();
-}
-
-
+} 

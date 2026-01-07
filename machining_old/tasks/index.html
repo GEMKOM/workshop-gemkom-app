@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemkom - Operasyonlar</title>
+    <title>Gemkom - Talaşlı İmalat</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -101,6 +101,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- W-07 Warning Section -->
+        <div class="warning-section" id="w-07-warning" style="display: none;">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <div class="warning-card">
+                            <div class="warning-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="warning-content">
+                                <h5>Bakım Ekibi Bildirimi</h5>
+                                <p>Zamanlayıcı arızanız bakım ekibi tarafından çözüldüğünde otomatik olarak durdurulacaktır.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Manual Time Modal -->
@@ -166,11 +185,9 @@
 
     <!-- Bootstrap JS and Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="../operationsService.js"></script>
+    <script type="module" src="../machiningService.js"></script>
     <script type="module" src="task.js"></script>
     <!-- Timer Widget -->
     <script type="module" src="../../components/timerWidgetInit.js"></script>
 </body>
-</html>
-
-
+</html> 

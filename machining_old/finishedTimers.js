@@ -57,7 +57,7 @@ function createFinishedTimersHTML() {
 function createHeader() {
     new HeaderComponent({
         title: 'Tamamlanan Zamanlayıcılar',
-        subtitle: 'Tamamlanan operasyonları görüntüleyin ve analiz edin',
+        subtitle: 'Tamamlanan işleri görüntüleyin ve analiz edin',
         icon: 'check-circle',
         containerId: 'header-placeholder',
         showBackButton: 'none',
@@ -257,6 +257,4 @@ function bindFinishedTimersEvents() {
 
 
 // Make the function globally accessible
-window.loadFinishedTimersData = loadFinishedTimersData;
-
-
+window.loadFinishedTimersData = loadFinishedTimersData; 

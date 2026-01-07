@@ -1,9 +1,9 @@
 // --- task.js ---
-// Entry point for operation page - initialization and coordination
+// Entry point for task page - initialization and coordination
 
 import { initNavbar } from '../../components/navbar.js';
 import { guardRoute, navigateTo, ROUTES } from '../../authService.js';
-import { getOperation } from '../../generic/machining/operations.js';
+import { getTaskKeyFromURL, fetchTaskDetails } from '../../generic/tasks.js';
 import { 
     setCurrentIssueState,
     setCurrentTimerState,
@@ -15,16 +15,11 @@ import {
 import { setupAllHandlers } from './taskHandlers.js';
 import { fetchTimers } from '../../generic/timers.js';
 import { extractFirstResultFromResponse } from '../../generic/paginationHelper.js';
-import { state } from '../operationsService.js';
+import { state } from '../machiningService.js';
 
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
-
-function getOperationKeyFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('key');
-}
 
 async function initializeTaskView() {
     if (!guardRoute()) {
@@ -33,21 +28,19 @@ async function initializeTaskView() {
     
     initNavbar();
     
-    const operationKey = getOperationKeyFromURL();
-    if (!operationKey) {
-        navigateTo('/machining/');
+    const taskKey = getTaskKeyFromURL();
+    if (!taskKey) {
+        navigateTo(ROUTES.MACHINING);
         return;
     }
     await setCurrentMachineState();
-    let operation = await getOperation(operationKey);
-    const activeTimer = extractFirstResultFromResponse(await fetchTimers({ is_active: true, machine_id: state.currentMachine.id, issue_key: operationKey }));
-    setCurrentIssueState(operation);
+    let issue = await fetchTaskDetails(taskKey, 'machining');
+    const activeTimer = extractFirstResultFromResponse(await fetchTimers({ is_active: true, machine_id: state.currentMachine.id, issue_key: taskKey }));
+    setCurrentIssueState(issue);
     setCurrentTimerState(activeTimer);
-    setupTaskDisplay(activeTimer ? true : false);
+    setupTaskDisplay(activeTimer ? true : false, issue.is_hold_task);
     setupAllHandlers(activeTimer ? true : false);
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', initializeTaskView);
-
-
+document.addEventListener('DOMContentLoaded', initializeTaskView); 

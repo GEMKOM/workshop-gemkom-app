@@ -1,9 +1,10 @@
 // --- taskActions.js ---
-// Button action handlers for operation functionality
+// Button action handlers for task functionality
 
-import { state } from '../operationsService.js';
-import { navigateTo } from '../../authService.js';
-import { markOperationCompleted } from '../../generic/machining/operations.js';
+import { state } from '../machiningService.js';
+import { navigateTo, ROUTES } from '../../authService.js';
+import { markTaskAsDoneShared } from '../../generic/tasks.js';
+import { showCommentModal } from '../../components/taskTimerModals.js';
 import { createMaintenanceRequest } from '../../generic/machines.js';
 import { createManualTimeEntryShared } from '../../generic/timers.js';
 import { handleStartTimer, handleStopTimer } from './taskLogic.js';
@@ -12,7 +13,7 @@ import { ConfirmationModal } from '../../components/confirmation-modal/confirmat
 function checkMaintenanceAndAlert() {
     if (state.currentMachine && state.currentMachine.is_under_maintenance) {
         alert('Bu makine bakımda. İşlem yapamazsınız.');
-        navigateTo('/machining/');
+        navigateTo(ROUTES.MACHINING);
         return true;
     }
     return false;
@@ -21,11 +22,19 @@ function checkMaintenanceAndAlert() {
 export async function handleStartStopClick() {
     if (state.currentMachine.is_under_maintenance) {
         alert('Bu makine bakımda. İşlem yapamazsınız.');
-        navigateTo('/machining/');
+        navigateTo(ROUTES.MACHINING);
         return;
     }
     if (!state.currentMachine.has_active_timer) {
-        await handleStartTimer();
+        // For hold tasks, show comment modal first
+        if (state.currentIssue.is_hold_task && state.currentIssue.key !== 'W-14' && state.currentIssue.key !== 'W-02') {
+            const comment = await showCommentModal("Bekletme Görevi Başlatma");
+            if (comment) {
+                await handleStartTimer(comment);
+            }
+        } else {
+            await handleStartTimer();
+        }
     } else {
         await handleStopTimer(true);
     }
@@ -34,21 +43,21 @@ export async function handleStartStopClick() {
 export async function handleMarkDoneClick() {
     if (checkMaintenanceAndAlert()) return;
     
-    const confirmed = await showCompleteOperationModal();
+    const confirmed = await showCompleteTaskModal();
     if (!confirmed) {
         return;
     }
     
     try {
-        const marked = await markOperationCompleted(state.currentIssue.key);
+        const marked = await markTaskAsDoneShared(state.currentIssue.key, 'machining');
         if (marked) {
-            alert('Operasyon tamamlandı olarak işaretlendi.');
-            navigateTo('/machining/');
+            alert('Görev tamamlandı olarak işaretlendi.');
+            navigateTo(ROUTES.MACHINING);
         } else {
             alert("Hata oluştu. Lütfen tekrar deneyin.");
         }
     } catch (error) {
-        console.error('Error marking operation as completed:', error);
+        console.error('Error marking as done:', error);
         alert("Hata oluştu. Lütfen tekrar deneyin.");
     }
 }
@@ -59,7 +68,7 @@ let confirmationModalInstance = null;
 function getConfirmationModal() {
     if (!confirmationModalInstance) {
         confirmationModalInstance = new ConfirmationModal('confirmation-modal-container', {
-            title: 'Operasyonu Tamamla',
+            title: 'Görevi Tamamla',
             icon: 'fas fa-check-circle',
             confirmText: 'Evet',
             cancelText: 'İptal',
@@ -72,40 +81,144 @@ function getConfirmationModal() {
 
 export async function handleManualLogClick() {
     if (checkMaintenanceAndAlert()) return;
-    await showNewManualTimeModal();
+    
+    // For hold tasks, show comment modal first
+    if (state.currentIssue.is_hold_task && state.currentIssue.key !== 'W-14' && state.currentIssue.key !== 'W-02') {
+        const comment = await showCommentModal("Bekletme Görevi Manuel Giriş");
+        if (comment) {
+            await showNewManualTimeModal(comment);
+        }
+    } else {
+        await showNewManualTimeModal();
+    }
 }
 
 
 export async function handleFaultReportClick() {
     if (!state.currentMachine.id) {
-        navigateTo('/machining/');
+        navigateTo(ROUTES.MACHINING);
         return;
     }
     
     const machineStatus = await showMachineStatusModal();
     
     if (machineStatus === true) {
-        // If yes, show the description modal immediately
+        // If yes, show the description modal immediately (same behavior as "No")
         await showNewFaultReportModal(state.currentMachine.id);
     } else if (machineStatus === 'no') {
         // Only show redirect warning if user explicitly clicked "No"
         const shouldRedirect = await showRedirectWarningModal();
         if (shouldRedirect) {
-            // Redirect to operations page
-            navigateTo('/machining/');
+            // Only redirect if user explicitly clicked OK
+            window.location.href = "/machining/tasks/?machine_id=7&key=W-07&name=Makine%20Ar%C4%B1zas%C4%B1%20Nedeniyle%20Bekleme&hold=1";
         }
     }
     // If machineStatus is false (user clicked X or backdrop), do nothing
 }
 
+// Custom confirmation dialog function
+function showCustomConfirm(message, yesText = "Evet", noText = "Hayır") {
+    return new Promise((resolve) => {
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
+        
+        modal.innerHTML = `
+            <div style="
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                max-width: 400px;
+                width: 90%;
+                text-align: center;
+            ">
+                <p style="margin-bottom: 20px; font-size: 16px;">${message}</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="confirm-yes" style="
+                        padding: 10px 20px;
+                        background: #007bff;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 14px;
+                    ">${yesText}</button>
+                    <button id="confirm-no" style="
+                        padding: 10px 20px;
+                        background: #6c757d;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 14px;
+                    ">${noText}</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const yesBtn = modal.querySelector('#confirm-yes');
+        const noBtn = modal.querySelector('#confirm-no');
+        
+        function closeModal(result) {
+            document.body.removeChild(modal);
+            resolve(result);
+        }
+        
+        yesBtn.onclick = () => closeModal(true);
+        noBtn.onclick = () => closeModal(false);
+        
+        // Close on background click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                closeModal(false);
+            }
+        };
+        
+        // Focus on yes button by default
+        yesBtn.focus();
+        
+        // Handle Enter and Escape keys
+        const handleKeydown = (e) => {
+            if (e.key === 'Enter') {
+                closeModal(true);
+            } else if (e.key === 'Escape') {
+                closeModal(false);
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeydown);
+        
+        // Clean up event listener when modal closes
+        const originalCloseModal = closeModal;
+        closeModal = (result) => {
+            document.removeEventListener('keydown', handleKeydown);
+            originalCloseModal(result);
+        };
+    });
+}
+
 export function handleBackClick() {
-    if (state.currentTimer && state.currentTimer.id) {
+    if (state.timerActive) {
         if (!confirm("Zamanlayıcı aktif. Geri dönmek istediğinize emin misiniz?")) {
             return;
         }
         clearInterval(state.intervalId);
+        setInactiveTimerUI();
     }
-    navigateTo('/machining/');
+    navigateTo(ROUTES.MACHINING);
 }
 
 // ============================================================================
@@ -170,7 +283,7 @@ export async function showNewManualTimeModal(comment = null) {
                 
                 // Create manual time entry
                 if (!state.currentMachine.id || !state.currentIssue.key) {
-                    navigateTo('/machining/');
+                    navigateTo(ROUTES.MACHINING);
                     return;
                 }
                 const timerData = {
@@ -358,7 +471,7 @@ export async function showRedirectWarningModal() {
         modal.show({
             title: 'Yönlendirme Uyarısı',
             icon: 'fas fa-exclamation-triangle',
-            message: 'Makine çalışmıyor olarak işaretlendi. Operasyonlar sayfasına yönlendirileceksiniz.',
+            message: 'Makine çalışmıyor olarak işaretlendi. Bekletme sayfasına yönlendirileceksiniz.',
             confirmText: 'Tamam',
             confirmButtonClass: 'btn-primary',
             showCancelButton: false,
@@ -372,12 +485,12 @@ export async function showRedirectWarningModal() {
     });
 }
 
-export async function showCompleteOperationModal() {
+export async function showCompleteTaskModal() {
     return new Promise((resolve) => {
         const modal = getConfirmationModal();
         
         modal.show({
-            message: 'Bu operasyonu tamamladınız mı?',
+            message: `${state.currentIssue.quantity} adetin hepsini tamamladınız mı?`,
             onConfirm: () => {
                 resolve(true);
             },
@@ -413,6 +526,4 @@ function updateDurationPreview() {
     } catch (error) {
         document.getElementById('duration-preview').textContent = '00:00:00';
     }
-}
-
-
+} 

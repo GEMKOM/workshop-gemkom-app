@@ -179,10 +179,10 @@ body {
     margin: 0 auto;
 }
 
-/* When there's enough space, show 5 columns side by side */
+/* When there's enough space, show 4 columns side by side */
 @media (min-width: 1200px) {
     .task-details-grid {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         max-width: 1400px;
     }
 }
@@ -875,6 +875,4 @@ body {
     to {
         transform: rotate(360deg);
     }
-}
-
-
+} 

@@ -1,22 +1,21 @@
 // --- taskState.js ---
-// State management and utilities for operation functionality
+// State management and utilities for task functionality
 
-import { state } from '../operationsService.js';
+import { state } from '../machiningService.js';
 import { getMachine } from '../../generic/machines.js';
 
 // ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
-export function setCurrentIssueState(operation) {
+export function setCurrentIssueState(issue) {
     state.currentIssue = {
-        key: operation.key,
-        part_task_key: operation.part_task_key || null,
-        name: operation.part_name || operation.name || '',
-        job_no: operation.part_job_no || null,
-        image_no: operation.part_image_no || null,
-        position_no: operation.part_position_no || null,
-        quantity: operation.part_quantity || null,
-        order: operation.order || null
+        key: issue.key,
+        name: issue.name,
+        job_no: issue.job_no,
+        image_no: issue.image_no,
+        position_no: issue.position_no,
+        quantity: issue.quantity,
+        is_hold_task: issue.is_hold_task
     };
 }   
 
@@ -32,4 +31,3 @@ export async function setCurrentMachineState() {
     const machine = await getMachine(machineId);
     state.currentMachine = machine;
 }
-

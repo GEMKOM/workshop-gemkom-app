@@ -1,5 +1,4 @@
 // --- machiningService.js ---
-
 export const state = {
     intervalId: null,
     currentIssue: {

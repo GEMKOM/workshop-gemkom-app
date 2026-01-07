@@ -1,7 +1,7 @@
 // --- taskUI.js ---
-// UI management functions for operation functionality
+// UI management functions for task functionality
 
-import { state} from '../operationsService.js';
+import { state} from '../machiningService.js';
 import { getSyncedNow } from '../../generic/timeService.js';
 import { formatTime } from '../../generic/formatters.js';
 
@@ -20,7 +20,8 @@ export function getUIElements() {
         taskTitle: document.getElementById('task-title'),
         machineName: document.getElementById('machine-name'),
         taskStatus: document.getElementById('task-status'),
-        taskDetailsGrid: document.getElementById('task-details-grid')
+        taskDetailsGrid: document.getElementById('task-details-grid'),
+        w07Warning: document.getElementById('w-07-warning')
     };
 }
 
@@ -41,18 +42,11 @@ export function resetTimerDisplay() {
     document.getElementById('timer-display').textContent = '00:00:00';
 }
 
-export function setupTaskDisplay(hasActiveTimer) {
-    const { startBtn, manualBtn, doneBtn, faultBtn, backBtn, timerDisplay, taskTitle, machineName, taskStatus, taskDetailsGrid } = getUIElements();
+export function setupTaskDisplay(hasActiveTimer, isHoldTask) {
+    const { startBtn, manualBtn, doneBtn, faultBtn, backBtn, timerDisplay, taskTitle, machineName, taskStatus, taskDetailsGrid, w07Warning } = getUIElements();
     
     if (!taskTitle.textContent) {
-        // Display part_task_key as main title with operation key in parentheses, or just operation key if part_task_key doesn't exist
-        let displayTitle;
-        if (state.currentIssue.part_task_key) {
-            displayTitle = `${state.currentIssue.part_task_key} (${state.currentIssue.key})`;
-        } else {
-            displayTitle = state.currentIssue.key;
-        }
-        taskTitle.textContent = displayTitle;
+        taskTitle.textContent = state.currentIssue.key;
         machineName.textContent = state.currentMachine.name;
         
         // Update task status
@@ -60,6 +54,34 @@ export function setupTaskDisplay(hasActiveTimer) {
         
         // Update the new task details grid structure
         updateTaskDetailsGrid();
+    }
+    
+    // Special handling for W-07 tasks
+    if (state.currentIssue.key === 'W-07' && hasActiveTimer) {
+        // Hide all buttons for W-07 tasks with active timer
+        startBtn.style.display = 'none';
+        manualBtn.style.display = 'none';
+        doneBtn.style.display = 'none';
+        faultBtn.style.display = 'none';
+        
+        // Show warning message
+        if (w07Warning) {
+            w07Warning.style.display = 'block';
+        }
+        return;
+    }
+    
+    // Hide W-07 warning for other cases
+    if (w07Warning) {
+        w07Warning.style.display = 'none';
+    }
+    
+    // Handle hold task restrictions
+    if (isHoldTask) {
+        // Hide "Tamamlandı" button for hold tasks
+        doneBtn.style.display = 'none';
+    } else {
+        doneBtn.style.display = 'flex';
     }
     
     // Update button states based on timer status
@@ -84,11 +106,6 @@ function updateTaskDetailsGrid() {
     if (!taskDetailsGrid) return;
     
     const details = [
-        {
-            icon: 'fas fa-sort-numeric-up',
-            label: 'Sıra',
-            value: state.currentIssue.order || '-'
-        },
         {
             icon: 'fas fa-file-alt',
             label: 'İş Emri',
@@ -308,6 +325,4 @@ export function showErrorMessage(message, duration = 5000) {
             messageDiv.remove();
         }
     }, duration);
-}
-
-
+} 
