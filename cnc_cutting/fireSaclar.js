@@ -8,6 +8,9 @@ import { createCardGrid } from '../components/genericCard/genericCard.js';
 // FIRE SACLAR TAB FUNCTIONALITY
 // ============================================================================
 
+// Store all remnants for filtering
+let allRemnants = [];
+
 export function loadFireSaclarContent() {
     createFireSaclarHTML();
     bindFireSaclarEvents();
@@ -126,6 +129,69 @@ function createFireSaclarHTML() {
                 </div>
             </div>
             
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <div class="section-header">
+                    <h4 class="section-title">
+                        <i class="fas fa-filter me-2"></i>
+                        Filtreler
+                    </h4>
+                    <button type="button" class="btn btn-link p-0 filter-toggle" id="fire-saclar-filter-toggle">
+                        <i class="fas fa-chevron-down me-1"></i>Filtreleri Göster
+                    </button>
+                </div>
+                
+                <div class="filter-content" id="fire-saclar-filter-content" style="display: none;">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-cube me-2"></i>Malzeme
+                            </label>
+                            <input 
+                                type="text" 
+                                id="filter-material" 
+                                class="form-control" 
+                                placeholder="Malzeme ara (örn: S235JR)"
+                            >
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-ruler-vertical me-2"></i>Kalınlık (mm)
+                            </label>
+                            <input 
+                                type="number" 
+                                id="filter-thickness_mm" 
+                                class="form-control" 
+                                step="0.01" 
+                                min="0" 
+                                placeholder="Kalınlık ara (örn: 10.00)"
+                            >
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="fas fa-arrows-alt me-2"></i>Boyutlar
+                            </label>
+                            <input 
+                                type="text" 
+                                id="filter-dimensions" 
+                                class="form-control" 
+                                placeholder="Boyut ara (örn: 1200x800)"
+                            >
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn btn-primary" id="fire-saclar-apply-filters">
+                            <i class="fas fa-search me-2"></i>Filtrele
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="fire-saclar-clear-filters">
+                            <i class="fas fa-times me-2"></i>Temizle
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Loading State -->
             <div id="fire-saclar-loading" class="loading-state" style="display: none;">
                 <div class="spinner-border text-primary" role="status">
@@ -179,6 +245,9 @@ async function loadRemnantPlates() {
         // Handle paginated response or direct array
         const remnants = data.results || data;
         
+        // Store all remnants for filtering
+        allRemnants = remnants || [];
+        
         // Hide loading state
         loadingDiv.style.display = 'none';
         
@@ -188,8 +257,44 @@ async function loadRemnantPlates() {
             return;
         }
         
-        // Map remnants to card data format
-        const cardsData = remnants.map(remnant => ({
+        // Check if filters are active and apply them, otherwise display all
+        if (hasActiveFilters()) {
+            applyFilters();
+        } else {
+            displayRemnants(allRemnants);
+        }
+        
+    } catch (error) {
+        console.error('Error loading remnant plates:', error);
+        
+        // Hide loading state
+        loadingDiv.style.display = 'none';
+        
+        // Show error state
+        errorMessage.textContent = error.message || 'Fire saclar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.';
+        errorDiv.style.display = 'block';
+    }
+}
+
+/**
+ * Display remnants with optional filtering
+ */
+function displayRemnants(remnants) {
+    const emptyDiv = document.getElementById('fire-saclar-empty');
+    const gridContainer = document.getElementById('fire-saclar-grid');
+    
+    if (!remnants || remnants.length === 0) {
+        // Show empty state
+        emptyDiv.style.display = 'block';
+        gridContainer.innerHTML = '';
+        return;
+    }
+    
+    // Hide empty state
+    emptyDiv.style.display = 'none';
+    
+    // Map remnants to card data format
+    const cardsData = remnants.map(remnant => ({
             title: remnant.id ? `Fire Sac #${remnant.id}` : 'Fire Sac',
             subtitle: `${remnant.material || 'N/A'} - ${remnant.dimensions || 'N/A'}`,
             icon: 'fas fa-fire',
@@ -223,23 +328,12 @@ async function loadRemnantPlates() {
             className: 'remnant-card'
         }));
         
-        // Create card grid
-        createCardGrid(gridContainer, cardsData, {
-            columns: 3,
-            gap: '1.5rem',
-            className: 'fire-saclar-card-grid'
-        });
-        
-    } catch (error) {
-        console.error('Error loading remnant plates:', error);
-        
-        // Hide loading state
-        loadingDiv.style.display = 'none';
-        
-        // Show error state
-        errorMessage.textContent = error.message || 'Fire saclar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.';
-        errorDiv.style.display = 'block';
-    }
+    // Create card grid
+    createCardGrid(gridContainer, cardsData, {
+        columns: 3,
+        gap: '1.5rem',
+        className: 'fire-saclar-card-grid'
+    });
 }
 
 /**
@@ -297,6 +391,51 @@ function bindFireSaclarEvents() {
     if (form) {
         form.addEventListener('submit', handleFireSaclarFormSubmit);
     }
+    
+    // Filter toggle
+    const filterToggle = document.getElementById('fire-saclar-filter-toggle');
+    const filterContent = document.getElementById('fire-saclar-filter-content');
+    
+    if (filterToggle && filterContent) {
+        filterToggle.addEventListener('click', () => {
+            const isVisible = filterContent.style.display !== 'none';
+            filterContent.style.display = isVisible ? 'none' : 'block';
+            
+            const icon = filterToggle.querySelector('i');
+            if (isVisible) {
+                icon.className = 'fas fa-chevron-down me-1';
+                filterToggle.innerHTML = '<i class="fas fa-chevron-down me-1"></i>Filtreleri Göster';
+            } else {
+                icon.className = 'fas fa-chevron-up me-1';
+                filterToggle.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Filtreleri Gizle';
+            }
+        });
+    }
+    
+    // Apply filters button
+    const applyFiltersBtn = document.getElementById('fire-saclar-apply-filters');
+    if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', applyFilters);
+    }
+    
+    // Clear filters button
+    const clearFiltersBtn = document.getElementById('fire-saclar-clear-filters');
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', clearFilters);
+    }
+    
+    // Filter inputs - apply on Enter key
+    const filterInputs = ['filter-material', 'filter-thickness_mm', 'filter-dimensions'];
+    filterInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    applyFilters();
+                }
+            });
+        }
+    });
 }
 
 /**
@@ -421,5 +560,73 @@ function hideFireSaclarMessage() {
         messageDiv.style.display = 'none';
         messageDiv.innerHTML = '';
     }
+}
+
+/**
+ * Apply filters to remnants
+ */
+function applyFilters() {
+    const materialFilter = document.getElementById('filter-material')?.value.trim().toLowerCase() || '';
+    const thicknessFilter = document.getElementById('filter-thickness_mm')?.value.trim() || '';
+    const dimensionsFilter = document.getElementById('filter-dimensions')?.value.trim().toLowerCase() || '';
+    
+    let filtered = [...allRemnants];
+    
+    // Filter by material
+    if (materialFilter) {
+        filtered = filtered.filter(remnant => {
+            const material = (remnant.material || '').toLowerCase();
+            return material.includes(materialFilter);
+        });
+    }
+    
+    // Filter by thickness_mm
+    if (thicknessFilter) {
+        const thicknessValue = parseFloat(thicknessFilter);
+        if (!isNaN(thicknessValue)) {
+            filtered = filtered.filter(remnant => {
+                const remnantThickness = parseFloat(remnant.thickness_mm);
+                return !isNaN(remnantThickness) && remnantThickness === thicknessValue;
+            });
+        }
+    }
+    
+    // Filter by dimensions
+    if (dimensionsFilter) {
+        filtered = filtered.filter(remnant => {
+            const dimensions = (remnant.dimensions || '').toLowerCase();
+            return dimensions.includes(dimensionsFilter);
+        });
+    }
+    
+    // Display filtered results
+    displayRemnants(filtered);
+}
+
+/**
+ * Clear all filters
+ */
+function clearFilters() {
+    const materialInput = document.getElementById('filter-material');
+    const thicknessInput = document.getElementById('filter-thickness_mm');
+    const dimensionsInput = document.getElementById('filter-dimensions');
+    
+    if (materialInput) materialInput.value = '';
+    if (thicknessInput) thicknessInput.value = '';
+    if (dimensionsInput) dimensionsInput.value = '';
+    
+    // Display all remnants
+    displayRemnants(allRemnants);
+}
+
+/**
+ * Check if any filters are currently active
+ */
+function hasActiveFilters() {
+    const materialFilter = document.getElementById('filter-material')?.value.trim() || '';
+    const thicknessFilter = document.getElementById('filter-thickness_mm')?.value.trim() || '';
+    const dimensionsFilter = document.getElementById('filter-dimensions')?.value.trim() || '';
+    
+    return !!(materialFilter || thicknessFilter || dimensionsFilter);
 }
 
