@@ -5,7 +5,6 @@ import { state } from '../operationsService.js';
 import { navigateTo } from '../../authService.js';
 import { markOperationCompleted } from '../../generic/machining/operations.js';
 import { createMaintenanceRequest } from '../../generic/machines.js';
-import { createManualTimeEntryShared } from '../../generic/timers.js';
 import { handleStartTimer, handleStopTimer } from './taskLogic.js';
 import { ConfirmationModal } from '../../components/confirmation-modal/confirmation-modal.js';
 
@@ -70,12 +69,6 @@ function getConfirmationModal() {
 }
 
 
-export async function handleManualLogClick() {
-    if (checkMaintenanceAndAlert()) return;
-    await showNewManualTimeModal();
-}
-
-
 export async function handleFaultReportClick() {
     if (!state.currentMachine.id) {
         navigateTo('/machining/');
@@ -111,102 +104,6 @@ export function handleBackClick() {
 // ============================================================================
 // NEW MODAL FUNCTIONS
 // ============================================================================
-
-export async function showNewManualTimeModal(comment = null) {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('manual-time-modal');
-        const backdrop = document.getElementById('manual-time-modal-backdrop');
-        const closeBtn = document.getElementById('manual-time-modal-close');
-        const cancelBtn = document.getElementById('manual-time-modal-cancel');
-        const submitBtn = document.getElementById('manual-time-modal-submit');
-        
-        // Set default values
-        const now = new Date();
-        const endDateTime = new Date(now.getTime() + 60 * 60 * 1000);
-        
-        // Format datetime-local inputs (YYYY-MM-DDTHH:MM)
-        const formatDateTimeLocal = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day}T${hours}:${minutes}`;
-        };
-        
-        document.getElementById('start-datetime').value = formatDateTimeLocal(now);
-        document.getElementById('end-datetime').value = formatDateTimeLocal(endDateTime);
-        
-        // Setup duration preview
-        updateDurationPreview();
-        
-        function closeModal() {
-            modal.classList.remove('show');
-            resolve();
-        }
-        
-        async function handleSubmit() {
-            const startDateTime = document.getElementById('start-datetime').value;
-            const endDateTime = document.getElementById('end-datetime').value;
-            
-            if (!startDateTime || !endDateTime) {
-                alert("Lütfen tüm alanları doldurun.");
-                return;
-            }
-            
-            try {
-                const startDate = new Date(startDateTime);
-                const endDate = new Date(endDateTime);
-                
-                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-                    alert("Geçersiz tarih/saat formatı.");
-                    return;
-                }
-                
-                if (endDate <= startDate) {
-                    alert("Bitiş zamanı başlangıç zamanından sonra olmalıdır.");
-                    return;
-                }
-                
-                // Create manual time entry
-                if (!state.currentMachine.id || !state.currentIssue.key) {
-                    navigateTo('/machining/');
-                    return;
-                }
-                const timerData = {
-                    issue_key: state.currentIssue.key,
-                    start_time: startDate.getTime(),
-                    finish_time: endDate.getTime(),
-                    machine_fk: state.currentMachine.id
-                };
-                if (comment) {
-                    timerData.comment = comment;
-                }
-                await createManualTimeEntryShared(timerData, 'machining');
-                closeModal();
-                resolve();
-            } catch (error) {
-                console.error('Error creating manual time entry:', error);
-                alert("Hata oluştu. Lütfen tekrar deneyin.");
-            }
-        }
-        
-        // Event listeners
-        backdrop.addEventListener('click', closeModal);
-        closeBtn.addEventListener('click', closeModal);
-        cancelBtn.addEventListener('click', closeModal);
-        submitBtn.addEventListener('click', handleSubmit);
-        
-        // Show modal
-        modal.classList.add('show');
-        
-        // Setup input change listeners for duration preview
-        const inputs = ['start-datetime', 'end-datetime'];
-        inputs.forEach(id => {
-            document.getElementById(id).addEventListener('change', updateDurationPreview);
-        });
-    });
-}
 
 export async function showNewFaultReportModal(machineId) {
     return new Promise((resolve) => {
@@ -387,32 +284,4 @@ export async function showCompleteOperationModal() {
         });
     });
 }
-
-function updateDurationPreview() {
-    try {
-        const startDateTime = document.getElementById('start-datetime').value;
-        const endDateTime = document.getElementById('end-datetime').value;
-        
-        if (startDateTime && endDateTime) {
-            const startDate = new Date(startDateTime);
-            const endDate = new Date(endDateTime);
-            
-            if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime()) && endDate > startDate) {
-                const elapsedSeconds = Math.round((endDate.getTime() - startDate.getTime()) / 1000);
-                const hours = Math.floor(elapsedSeconds / 3600);
-                const minutes = Math.floor((elapsedSeconds % 3600) / 60);
-                const seconds = elapsedSeconds % 60;
-                const durationStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                document.getElementById('duration-preview').textContent = durationStr;
-            } else {
-                document.getElementById('duration-preview').textContent = '00:00:00';
-            }
-        } else {
-            document.getElementById('duration-preview').textContent = '00:00:00';
-        }
-    } catch (error) {
-        document.getElementById('duration-preview').textContent = '00:00:00';
-    }
-}
-
 

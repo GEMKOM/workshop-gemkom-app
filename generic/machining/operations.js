@@ -171,3 +171,59 @@ export async function stopOperationTimer(operationKey) {
         throw error;
     }
 }
+
+/**
+ * Fetch all active downtime reasons
+ * @returns {Promise<Array>} Array of downtime reason objects
+ */
+export async function fetchDowntimeReasons() {
+    try {
+        const response = await authedFetch(`${MACHINING_2_BASE_URL}/downtime-reasons/`);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Failed to fetch downtime reasons: ${response.statusText} - ${JSON.stringify(errorData)}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching downtime reasons:', error);
+        throw error;
+    }
+}
+
+/**
+ * Log a downtime/break reason
+ * @param {Object} logData - Log reason data
+ * @param {number} [logData.current_timer_id] - Optional timer ID to stop
+ * @param {number} logData.reason_id - Required downtime reason ID
+ * @param {string} [logData.comment] - Optional description
+ * @param {number} logData.machine_id - Required machine ID
+ * @param {string} logData.operation_key - Required operation key
+ * @returns {Promise<Object>} Response with stopped_timer_id, new_timer_id, timer, fault_id, operation_completed, message
+ */
+export async function logReason(logData) {
+    try {
+        const response = await authedFetch(`${MACHINING_2_BASE_URL}/log-reason/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(logData)
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMessage = errorData.error || `Failed to log reason: ${response.statusText}`;
+            const error = new Error(errorMessage);
+            error.status = response.status;
+            error.data = errorData;
+            throw error;
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error logging reason:', error);
+        throw error;
+    }
+}

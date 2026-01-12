@@ -12,7 +12,6 @@ import { formatTime } from '../../generic/formatters.js';
 export function getUIElements() {
     return {
         startBtn: document.getElementById('start-stop'),
-        manualBtn: document.getElementById('manual-log-button'),
         doneBtn: document.getElementById('mark-done-button'),
         faultBtn: document.getElementById('fault-report-button'),
         backBtn: document.getElementById('back-button'),
@@ -42,7 +41,7 @@ export function resetTimerDisplay() {
 }
 
 export function setupTaskDisplay(hasActiveTimer) {
-    const { startBtn, manualBtn, doneBtn, faultBtn, backBtn, timerDisplay, taskTitle, machineName, taskStatus, taskDetailsGrid } = getUIElements();
+    const { startBtn, doneBtn, faultBtn, backBtn, timerDisplay, taskTitle, machineName, taskStatus, taskDetailsGrid } = getUIElements();
     
     if (!taskTitle.textContent) {
         // Display part_task_key as main title with operation key in parentheses, or just operation key if part_task_key doesn't exist
@@ -123,7 +122,7 @@ function updateTaskDetailsGrid() {
 }
 
 function updateButtonStates(hasActiveTimer) {
-    const { startBtn, manualBtn, doneBtn, faultBtn } = getUIElements();
+    const { startBtn, doneBtn, faultBtn } = getUIElements();
     
     if (hasActiveTimer) {
         // Timer is running
@@ -132,11 +131,9 @@ function updateButtonStates(hasActiveTimer) {
         startBtn.classList.add('btn-danger', 'running');
         
         // Disable other buttons while timer is running
-        manualBtn.disabled = true;
         doneBtn.disabled = true;
         faultBtn.disabled = true;
         
-        manualBtn.classList.add('disabled');
         doneBtn.classList.add('disabled');
         faultBtn.classList.add('disabled');
     } else {
@@ -147,11 +144,9 @@ function updateButtonStates(hasActiveTimer) {
         startBtn.disabled = false; // Explicitly enable the start button
         
         // Enable other buttons
-        manualBtn.disabled = false;
         doneBtn.disabled = false;
         faultBtn.disabled = false;
         
-        manualBtn.classList.remove('disabled');
         doneBtn.classList.remove('disabled');
         faultBtn.classList.remove('disabled');
     }

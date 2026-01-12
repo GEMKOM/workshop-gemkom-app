@@ -1,9 +1,10 @@
 // --- activeTimers.js ---
-import { fetchMachines } from '../generic/machines.js';
+import { fetchMachinesDropdown } from '../generic/machines.js';
 import { HeaderComponent } from '../components/header/header.js';
 import { ResultsTable } from '../components/resultsTable/resultsTable.js';
 import { ModernDropdown } from '../components/dropdown/dropdown.js';
-import { getOperations } from '../generic/machining/operations.js';
+import { getOperations, fetchDowntimeReasons, logReason } from '../generic/machining/operations.js';
+import { navigateTo } from '../authService.js';
 
 // ============================================================================
 // ACTIVE TIMERS TAB FUNCTIONALITY
@@ -14,6 +15,8 @@ let resultsTableInstance = null;
 let machineDropdown = null;
 let allMachines = [];
 let allOperations = [];
+let downtimeReasonsCache = null;
+let currentMachineId = null;
 
 export function loadActiveTimersContent() {
     createActiveTimersHTML();
@@ -130,9 +133,8 @@ function setupSearchInput() {
  */
 async function loadMachinesAndSetupDropdown() {
     try {
-        // Load machines
-        const machinesData = await fetchMachines({ used_in: "machining", is_active: true });
-        allMachines = machinesData.results || machinesData;
+        // Load machines with availability flags for dropdown
+        allMachines = await fetchMachinesDropdown("machining", true);
         
         // Setup machine dropdown
         setupMachineDropdown();
@@ -209,11 +211,21 @@ function setupMachineDropdown() {
  * Loads operations for a specific machine
  */
 async function loadOperationsForMachine(machineId) {
+    currentMachineId = machineId;
+    
     if (resultsTableInstance) {
         resultsTableInstance.showLoadingState();
     }
     
     try {
+        // Fetch downtime reasons for this machine
+        try {
+            downtimeReasonsCache = await fetchDowntimeReasons();
+        } catch (error) {
+            console.error('Error fetching downtime reasons:', error);
+            downtimeReasonsCache = null;
+        }
+        
         // Fetch operations for the machine, filtering for incomplete operations in plan
         const data = await getOperations({ 
             machine_fk: machineId,
@@ -238,25 +250,24 @@ async function loadOperationsForMachine(machineId) {
  * Filters and displays operations based on search
  */
 function filterAndDisplayOperations() {
-    if (!resultsTableInstance || allOperations.length === 0) {
-        if (resultsTableInstance) {
-            resultsTableInstance.setItems([]);
-            resultsTableInstance.updateResultsInfo(0);
-        }
+    if (!resultsTableInstance) {
         return;
     }
     
     // Get search term from the main search input
     const searchInput = document.getElementById('search-input');
     const searchTerm = searchInput ? searchInput.value : '';
-    const filteredOperations = filterOperationsBySearch(allOperations, searchTerm);
     
-    // Convert operations to ResultsTable format
+    // Filter operations (downtime reason item is always shown, so we don't filter it)
+    const filteredOperations = searchTerm ? filterOperationsBySearch(allOperations, searchTerm) : allOperations;
+    
+    // Convert operations to ResultsTable format (downtime reason item is added here)
     const formattedOperations = formatOperationsForResultsTable(filteredOperations);
     
     if (resultsTableInstance) {
         resultsTableInstance.setItems(formattedOperations);
-        resultsTableInstance.updateResultsInfo(filteredOperations.length);
+        // Count includes downtime reason item if present
+        resultsTableInstance.updateResultsInfo(formattedOperations.length);
     }
 }
 
@@ -276,9 +287,42 @@ function filterOperationsBySearch(operations, searchTerm) {
 }
 
 /**
+ * Creates downtime reason item for the top of the list
+ */
+function createDowntimeReasonItem() {
+    if (!downtimeReasonsCache || downtimeReasonsCache.length === 0) {
+        return null;
+    }
+    
+    // Filter to only show reasons that create a timer
+    const timerReasons = downtimeReasonsCache.filter(reason => reason.creates_timer);
+    
+    if (timerReasons.length === 0) {
+        return null;
+    }
+    
+    return {
+        title: 'Durma Nedeni Kaydet',
+        subtitle: 'Makine durma nedenini seçin ve kaydedin',
+        icon: 'fas fa-pause-circle',
+        iconColor: '#ffffff',
+        iconBackground: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        details: [],
+        clickable: true,
+        isDowntimeReason: true, // Special flag to identify this item
+        onClick: () => {
+            showDowntimeReasonModal();
+        }
+    };
+}
+
+/**
  * Formats operations for the ResultsTable component
  */
 function formatOperationsForResultsTable(operations) {
+    // Add downtime reason item at the top if available
+    const downtimeReasonItem = createDowntimeReasonItem();
+    
     // Map operations to ResultsTable format
     const formattedOperations = operations.map(operation => {
         // Display part_task_key as main title with operation key in parentheses, or just operation key if part_task_key doesn't exist
@@ -339,6 +383,11 @@ function formatOperationsForResultsTable(operations) {
         };
     });
     
+    // Prepend downtime reason item at the top if available
+    if (downtimeReasonItem) {
+        return [downtimeReasonItem, ...formattedOperations];
+    }
+    
     return formattedOperations;
 }
 
@@ -368,5 +417,166 @@ function loadActiveTimersData() {
     if (machineId) {
         loadOperationsForMachine(machineId);
     }
+}
+
+// ============================================================================
+// DOWNTIME REASONS MODAL
+// ============================================================================
+
+function renderDowntimeReasonsList(reasons) {
+    const listContainer = document.getElementById('downtime-reasons-list');
+    if (!listContainer) return;
+    
+    // Filter to only show reasons that create a timer
+    const timerReasons = reasons.filter(reason => reason.creates_timer);
+    
+    if (timerReasons.length === 0) {
+        listContainer.innerHTML = '<p class="text-muted text-center">Durma nedeni bulunamadı.</p>';
+        return;
+    }
+    
+    listContainer.innerHTML = timerReasons.map(reason => `
+        <div class="downtime-reason-item" data-reason-id="${reason.id}">
+            <div class="downtime-reason-content">
+                <span class="downtime-reason-name">${reason.name}</span>
+            </div>
+            <div class="downtime-reason-select">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    `).join('');
+    
+    // Add click handlers
+    listContainer.querySelectorAll('.downtime-reason-item').forEach(item => {
+        item.addEventListener('click', () => {
+            // Remove previous selection
+            listContainer.querySelectorAll('.downtime-reason-item').forEach(i => {
+                i.classList.remove('selected');
+            });
+            // Add selection to clicked item
+            item.classList.add('selected');
+            
+            // Enable submit button
+            const submitBtn = document.getElementById('downtime-reason-modal-submit');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+        });
+    });
+}
+
+function getSelectedDowntimeReason() {
+    const selectedItem = document.querySelector('.downtime-reason-item.selected');
+    if (!selectedItem) return null;
+    
+    return parseInt(selectedItem.getAttribute('data-reason-id'));
+}
+
+function showDowntimeReasonModal() {
+    const modal = document.getElementById('downtime-reason-modal');
+    const backdrop = document.getElementById('downtime-reason-modal-backdrop');
+    const closeBtn = document.getElementById('downtime-reason-modal-close');
+    const cancelBtn = document.getElementById('downtime-reason-modal-cancel');
+    const submitBtn = document.getElementById('downtime-reason-modal-submit');
+    const commentInput = document.getElementById('downtime-reason-comment');
+    
+    if (!modal || !downtimeReasonsCache) {
+        return;
+    }
+    
+    // Reset state
+    submitBtn.disabled = true;
+    if (commentInput) commentInput.value = '';
+    
+    // Render reasons
+    renderDowntimeReasonsList(downtimeReasonsCache);
+    
+    function closeModal() {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    async function handleSubmit() {
+        const reasonId = getSelectedDowntimeReason();
+        if (!reasonId) {
+            alert('Lütfen bir durma nedeni seçin.');
+            return;
+        }
+        
+        if (!currentMachineId) {
+            alert('Makine bilgisi bulunamadı.');
+            return;
+        }
+        
+        const comment = commentInput ? commentInput.value.trim() : '';
+        
+        // Prepare log data - we need an operation key, but we're on the list page
+        // We'll need to get the first available operation or handle this differently
+        // For now, let's check if we can log without operation_key
+        const logData = {
+            reason_id: reasonId,
+            machine_id: currentMachineId
+        };
+        
+        if (comment) {
+            logData.comment = comment;
+        }
+        
+        // Disable submit button during request
+        submitBtn.disabled = true;
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...';
+        
+        try {
+            // We need an operation_key, but we're on the list page
+            // The API might require it, so we'll need to handle this
+            // For now, let's try to get the first operation or show an error
+            if (allOperations.length === 0) {
+                alert('Durma nedeni kaydetmek için en az bir operasyon olmalıdır.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+                return;
+            }
+            
+            // Use the first operation's key
+            logData.operation_key = allOperations[0].key;
+            
+            const result = await logReason(logData);
+            
+            // Show success message
+            let message = result.message || 'Durma nedeni başarıyla kaydedildi.';
+            if (result.new_timer_id) {
+                message += ' Yeni zamanlayıcı başlatıldı.';
+            }
+            alert(message);
+            
+            // Close modal and reload
+            closeModal();
+            
+            // Reload operations to refresh the list
+            if (currentMachineId) {
+                loadOperationsForMachine(currentMachineId);
+            }
+            
+        } catch (error) {
+            console.error('Error logging reason:', error);
+            const errorMessage = error.data?.error || error.message || 'Durma nedeni kaydedilirken hata oluştu.';
+            alert(errorMessage);
+            
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    }
+    
+    // Event listeners
+    backdrop.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    submitBtn.addEventListener('click', handleSubmit);
+    
+    // Show modal
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 

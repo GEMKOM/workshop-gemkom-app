@@ -629,4 +629,3 @@ function hasActiveFilters() {
     
     return !!(materialFilter || thicknessFilter || dimensionsFilter);
 }
-

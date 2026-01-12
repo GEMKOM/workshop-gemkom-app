@@ -73,6 +73,34 @@
         </div>
     </div>
 
+    <!-- Downtime Reason Selection Modal -->
+    <div id="downtime-reason-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-backdrop" id="downtime-reason-modal-backdrop"></div>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-pause-circle me-2"></i>Durma Nedeni Seçin</h3>
+                <button class="modal-close" id="downtime-reason-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="downtime-reasons-list" class="downtime-reasons-list">
+                    <!-- Dynamically filled -->
+                </div>
+                <div class="form-group mt-3">
+                    <label for="downtime-reason-comment">Açıklama (Opsiyonel):</label>
+                    <textarea id="downtime-reason-comment" class="form-control" rows="3" placeholder="Ek açıklama giriniz..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="downtime-reason-modal-cancel">
+                    <i class="fas fa-times me-2"></i>İptal
+                </button>
+                <button class="btn btn-primary" id="downtime-reason-modal-submit" disabled>
+                    <i class="fas fa-save me-2"></i>Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS and Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../components/refreshButton.js"></script>

@@ -2,6 +2,44 @@ import { authedFetch } from '../authService.js';
 import { backendBase } from '../base.js';
 import { extractResultsFromResponse } from './paginationHelper.js';
 
+
+/**
+ * Fetch machines for dropdowns (lightweight endpoint)
+ * Returns only id, name, and used_in for all active machines
+ * @param {string} [used_in] - Optional filter by used_in (e.g., 'machining')
+ * @param {boolean} [include_availability=false] - Optional flag to include availability information (has_active_timer, is_under_maintenance, is_available)
+ * @returns {Promise<Array>} Array of machine objects with id, name, and used_in (and optionally availability flags)
+ */
+export async function fetchMachinesDropdown(used_in = null, include_availability = false) {
+    try {
+        let url = `${backendBase}/machines/dropdown/`;
+        const params = new URLSearchParams();
+        
+        if (used_in) {
+            params.append('used_in', used_in);
+        }
+        
+        if (include_availability) {
+            params.append('include_availability', 'true');
+        }
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+        
+        const response = await authedFetch(url);
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch machines dropdown');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching machines dropdown:', error);
+        throw error;
+    }
+}
+
 export async function fetchMachines(filters = {}) {
     try {
         let url = `${backendBase}/machines/`;
