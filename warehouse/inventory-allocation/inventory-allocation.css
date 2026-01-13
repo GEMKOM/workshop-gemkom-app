@@ -12,6 +12,11 @@
     margin-top: 2rem;
 }
 
+/* Warehouse requests container */
+#warehouse-requests-container {
+    margin-top: 3rem;
+}
+
 /* ============================================================================
    MODAL STYLES
    ============================================================================ */
@@ -164,6 +169,11 @@
         transition: background-color 0.2s ease;
     }
     
+    /* Read-only view (warehouse requests) - 4 columns */
+    .items-container-readonly .item-row {
+        grid-template-columns: 60px 1fr 180px 180px;
+    }
+    
     /* Header row styling */
     .header-row {
         background: linear-gradient(135deg, #2c3e50, #34495e);
@@ -208,6 +218,13 @@
     
     .item-input {
         padding: 0.5rem 0.75rem;
+    }
+    
+    .item-inventory {
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
     }
     
     .mobile-label {
@@ -560,7 +577,8 @@
     }
     
     .item-quantity,
-    .item-unit {
+    .item-unit,
+    .item-inventory {
         margin-bottom: 0.75rem;
     }
     
@@ -572,6 +590,13 @@
         grid-column: 2;
     }
     
+    .item-inventory {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0;
+    }
+    
     /* Create a grid for quantity and unit */
     .item-row {
         display: grid;
@@ -579,9 +604,27 @@
         gap: 0.75rem;
     }
     
+    /* Read-only view: quantity and inventory in grid */
+    .items-container-readonly .item-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .items-container-readonly .item-quantity {
+        grid-column: 1;
+    }
+    
+    .items-container-readonly .item-inventory {
+        grid-column: 2;
+    }
+    
     .item-number,
     .item-details,
     .item-input {
+        grid-column: 1 / -1;
+    }
+    
+    .items-container-readonly .item-number,
+    .items-container-readonly .item-details {
         grid-column: 1 / -1;
     }
     

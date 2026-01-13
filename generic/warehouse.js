@@ -214,3 +214,51 @@ export async function completeInventoryControl(planningRequestId, data = {}) {
         throw error;
     }
 }
+
+/**
+ * Get planning requests for warehouse team
+ * Shows requests that need inventory checking or have been submitted.
+ * Only accessible by warehouse team and superusers.
+ * 
+ * @param {Object} filters - Filter parameters
+ * @param {string} filters.status - Filter by specific status (pending_inventory, pending_erp_entry, completed)
+ * @param {number} filters.page - Page number for pagination
+ * @param {number} filters.page_size - Page size for pagination
+ * @returns {Promise<Object>} Response with warehouse planning requests (paginated)
+ */
+export async function getWarehouseRequests(filters = {}) {
+    try {
+        const queryParams = new URLSearchParams();
+        
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                queryParams.append(key, value);
+            }
+        });
+
+        const url = `${PLANNING_BASE_URL}/requests/warehouse_requests/${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+        
+        console.log('Fetching warehouse requests from:', url);
+        
+        const response = await authedFetch(url);
+
+        if (!response.ok) {
+            let errorMessage = 'Depo talepleri yüklenirken hata oluştu';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.detail || errorData.error || errorMessage;
+            } catch (e) {
+                // If error response is not JSON, use status text
+                errorMessage = `${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        console.log('Warehouse requests response:', data);
+        return data;
+    } catch (error) {
+        console.error('Error fetching warehouse requests:', error);
+        throw error;
+    }
+}

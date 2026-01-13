@@ -3,7 +3,7 @@ import { initNavbar } from '../../components/navbar.js';
 import { HeaderComponent } from '../../components/header/header.js';
 import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
 import { TableComponent } from '../../components/table/table.js';
-import { getPlanningRequests, getPlanningRequest, updateInventoryQuantities, completeInventoryControl } from '../../generic/warehouse.js';
+import { getPlanningRequests, getPlanningRequest, updateInventoryQuantities, completeInventoryControl, getWarehouseRequests } from '../../generic/warehouse.js';
 import { formatDecimalTurkish } from '../../generic/formatters.js';
 import { ConfirmationModal } from '../../components/confirmation-modal/confirmation-modal.js';
 
@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize results table
     initializeResultsTable();
     
+    // Initialize warehouse requests table
+    initializeWarehouseRequestsTable();
+    
     // Initialize confirmation modal
     confirmationModal = new ConfirmationModal('confirmation-modal-container', {
         title: 'Onay',
@@ -35,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Load pending inventory requests
     loadPendingInventoryRequests();
+    
+    // Load warehouse requests
+    loadWarehouseRequests();
 });
 
 // ============================================================================
@@ -53,6 +59,7 @@ function initializeHeader() {
         backUrl: '../',
         onRefreshClick: () => {
             loadPendingInventoryRequests();
+            loadWarehouseRequests();
         }
     });
 }
@@ -75,6 +82,22 @@ function initializeResultsTable() {
     
     // Store reference for later use
     window.resultsTable = resultsTable;
+}
+
+function initializeWarehouseRequestsTable() {
+    const warehouseRequestsContainer = document.getElementById('warehouse-requests-container');
+    
+    const warehouseRequestsTable = new ResultsTable(warehouseRequestsContainer, {
+        title: 'Depo Talepleri',
+        icon: 'fas fa-warehouse',
+        showFilters: false,
+        emptyStateText: 'Talep bulunamadı',
+        emptyStateDescription: 'Depo için planlama talebi bulunmuyor.',
+        loadingText: 'Talepler yükleniyor...'
+    });
+    
+    // Store reference for later use
+    window.warehouseRequestsTable = warehouseRequestsTable;
 }
 
 // ============================================================================
@@ -154,7 +177,8 @@ async function loadPendingInventoryRequests() {
             ],
             onClick: () => {
                 showInventoryAllocationModal({
-                    originalData: request
+                    originalData: request,
+                    isWarehouseRequest: false
                 });
             }
         }));
@@ -181,12 +205,120 @@ async function loadPendingInventoryRequests() {
     }
 }
 
+/**
+ * Load warehouse requests using the warehouse_requests API endpoint
+ */
+async function loadWarehouseRequests() {
+    try {
+        // Show loading state
+        if (window.warehouseRequestsTable) {
+            window.warehouseRequestsTable.showLoadingState();
+        }
+        
+        // Fetch warehouse requests (no status filter = shows all with check_inventory=True)
+        const filters = {
+            page_size: 50
+        };
+        
+        const data = await getWarehouseRequests(filters);
+        
+        console.log('Fetched warehouse requests data:', data);
+        
+        // Handle different response structures
+        let results = [];
+        if (Array.isArray(data)) {
+            // If data is directly an array
+            results = data;
+        } else if (data && data.results && Array.isArray(data.results)) {
+            // If data has a results property (paginated response)
+            results = data.results;
+        } else if (data && typeof data === 'object') {
+            // If data is an object but not the expected structure
+            console.warn('Unexpected data structure:', data);
+            results = [];
+        }
+        
+        // Transform requests for display (same format as pending inventory requests)
+        const transformedRequests = results.map(request => ({
+            title: request.request_number || `Talep #${request.id}`,
+            subtitle: request.title || request.department_request_number || 'Departman Talebi',
+            icon: 'fas fa-warehouse',
+            iconColor: '#8b0000',
+            iconBackground: '#ffe6e6',
+            details: [
+                {
+                    label: 'Talep No',
+                    value: request.request_number || '-',
+                    icon: 'fas fa-hashtag'
+                },
+                {
+                    label: 'Departman Talebi',
+                    value: request.department_request_number || '-',
+                    icon: 'fas fa-building'
+                },
+                {
+                    label: 'Durum',
+                    value: getStatusText(request.status),
+                    icon: 'fas fa-info-circle'
+                },
+                {
+                    label: 'Öncelik',
+                    value: formatPriority(request.priority),
+                    icon: 'fas fa-exclamation-circle'
+                },
+                {
+                    label: 'Ürün Sayısı',
+                    value: request.items ? request.items.length : (request.items_count || 0),
+                    icon: 'fas fa-boxes'
+                },
+                {
+                    label: 'Oluşturan',
+                    value: request.created_by_full_name || request.created_by_username || '-',
+                    icon: 'fas fa-user'
+                },
+                {
+                    label: 'Oluşturulma',
+                    value: formatDate(request.created_at),
+                    icon: 'fas fa-calendar-plus'
+                }
+            ],
+            onClick: () => {
+                showInventoryAllocationModal({
+                    originalData: request,
+                    isWarehouseRequest: true
+                });
+            }
+        }));
+        
+        console.log('Transformed warehouse requests:', transformedRequests.length, 'items');
+        
+        // Update results table
+        if (window.warehouseRequestsTable) {
+            window.warehouseRequestsTable.setItems(transformedRequests);
+            window.warehouseRequestsTable.updateResultsInfo(transformedRequests.length);
+        }
+        
+        // If no results, the ResultsTable component will show empty state automatically
+        if (transformedRequests.length === 0) {
+            console.log('No warehouse requests found');
+        }
+        
+    } catch (error) {
+        console.error('Error loading warehouse requests:', error);
+        
+        if (window.warehouseRequestsTable) {
+            window.warehouseRequestsTable.showErrorState(error);
+        }
+    }
+}
+
 // ============================================================================
 // MODAL FUNCTIONS
 // ============================================================================
 
 async function showInventoryAllocationModal(requestData) {
     const requestSummary = requestData.originalData || requestData;
+    const isWarehouseRequest = requestData.isWarehouseRequest || false;
     
     try {
         // Show loading modal first
@@ -199,7 +331,7 @@ async function showInventoryAllocationModal(requestData) {
         console.log('Received full request data:', request);
         
         // Create and show the modal
-        const modalHTML = createInventoryAllocationModalHTML(request);
+        const modalHTML = createInventoryAllocationModalHTML(request, isWarehouseRequest);
         
         // Remove any existing modals
         const existingModal = document.getElementById('inventoryAllocationModal');
@@ -211,10 +343,16 @@ async function showInventoryAllocationModal(requestData) {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
         // Initialize modal components
-        initializeItemsTable(request);
+        initializeItemsTable(request, isWarehouseRequest);
         
         // Add event listeners
-        setupModalEventListeners(request);
+        if (isWarehouseRequest) {
+            // Simple close handler for read-only modal
+            setupReadOnlyModalEventListeners();
+        } else {
+            // Full event listeners for editable modal
+            setupModalEventListeners(request);
+        }
         
     } catch (error) {
         console.error('Error showing inventory allocation modal:', error);
@@ -256,14 +394,22 @@ function showLoadingModal() {
 /**
  * Creates the HTML for inventory allocation modal
  */
-function createInventoryAllocationModalHTML(request) {
+function createInventoryAllocationModalHTML(request, isWarehouseRequest = false) {
+    const modalTitle = isWarehouseRequest 
+        ? `${request.request_number || `Talep #${request.id}`} - Envanter Durumu`
+        : `${request.request_number || `Talep #${request.id}`} - Envanter Tahsisi`;
+    
+    const sectionTitle = isWarehouseRequest
+        ? 'Ürünler ve Envanter Miktarları'
+        : 'Ürünler ve Envanter Miktarları';
+    
     return `
         <div class="modal fade show" id="inventoryAllocationModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="fas fa-clipboard-check me-2"></i>${request.request_number || `Talep #${request.id}`} - Envanter Tahsisi
+                            <i class="fas ${isWarehouseRequest ? 'fa-warehouse' : 'fa-clipboard-check'} me-2"></i>${modalTitle}
                         </h5>
                         <button type="button" class="btn-close" data-dismiss="modal"></button>
                     </div>
@@ -271,8 +417,9 @@ function createInventoryAllocationModalHTML(request) {
                         <!-- Items Table -->
                         <div class="items-table-section">
                             <h6 class="section-title mb-3">
-                                <i class="fas fa-boxes me-2"></i>Ürünler ve Envanter Miktarları
+                                <i class="fas fa-boxes me-2"></i>${sectionTitle}
                             </h6>
+                            ${!isWarehouseRequest ? `
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 <strong>Önemli:</strong> Her ürün için envanterde bulunan miktarı girmeniz zorunludur. Hiç bulunamayanlar için "0" yazın.
@@ -286,14 +433,23 @@ function createInventoryAllocationModalHTML(request) {
                                     <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                                 </div>
                             </div>
+                            ` : ''}
                             <div id="items-table-container"></div>
                         </div>
                     </div>
+                    ${!isWarehouseRequest ? `
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary" id="submit-allocation-btn">
                             <i class="fas fa-check me-2"></i>Envanter Miktarlarını Güncelle
                         </button>
                     </div>
+                    ` : `
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Kapat
+                        </button>
+                    </div>
+                    `}
                 </div>
             </div>
         </div>
@@ -301,9 +457,9 @@ function createInventoryAllocationModalHTML(request) {
 }
 
 /**
- * Initialize items table with input fields for allocation
+ * Initialize items table with input fields for allocation or read-only view
  */
-function initializeItemsTable(request) {
+function initializeItemsTable(request, isWarehouseRequest = false) {
     const container = document.getElementById('items-table-container');
     if (!container) {
         console.error('Items table container not found');
@@ -312,7 +468,7 @@ function initializeItemsTable(request) {
     
     const items = request.items || [];
     
-    console.log('Initializing items table with', items.length, 'items');
+    console.log('Initializing items table with', items.length, 'items', isWarehouseRequest ? '(read-only)' : '(editable)');
     
     if (items.length === 0) {
         container.innerHTML = `
@@ -324,136 +480,204 @@ function initializeItemsTable(request) {
         return;
     }
     
-    // Create responsive item cards (styled as table on desktop, cards on mobile)
-    const itemsHTML = `
-        <div class="items-container">
-            <!-- Header row for desktop table view -->
-            <div class="item-row header-row">
-                <div class="item-col item-number">
-                    <span class="desktop-label">#</span>
-                </div>
-                <div class="item-col item-details">
-                    <span class="desktop-label">Ürün</span>
-                </div>
-                <div class="item-col item-quantity">
-                    <span class="desktop-label">Talep Edilen Miktar</span>
-                </div>
-                <div class="item-col item-unit">
-                    <span class="desktop-label">Birim</span>
-                </div>
-                <div class="item-col item-input">
-                    <span class="desktop-label">Bulunan Miktar</span>
-                </div>
-            </div>
-            ${items.map((item, index) => `
-                <div class="item-row" data-item-id="${item.id}">
+    if (isWarehouseRequest) {
+        // Read-only view for warehouse requests
+        const itemsHTML = `
+            <div class="items-container items-container-readonly">
+                <!-- Header row for desktop table view -->
+                <div class="item-row header-row">
                     <div class="item-col item-number">
                         <span class="desktop-label">#</span>
-                        <span class="item-value">${index + 1}</span>
                     </div>
                     <div class="item-col item-details">
                         <span class="desktop-label">Ürün</span>
-                        <div class="item-value">
-                            <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
-                            ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
-                            ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
-                            ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
-                        </div>
                     </div>
                     <div class="item-col item-quantity">
-                        <span class="mobile-label">Talep Edilen</span>
                         <span class="desktop-label">Talep Edilen Miktar</span>
-                        <span class="item-value text-end fw-bold">${formatDecimalTurkish(item.quantity || 0, 2)}</span>
                     </div>
-                    <div class="item-col item-unit">
-                        <span class="mobile-label">Birim</span>
-                        <span class="desktop-label">Birim</span>
-                        <span class="item-value">${item.item_unit || item.unit || 'Adet'}</span>
-                    </div>
-                    <div class="item-col item-input">
-                        <label for="qty-${item.id}" class="mobile-label">
-                            <i class="fas fa-box me-2"></i>Bulunan Miktar
-                        </label>
-                        <span class="desktop-label">Bulunan Miktar</span>
-                        <input type="number" 
-                               id="qty-${item.id}"
-                               class="form-control quantity-found-input" 
-                               data-item-id="${item.id}"
-                               data-requested-quantity="${item.quantity || 0}"
-                               step="0.01"
-                               min="0"
-                               max="${item.quantity || 0}"
-                               placeholder="Miktar girin"
-                               inputmode="decimal"
-                               required>
+                    <div class="item-col item-inventory">
+                        <span class="desktop-label">Envanterden Alınan</span>
                     </div>
                 </div>
-            `).join('')}
-        </div>
-    `;
-    
-    container.innerHTML = itemsHTML;
-    
-    // Add event listeners to remove validation errors and update progress
-    setTimeout(() => {
-        const inputs = document.querySelectorAll('.quantity-found-input');
-        const totalItems = inputs.length;
+                ${items.map((item, index) => `
+                    <div class="item-row" data-item-id="${item.id}">
+                        <div class="item-col item-number">
+                            <span class="desktop-label">#</span>
+                            <span class="item-value">${index + 1}</span>
+                        </div>
+                        <div class="item-col item-details">
+                            <span class="desktop-label">Ürün</span>
+                            <div class="item-value">
+                                <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
+                                ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
+                                ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
+                                ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
+                            </div>
+                        </div>
+                        <div class="item-col item-quantity">
+                            <span class="mobile-label">Talep Edilen</span>
+                            <span class="desktop-label">Talep Edilen Miktar</span>
+                            <span class="item-value text-end fw-bold">${formatDecimalTurkish(item.quantity || 0, 2)}</span>
+                        </div>
+                        <div class="item-col item-inventory">
+                            <span class="mobile-label">Envanterden Alınan</span>
+                            <span class="desktop-label">Envanterden Alınan</span>
+                            <span class="item-value text-end fw-bold ${parseFloat(item.quantity_from_inventory || 0) > 0 ? 'text-success' : 'text-muted'}">${formatDecimalTurkish(item.quantity_from_inventory || 0, 2)}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
         
-        // Show progress indicator if there are items
-        if (totalItems > 0) {
-            const progressIndicator = document.getElementById('progress-indicator');
-            if (progressIndicator) {
-                progressIndicator.style.display = 'block';
-            }
-        }
+        container.innerHTML = itemsHTML;
+    } else {
+        // Editable view for pending inventory requests
+        const itemsHTML = `
+            <div class="items-container">
+                <!-- Header row for desktop table view -->
+                <div class="item-row header-row">
+                    <div class="item-col item-number">
+                        <span class="desktop-label">#</span>
+                    </div>
+                    <div class="item-col item-details">
+                        <span class="desktop-label">Ürün</span>
+                    </div>
+                    <div class="item-col item-quantity">
+                        <span class="desktop-label">Talep Edilen Miktar</span>
+                    </div>
+                    <div class="item-col item-unit">
+                        <span class="desktop-label">Birim</span>
+                    </div>
+                    <div class="item-col item-input">
+                        <span class="desktop-label">Bulunan Miktar</span>
+                    </div>
+                </div>
+                ${items.map((item, index) => `
+                    <div class="item-row" data-item-id="${item.id}">
+                        <div class="item-col item-number">
+                            <span class="desktop-label">#</span>
+                            <span class="item-value">${index + 1}</span>
+                        </div>
+                        <div class="item-col item-details">
+                            <span class="desktop-label">Ürün</span>
+                            <div class="item-value">
+                                <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
+                                ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
+                                ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
+                                ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
+                            </div>
+                        </div>
+                        <div class="item-col item-quantity">
+                            <span class="mobile-label">Talep Edilen</span>
+                            <span class="desktop-label">Talep Edilen Miktar</span>
+                            <span class="item-value text-end fw-bold">${formatDecimalTurkish(item.quantity || 0, 2)}</span>
+                        </div>
+                        <div class="item-col item-unit">
+                            <span class="mobile-label">Birim</span>
+                            <span class="desktop-label">Birim</span>
+                            <span class="item-value">${item.item_unit || item.unit || 'Adet'}</span>
+                        </div>
+                        <div class="item-col item-input">
+                            <label for="qty-${item.id}" class="mobile-label">
+                                <i class="fas fa-box me-2"></i>Bulunan Miktar
+                            </label>
+                            <span class="desktop-label">Bulunan Miktar</span>
+                            <input type="number" 
+                                   id="qty-${item.id}"
+                                   class="form-control quantity-found-input" 
+                                   data-item-id="${item.id}"
+                                   data-requested-quantity="${item.quantity || 0}"
+                                   step="0.01"
+                                   min="0"
+                                   max="${item.quantity || 0}"
+                                   placeholder="Miktar girin"
+                                   inputmode="decimal"
+                                   required>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
         
-        // Function to update progress
-        const updateProgress = () => {
-            let filledCount = 0;
-            inputs.forEach(input => {
-                if (input.value && input.value.trim() !== '') {
-                    filledCount++;
+        container.innerHTML = itemsHTML;
+        
+        // Add event listeners to remove validation errors and update progress
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('.quantity-found-input');
+            const totalItems = inputs.length;
+            
+            // Show progress indicator if there are items
+            if (totalItems > 0) {
+                const progressIndicator = document.getElementById('progress-indicator');
+                if (progressIndicator) {
+                    progressIndicator.style.display = 'block';
                 }
-            });
-            
-            const progressPercent = (filledCount / totalItems) * 100;
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            
-            if (progressBar) {
-                progressBar.style.width = progressPercent + '%';
-                // Change color based on progress
-                if (progressPercent === 100) {
-                    progressBar.className = 'progress-bar bg-success';
-                } else if (progressPercent >= 50) {
-                    progressBar.className = 'progress-bar bg-info';
-                } else {
-                    progressBar.className = 'progress-bar bg-warning';
-                }
             }
             
-            if (progressText) {
-                progressText.textContent = `${filledCount} / ${totalItems}`;
-            }
-        };
-        
-        inputs.forEach(input => {
-            input.addEventListener('input', function() {
-                this.classList.remove('is-invalid');
-                // Remove error from item row
-                const itemRow = this.closest('.item-row');
-                if (itemRow) {
-                    itemRow.classList.remove('has-error');
+            // Function to update progress
+            const updateProgress = () => {
+                let filledCount = 0;
+                inputs.forEach(input => {
+                    if (input.value && input.value.trim() !== '') {
+                        filledCount++;
+                    }
+                });
+                
+                const progressPercent = (filledCount / totalItems) * 100;
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                if (progressBar) {
+                    progressBar.style.width = progressPercent + '%';
+                    // Change color based on progress
+                    if (progressPercent === 100) {
+                        progressBar.className = 'progress-bar bg-success';
+                    } else if (progressPercent >= 50) {
+                        progressBar.className = 'progress-bar bg-info';
+                    } else {
+                        progressBar.className = 'progress-bar bg-warning';
+                    }
                 }
                 
-                // Update progress
-                updateProgress();
+                if (progressText) {
+                    progressText.textContent = `${filledCount} / ${totalItems}`;
+                }
+            };
+            
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
+                    // Remove error from item row
+                    const itemRow = this.closest('.item-row');
+                    if (itemRow) {
+                        itemRow.classList.remove('has-error');
+                    }
+                    
+                    // Update progress
+                    updateProgress();
+                });
             });
+            
+            // Initial progress update
+            updateProgress();
+        }, 100);
+    }
+}
+
+/**
+ * Setup event listeners for read-only modal
+ */
+function setupReadOnlyModalEventListeners() {
+    // Close button handler
+    const closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            closeModal();
         });
-        
-        // Initial progress update
-        updateProgress();
-    }, 100);
+    });
+    
+    // Escape key to close modal
+    document.addEventListener('keydown', handleEscapeKey);
 }
 
 /**
@@ -639,8 +863,9 @@ async function performInventoryUpdate(request, items) {
         // Close modals
         closeModal();
         
-        // Reload the list
+        // Reload the lists
         loadPendingInventoryRequests();
+        loadWarehouseRequests();
         
         // Return true to allow confirmation modal to close
         return true;
