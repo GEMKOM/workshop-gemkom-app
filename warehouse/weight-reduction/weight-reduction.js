@@ -129,6 +129,11 @@ async function loadCompletedTasks() {
                     icon: 'fas fa-cubes'
                 },
                 {
+                    label: 'Plaka Sayısı',
+                    value: task.quantity !== null && task.quantity !== undefined ? task.quantity : 1,
+                    icon: 'fas fa-layer-group'
+                },
+                {
                     label: 'Tamamlanma Tarihi',
                     value: formatDate(task.completion_date),
                     icon: 'fas fa-calendar-check'
@@ -237,8 +242,13 @@ function showTaskDetailsModal(task) {
         }
     }
     
+    // Get task quantity (plaka sayisi) - default to 1 if null/undefined
+    const taskQuantity = (task.quantity !== null && task.quantity !== undefined) 
+        ? parseInt(task.quantity) 
+        : 1;
+    
     // Render parts table with plate weight for remnant calculation
-    renderPartsTable(task.parts || [], plateWeight);
+    renderPartsTable(task.parts || [], plateWeight, taskQuantity);
     
     // Bind modal events
     bindModalEvents();
@@ -400,6 +410,12 @@ function createTaskDetailsModalHTML(task) {
                                         <span class="detail-value-compact">${task.total_hours_spent ? formatDecimalTurkish(task.total_hours_spent, 2) + ' sa' : '0 sa'}</span>
                                     </div>
                                 </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="detail-item-compact">
+                                        <span class="detail-label-compact">Plaka Sayısı:</span>
+                                        <span class="detail-value-compact">${task.quantity !== null && task.quantity !== undefined ? task.quantity : 1}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -511,7 +527,7 @@ function calculateRemnants(parts, plateWeight) {
 /**
  * Render parts table
  */
-function renderPartsTable(parts, plateWeight = null) {
+function renderPartsTable(parts, plateWeight = null, taskQuantity = 1) {
     const container = document.getElementById('task-parts-table');
     
     if (!container) return;
@@ -529,6 +545,9 @@ function renderPartsTable(parts, plateWeight = null) {
         return;
     }
     
+    // Ensure taskQuantity is a valid number
+    taskQuantity = (taskQuantity !== null && taskQuantity !== undefined) ? parseInt(taskQuantity) : 1;
+    
     // Calculate remnants
     const remnants = calculateRemnants(parts, plateWeight);
     
@@ -537,7 +556,7 @@ function renderPartsTable(parts, plateWeight = null) {
         const weight = parseFloat(part.weight_kg) || 0;
         const quantity = parseInt(part.quantity) || 0;
         const remnant = remnants[index] || 0;
-        const weightToReduce = (weight * quantity) + remnant;
+        const weightToReduce = taskQuantity * ((quantity * weight) + remnant);
         
         return {
             index: index + 1,
@@ -589,12 +608,13 @@ function renderPartsTable(parts, plateWeight = null) {
                 icon: 'fas fa-file-csv',
                 class: 'btn btn-sm btn-outline-success',
                 onClick: () => {
+                    // Use taskQuantity from renderPartsTable scope
                     // Append weightToReduce to each part before exporting
                     const partsWithWeightToReduce = parts.map((part, index) => {
                         const weight = parseFloat(part.weight_kg) || 0;
                         const quantity = parseInt(part.quantity) || 0;
                         const remnant = remnants[index] || 0;
-                        const weightToReduce = (weight * quantity) + remnant;
+                        const weightToReduce = taskQuantity * ((quantity * weight) + remnant);
                         return {
                             ...part,
                             weightToReduce: weightToReduce
