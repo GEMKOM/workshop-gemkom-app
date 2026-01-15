@@ -37,7 +37,7 @@ function setupHomeMenu(user) {
             link: 'cnc_cutting/',
             features: [],
             // Only visible to cutting team or admins
-            visibleTo: ['cutting', 'admin']
+            visibleTo: ['cutting', 'admin', 'planning']
         },
         {
             title: 'Depo',
@@ -47,7 +47,7 @@ function setupHomeMenu(user) {
             link: 'warehouse/',
             features: [],
             // Only visible to warehouse team or admins
-            visibleTo: ['warehouse', 'admin']
+            visibleTo: ['warehouse', 'admin', 'planning']
         },
         {
             title: 'Bakım',
