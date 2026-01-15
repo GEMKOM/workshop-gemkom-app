@@ -1,7 +1,7 @@
 // --- taskHandlers.js ---
 // Event handler setup for operation functionality
 
-import { handleStartStopClick, handleMarkDoneClick, handleBackClick, handleFaultReportClick } from './taskActions.js';
+import { handleStartStopClick, handleBackClick } from './taskActions.js';
 import { setupTimerHandlers } from './taskLogic.js';
 
 // ============================================================================
@@ -17,16 +17,6 @@ export function setupStartStopHandler() {
     startBtn.addEventListener('click', handleStartStopClick);
 }
 
-export function setupMarkDoneHandler() {
-    const doneBtn = document.getElementById('mark-done-button');
-    
-    // Remove any existing listeners to prevent duplicates
-    doneBtn.removeEventListener('click', handleMarkDoneClick);
-    
-    // Add new event listener
-    doneBtn.addEventListener('click', handleMarkDoneClick);
-}
-
 export function setupBackHandler() {
     const backBtn = document.getElementById('back-button');
     
@@ -37,24 +27,12 @@ export function setupBackHandler() {
     backBtn.addEventListener('click', handleBackClick);
 }
 
-export function setupFaultReportHandler() {
-    const faultBtn = document.getElementById('fault-report-button');
-    
-    // Remove any existing listeners to prevent duplicates
-    faultBtn.removeEventListener('click', handleFaultReportClick);
-    
-    // Add new event listener
-    faultBtn.addEventListener('click', handleFaultReportClick);
-}
-
 export function setupAllHandlers(restoring = false) {
     // Setup timer logic
     setupTimerHandlers(restoring);
     // Setup all event handlers
     setupStartStopHandler();
     setupBackHandler();
-    setupMarkDoneHandler();
-    setupFaultReportHandler();
 }
 
 

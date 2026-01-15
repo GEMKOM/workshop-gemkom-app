@@ -57,6 +57,23 @@ body {
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(139, 0, 0, 0.15);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Non-productive timer header styling */
+.task-header-section.non-productive-header {
+    background: linear-gradient(135deg, #ff9800, #ff6b00);
+    box-shadow: 0 4px 20px rgba(255, 152, 0, 0.25);
+    animation: blink-header-shadow 2s ease-in-out infinite;
+}
+
+@keyframes blink-header-shadow {
+    0%, 100% {
+        box-shadow: 0 4px 20px rgba(255, 152, 0, 0.25);
+    }
+    50% {
+        box-shadow: 0 4px 30px rgba(255, 107, 0, 0.4);
+    }
 }
 
 .task-header-section::before {
@@ -265,6 +282,40 @@ body {
     right: 0;
     height: 4px;
     background: var(--gradient-primary);
+    transition: background 0.3s ease;
+}
+
+/* Non-productive timer (break/downtime) styling */
+.timer-card.non-productive-timer {
+    border: 2px solid #ff9800;
+    animation: blink-border 2s ease-in-out infinite;
+}
+
+.timer-card.non-productive-timer::before {
+    background: linear-gradient(135deg, #ff9800, #ff6b00);
+    animation: blink-top-border 2s ease-in-out infinite;
+}
+
+@keyframes blink-border {
+    0%, 100% {
+        border-color: #ff9800;
+        box-shadow: 0 4px 20px rgba(255, 152, 0, 0.2);
+    }
+    50% {
+        border-color: #ff6b00;
+        box-shadow: 0 4px 30px rgba(255, 107, 0, 0.4);
+    }
+}
+
+@keyframes blink-top-border {
+    0%, 100% {
+        background: linear-gradient(135deg, #ff9800, #ff6b00);
+        opacity: 1;
+    }
+    50% {
+        background: linear-gradient(135deg, #ff6b00, #ff9800);
+        opacity: 0.8;
+    }
 }
 
 .timer-display-container {
@@ -585,6 +636,11 @@ body {
     box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
 }
 
+.form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
 .time-preview {
     background: var(--light-bg);
     padding: 1rem;
@@ -623,6 +679,92 @@ body {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+}
+
+/* ============================================================================
+   DOWNTIME REASONS LIST
+   ============================================================================ */
+
+.downtime-reasons-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+}
+
+.downtime-reason-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: #f8f9fa;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.downtime-reason-item:hover {
+    background: #e9ecef;
+    border-color: var(--primary-color);
+    transform: translateX(4px);
+}
+
+.downtime-reason-item.selected {
+    background: linear-gradient(135deg, rgba(139, 0, 0, 0.1) 0%, rgba(180, 0, 36, 0.1) 100%);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(139, 0, 0, 0.15);
+}
+
+.downtime-reason-content {
+    flex: 1;
+}
+
+.downtime-reason-name {
+    font-weight: 500;
+    color: #333;
+    font-size: 1rem;
+}
+
+.downtime-reason-select {
+    font-size: 1.5rem;
+    color: transparent;
+    transition: all 0.3s;
+}
+
+.downtime-reason-item.selected .downtime-reason-select {
+    color: var(--primary-color);
+}
+
+.downtime-reason-item.selected .downtime-reason-name {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Green styling for WORK_COMPLETE (Parça İşlemesi Tamamlandı) */
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"] {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(25, 135, 84, 0.1) 100%);
+    border-color: #28a745;
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"]:hover {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(25, 135, 84, 0.15) 100%);
+    border-color: #28a745;
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"].selected {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.2) 0%, rgba(25, 135, 84, 0.2) 100%);
+    border-color: #28a745;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"].selected .downtime-reason-select {
+    color: #28a745;
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"].selected .downtime-reason-name {
+    color: #28a745;
+    font-weight: 600;
 }
 
 /* ============================================================================

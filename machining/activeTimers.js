@@ -5,6 +5,7 @@ import { ResultsTable } from '../components/resultsTable/resultsTable.js';
 import { ModernDropdown } from '../components/dropdown/dropdown.js';
 import { getOperations, fetchDowntimeReasons, logReason } from '../generic/machining/operations.js';
 import { navigateTo } from '../authService.js';
+import { TimerWidget } from '../components/timerWidget.js';
 
 // ============================================================================
 // ACTIVE TIMERS TAB FUNCTIONALITY
@@ -436,7 +437,7 @@ function renderDowntimeReasonsList(reasons) {
     }
     
     listContainer.innerHTML = timerReasons.map(reason => `
-        <div class="downtime-reason-item" data-reason-id="${reason.id}">
+        <div class="downtime-reason-item" data-reason-id="${reason.id}" data-reason-code="${reason.code || ''}">
             <div class="downtime-reason-content">
                 <span class="downtime-reason-name">${reason.name}</span>
             </div>
@@ -456,6 +457,9 @@ function renderDowntimeReasonsList(reasons) {
             // Add selection to clicked item
             item.classList.add('selected');
             
+            // Update description field requirement based on selected reason
+            updateDescriptionFieldRequirement();
+            
             // Enable submit button
             const submitBtn = document.getElementById('downtime-reason-modal-submit');
             if (submitBtn) {
@@ -472,6 +476,54 @@ function getSelectedDowntimeReason() {
     return parseInt(selectedItem.getAttribute('data-reason-id'));
 }
 
+function getSelectedDowntimeReasonObject() {
+    const reasonId = getSelectedDowntimeReason();
+    if (!reasonId || !downtimeReasonsCache) return null;
+    
+    return downtimeReasonsCache.find(reason => reason.id === reasonId);
+}
+
+function updateDescriptionFieldRequirement() {
+    const commentInput = document.getElementById('downtime-reason-comment');
+    const commentLabel = document.querySelector('label[for="downtime-reason-comment"]');
+    
+    if (!commentInput || !commentLabel) return;
+    
+    const selectedReason = getSelectedDowntimeReasonObject();
+    
+    if (!selectedReason) {
+        // No selection - reset to optional
+        commentLabel.textContent = 'Açıklama (Opsiyonel):';
+        commentInput.removeAttribute('required');
+        commentInput.classList.remove('is-invalid');
+        return;
+    }
+    
+    // Check if description is required
+    // LUNCH (Yemek Molası) and BREAK (Kısa mola) don't require description
+    const reasonCode = selectedReason.code || '';
+    const reasonName = selectedReason.name || '';
+    const isOptional = reasonCode === 'LUNCH' ||
+                       reasonCode === 'BREAK' ||
+                       reasonName === 'Yemek Molası' || 
+                       reasonName === 'Yemek Molasi' ||
+                       reasonName === 'Kısa mola' ||
+                       reasonName === 'Kisa Mola';
+    
+    if (isOptional) {
+        commentLabel.textContent = 'Açıklama (Opsiyonel):';
+        commentInput.removeAttribute('required');
+        commentInput.classList.remove('is-invalid');
+    } else {
+        commentLabel.innerHTML = 'Açıklama <span class="text-danger">*</span>:';
+        commentInput.setAttribute('required', 'required');
+        // Remove invalid class if it was set, but don't add it yet (wait for validation)
+        if (commentInput.value.trim()) {
+            commentInput.classList.remove('is-invalid');
+        }
+    }
+}
+
 function showDowntimeReasonModal() {
     const modal = document.getElementById('downtime-reason-modal');
     const backdrop = document.getElementById('downtime-reason-modal-backdrop');
@@ -486,7 +538,17 @@ function showDowntimeReasonModal() {
     
     // Reset state
     submitBtn.disabled = true;
-    if (commentInput) commentInput.value = '';
+    if (commentInput) {
+        commentInput.value = '';
+        commentInput.removeAttribute('required');
+        commentInput.classList.remove('is-invalid');
+    }
+    
+    // Reset label to optional
+    const commentLabel = document.querySelector('label[for="downtime-reason-comment"]');
+    if (commentLabel) {
+        commentLabel.textContent = 'Açıklama (Opsiyonel):';
+    }
     
     // Render reasons
     renderDowntimeReasonsList(downtimeReasonsCache);
@@ -508,11 +570,36 @@ function showDowntimeReasonModal() {
             return;
         }
         
+        // Get selected reason to check if description is required
+        // LUNCH (Yemek Molası) and BREAK (Kısa mola) don't require description
+        const selectedReason = getSelectedDowntimeReasonObject();
+        const reasonCode = selectedReason ? (selectedReason.code || '') : '';
+        const reasonName = selectedReason ? (selectedReason.name || '') : '';
+        const isOptional = reasonCode === 'LUNCH' ||
+                           reasonCode === 'BREAK' ||
+                           reasonName === 'Yemek Molası' || 
+                           reasonName === 'Yemek Molasi' ||
+                           reasonName === 'Kısa mola' ||
+                           reasonName === 'Kisa Mola';
+        
         const comment = commentInput ? commentInput.value.trim() : '';
         
-        // Prepare log data - we need an operation key, but we're on the list page
-        // We'll need to get the first available operation or handle this differently
-        // For now, let's check if we can log without operation_key
+        // Validate description requirement
+        if (!isOptional && !comment) {
+            alert('Lütfen açıklama giriniz.');
+            if (commentInput) {
+                commentInput.classList.add('is-invalid');
+                commentInput.focus();
+            }
+            return;
+        }
+        
+        // Remove invalid class if description is provided
+        if (commentInput && comment) {
+            commentInput.classList.remove('is-invalid');
+        }
+        
+        // Prepare log data - downtime/break timers are machine-level only, no operation_key needed
         const logData = {
             reason_id: reasonId,
             machine_id: currentMachineId
@@ -528,34 +615,37 @@ function showDowntimeReasonModal() {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...';
         
         try {
-            // We need an operation_key, but we're on the list page
-            // The API might require it, so we'll need to handle this
-            // For now, let's try to get the first operation or show an error
-            if (allOperations.length === 0) {
-                alert('Durma nedeni kaydetmek için en az bir operasyon olmalıdır.');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-                return;
-            }
-            
-            // Use the first operation's key
-            logData.operation_key = allOperations[0].key;
-            
             const result = await logReason(logData);
             
-            // Show success message
-            let message = result.message || 'Durma nedeni başarıyla kaydedildi.';
-            if (result.new_timer_id) {
-                message += ' Yeni zamanlayıcı başlatıldı.';
-            }
-            alert(message);
-            
-            // Close modal and reload
+            // Close modal
             closeModal();
             
-            // Reload operations to refresh the list
-            if (currentMachineId) {
-                loadOperationsForMachine(currentMachineId);
+            // If a new timer was created, navigate to the timer page
+            if (result.new_timer_id && result.timer) {
+                const timer = result.timer;
+                // For break/downtime timers, issue_key is null, so we use timer_id instead
+                // For productive timers, we use issue_key
+                let url = `/machining/tasks/?machine_id=${encodeURIComponent(timer.machine_fk)}`;
+                if (timer.timer_type === 'productive' && timer.issue_key) {
+                    url += `&key=${encodeURIComponent(timer.issue_key)}`;
+                } else {
+                    // For break/downtime timers, use timer_id to identify the timer
+                    url += `&timer_id=${encodeURIComponent(timer.id)}`;
+                }
+                navigateTo(url);
+                
+                // Refresh timer widget to show the new timer
+                if (window.timerWidget) {
+                    await window.timerWidget.refreshTimerWidget();
+                } else {
+                    // Trigger timer update event in case widget hasn't initialized yet
+                    TimerWidget.triggerUpdate();
+                }
+            } else {
+                // Reload operations to refresh the list if no timer was created
+                if (currentMachineId) {
+                    loadOperationsForMachine(currentMachineId);
+                }
             }
             
         } catch (error) {
@@ -574,6 +664,15 @@ function showDowntimeReasonModal() {
     closeBtn.addEventListener('click', closeModal);
     cancelBtn.addEventListener('click', closeModal);
     submitBtn.addEventListener('click', handleSubmit);
+    
+    // Remove invalid class when user types in description field
+    if (commentInput) {
+        commentInput.addEventListener('input', () => {
+            if (commentInput.value.trim()) {
+                commentInput.classList.remove('is-invalid');
+            }
+        });
+    }
     
     // Show modal
     modal.style.display = 'flex';

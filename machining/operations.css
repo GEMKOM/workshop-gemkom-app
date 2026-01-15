@@ -170,6 +170,32 @@ body {
     font-weight: 600;
 }
 
+/* Green styling for WORK_COMPLETE (Parça İşlemesi Tamamlandı) */
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"] {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(25, 135, 84, 0.1) 100%);
+    border-color: #28a745;
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"]:hover {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(25, 135, 84, 0.15) 100%);
+    border-color: #28a745;
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"].selected {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.2) 0%, rgba(25, 135, 84, 0.2) 100%);
+    border-color: #28a745;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"].selected .downtime-reason-select {
+    color: #28a745;
+}
+
+.downtime-reason-item[data-reason-code="WORK_COMPLETE"].selected .downtime-reason-name {
+    color: #28a745;
+    font-weight: 600;
+}
+
 /* Distinctive styling for downtime reason item in results table */
 .results-container .generic-card {
     transition: all 0.3s ease;

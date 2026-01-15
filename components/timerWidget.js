@@ -18,6 +18,7 @@ export class TimerWidget {
         this.updateInterval = null;
         this.adminPollingInterval = null;
         this.lastSyncTime = 0;
+        this.isLoading = false; // Flag to prevent duplicate requests
         this.init();
     }
 
@@ -327,6 +328,12 @@ export class TimerWidget {
     }
 
     async loadActiveTimers() {
+        // Prevent duplicate concurrent requests
+        if (this.isLoading) {
+            return false;
+        }
+        
+        this.isLoading = true;
         try {
             // Fetch timers from both modules
             const [machiningResponse, cncCuttingResponse] = await Promise.all([
@@ -337,16 +344,32 @@ export class TimerWidget {
             const machiningTimers = extractResultsFromResponse(machiningResponse);
             const cncCuttingTimers = extractResultsFromResponse(cncCuttingResponse);
             
-            // Mark each timer with its module
-            const machiningTimersWithModule = machiningTimers.map(timer => ({ ...timer, module: 'machining' }));
-            const cncCuttingTimersWithModule = cncCuttingTimers.map(timer => ({ ...timer, module: 'cnc_cutting' }));
+            // Filter out any timers that have finish_time (shouldn't happen with is_active: true, but safety check)
+            const activeMachiningTimers = machiningTimers.filter(timer => !timer.finish_time);
+            const activeCncCuttingTimers = cncCuttingTimers.filter(timer => !timer.finish_time);
             
-            // Combine timers from both modules
-            this.activeTimers = [...machiningTimersWithModule, ...cncCuttingTimersWithModule];
+            // Mark each timer with its module
+            const machiningTimersWithModule = activeMachiningTimers.map(timer => ({ ...timer, module: 'machining' }));
+            const cncCuttingTimersWithModule = activeCncCuttingTimers.map(timer => ({ ...timer, module: 'cnc_cutting' }));
+            
+            // Combine timers from both modules and deduplicate by timer ID
+            const allTimers = [...machiningTimersWithModule, ...cncCuttingTimersWithModule];
+            const seenTimerIds = new Set();
+            this.activeTimers = allTimers.filter(timer => {
+                if (seenTimerIds.has(timer.id)) {
+                    // Duplicate timer - skip it
+                    console.warn(`Duplicate timer detected: ${timer.id}, skipping`);
+                    return false;
+                }
+                seenTimerIds.add(timer.id);
+                return true;
+            });
             return true;
         } catch (error) {
             console.error('Error loading active timers:', error);
             return false;
+        } finally {
+            this.isLoading = false;
         }
     }
 
@@ -378,16 +401,28 @@ export class TimerWidget {
             const module = timer.module || 'machining';
             const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
             
-            // Build URL with hold parameter if issue_is_hold_task is true
-            let url = `/${modulePath}/tasks/?machine_id=${timer.machine_fk}&key=${timer.issue_key}`;
-            if (timer.issue_is_hold_task) {
-                url += '&hold=1';
+            // Build URL - for break/downtime timers, use timer_id instead of issue_key
+            let url = `/${modulePath}/tasks/?machine_id=${timer.machine_fk}`;
+            if (timer.timer_type === 'productive' && timer.issue_key) {
+                url += `&key=${timer.issue_key}`;
+                if (timer.issue_is_hold_task) {
+                    url += '&hold=1';
+                }
+            } else {
+                // For break/downtime timers, use timer_id
+                url += `&timer_id=${timer.id}`;
             }
             
             // For CNC cutting tasks, show nesting_id if available, otherwise fall back to issue_key
-            const displayKey = module === 'cnc_cutting' && timer.nesting_id 
-                ? timer.nesting_id 
-                : timer.issue_key;
+            // For break/downtime timers, show downtime reason name
+            let displayKey;
+            if (module === 'cnc_cutting' && timer.nesting_id) {
+                displayKey = timer.nesting_id;
+            } else if (timer.timer_type !== 'productive' && timer.downtime_reason_name) {
+                displayKey = timer.downtime_reason_name;
+            } else {
+                displayKey = timer.issue_key || `Timer ${timer.id}`;
+            }
             
             return `
                 <div class="timer-widget-item" data-timer-id="${timer.id}" data-module="${module}" onclick="window.location.href='${url}'">
@@ -422,6 +457,11 @@ export class TimerWidget {
     }
 
     startUpdateInterval() {
+        // Clear any existing interval
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
+        
         this.updateInterval = setInterval(async () => {
             try {
                 // Periodically ensure time sync (every 30 seconds)
@@ -430,10 +470,16 @@ export class TimerWidget {
                     await this.ensureTimeSync();
                 }
                 
+                // Only update display for timers that still exist in the DOM
                 this.activeTimers.forEach(timer => {
                     const displayElement = document.getElementById(`timer-display-${timer.id}`);
                     if (displayElement) {
                         displayElement.textContent = this.formatDuration(timer.start_time);
+                    } else {
+                        // Timer element doesn't exist in DOM - might have been removed
+                        // This shouldn't happen, but if it does, refresh the widget
+                        console.warn(`Timer display element not found for timer ${timer.id}, refreshing widget`);
+                        this.reloadActiveTimers();
                     }
                 });
             } catch (error) {
@@ -469,9 +515,8 @@ export class TimerWidget {
             });
 
             if (response.ok) {
-                // Remove timer from local list
-                this.activeTimers = this.activeTimers.filter(t => t.id !== timerId);
-                this.renderTimers();
+                // Reload active timers to get fresh data from server
+                await this.reloadActiveTimers();
             }
         } catch (error) {
             console.error('Error stopping timer:', error);
@@ -519,55 +564,79 @@ export class TimerWidget {
             }
             
             try {
-                const now = Date.now(); // milliseconds
-                const startAfterTs = Math.floor((now - 24 * 60 * 60 * 1000) / 1000); // 24 hours ago, in seconds
-                
-                // Fetch timers from both modules
+                // Only fetch active timers (much lighter request) to check if any were stopped
                 const [machiningResponse, cncCuttingResponse] = await Promise.all([
-                    fetchTimers({ start_after: startAfterTs }, 'machining'),
-                    fetchTimers({ start_after: startAfterTs }, 'cnc_cutting')
+                    fetchTimers({ is_active: true }, 'machining'),
+                    fetchTimers({ is_active: true }, 'cnc_cutting')
                 ]);
-                
-                // Get current user information
-                const currentUser = JSON.parse(localStorage.getItem('user'));
                 
                 // Combine timers from both modules with their module info
                 const machiningTimers = extractResultsFromResponse(machiningResponse);
                 const cncCuttingTimers = extractResultsFromResponse(cncCuttingResponse);
-                const latestTimers = [
-                    ...machiningTimers.map(t => ({ ...t, module: 'machining' })),
-                    ...cncCuttingTimers.map(t => ({ ...t, module: 'cnc_cutting' }))
-                ];
+                const activeTimerIds = new Set([
+                    ...machiningTimers.map(t => t.id),
+                    ...cncCuttingTimers.map(t => t.id)
+                ]);
                 
-                // Check for any timer in this.activeTimers that is missing or finished in latestTimers
-                for (const timer of this.activeTimers) {
-                    const latest = latestTimers.find(t => t.id === timer.id);
-                    if (!latest || latest.finish_time) {
-                        // Check if the timer was stopped by someone else
-                        const stoppedBySomeoneElse = latest && latest.stopped_by && 
-                            latest.stopped_by !== currentUser?.id && 
-                            latest.stopped_by !== currentUser?.username;
-                        
-                        if (stoppedBySomeoneElse) {
-                            let name = latest.username;
-                            if (latest && (latest.stopped_by_first_name || latest.stopped_by_last_name)) {
-                                name = `${latest.stopped_by_first_name || ''} ${latest.stopped_by_last_name || ''}`.trim();
+                // Check if we're on a tasks page and if the current timer is no longer active
+                const currentPath = window.location.pathname;
+                const isOnTasksPage = currentPath.includes('/tasks/');
+                
+                if (isOnTasksPage) {
+                    // Get timer ID from URL parameters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const timerIdFromUrl = urlParams.get('timer_id');
+                    
+                    // If we have a timer_id in URL and it's no longer active, redirect
+                    // (timer_id means we expect an active timer to exist)
+                    if (timerIdFromUrl) {
+                        const timerId = parseInt(timerIdFromUrl);
+                        if (!activeTimerIds.has(timerId)) {
+                            // Timer is no longer active - redirect to list page
+                            if (currentPath.includes('/machining/tasks/')) {
+                                navigateTo(ROUTES.MACHINING);
+                                return;
+                            } else if (currentPath.includes('/cnc_cutting/tasks/')) {
+                                navigateTo(ROUTES.CNC_CUTTING);
+                                return;
                             }
-                            // Automatically reload the page without confirmation
-                            alert(`Zamanlayıcı ${name} tarafından durduruldu. Sayfa yenileniyor...`);
-                            window.location.reload();
-                            break;
                         }
+                    } else {
+                        // For productive timers with issue_key, only redirect if:
+                        // 1. We previously had an active timer (check state or a flag)
+                        // 2. That timer is no longer active
+                        // Don't redirect if user just navigated to view a task (no timer started yet)
+                        
+                        // Check if there's a current timer in state that was active
+                        // We'll use a more conservative approach: only redirect if we detect
+                        // the page was loaded with an expectation of an active timer
+                        // For now, we'll skip redirecting for issue_key pages to allow
+                        // users to view tasks without active timers
+                        
+                        // Note: This check is intentionally skipped for issue_key pages
+                        // because users should be able to view task pages even without
+                        // an active timer (they can start one from the page)
                     }
+                }
+                
+                // Check if any timer in this.activeTimers is no longer active
+                const hasStoppedTimers = this.activeTimers.some(timer => !activeTimerIds.has(timer.id));
+                
+                if (hasStoppedTimers) {
+                    // Refresh the widget to remove stopped timers
+                    await this.reloadActiveTimers();
                 }
             } catch (error) {
                 console.error('Error polling user timers:', error);
             }
-        }, 6000);
+        }, 15 * 60 * 1000); // 15 minutes
     }
 
     async reloadActiveTimers() {
         const hadActiveTimers = this.activeTimers.length > 0;
+        
+        // Force reload by clearing the loading flag and fetching fresh data
+        this.isLoading = false;
         await this.loadActiveTimers();
         
         // If we now have active timers but didn't before, start polling and update interval
@@ -589,6 +658,7 @@ export class TimerWidget {
             }
         }
         
+        // Always re-render to ensure UI is up to date
         this.renderTimers();
     }
 

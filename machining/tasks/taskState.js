@@ -23,7 +23,10 @@ export function setCurrentIssueState(operation) {
 export function setCurrentTimerState(activeTimer) {
     if (activeTimer) {
         state.currentTimer = activeTimer;
-    } 
+    } else {
+        // Explicitly clear the timer state when null/undefined
+        state.currentTimer = null;
+    }
 }
 
 export async function setCurrentMachineState() {

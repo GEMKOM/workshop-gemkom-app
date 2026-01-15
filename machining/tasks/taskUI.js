@@ -12,8 +12,6 @@ import { formatTime } from '../../generic/formatters.js';
 export function getUIElements() {
     return {
         startBtn: document.getElementById('start-stop'),
-        doneBtn: document.getElementById('mark-done-button'),
-        faultBtn: document.getElementById('fault-report-button'),
         backBtn: document.getElementById('back-button'),
         timerDisplay: document.getElementById('timer-display'),
         taskTitle: document.getElementById('task-title'),
@@ -41,28 +39,36 @@ export function resetTimerDisplay() {
 }
 
 export function setupTaskDisplay(hasActiveTimer) {
-    const { startBtn, doneBtn, faultBtn, backBtn, timerDisplay, taskTitle, machineName, taskStatus, taskDetailsGrid } = getUIElements();
+    const { startBtn, backBtn, timerDisplay, taskTitle, machineName, taskStatus, taskDetailsGrid } = getUIElements();
     
-    if (!taskTitle.textContent) {
-        // Display part_task_key as main title with operation key in parentheses, or just operation key if part_task_key doesn't exist
-        let displayTitle;
-        if (state.currentIssue.part_task_key) {
-            displayTitle = `${state.currentIssue.part_task_key} (${state.currentIssue.key})`;
-        } else {
-            displayTitle = state.currentIssue.key;
-        }
-        taskTitle.textContent = displayTitle;
-        machineName.textContent = state.currentMachine.name;
-        
-        // Update task status
-        updateTaskStatus(hasActiveTimer);
-        
-        // Update the new task details grid structure
-        updateTaskDetailsGrid();
+    // Always update title to reflect current timer state (for break/downtime timers)
+    let displayTitle;
+    if (state.currentTimer && state.currentTimer.timer_type !== 'productive' && state.currentTimer.downtime_reason_name) {
+        displayTitle = state.currentTimer.downtime_reason_name;
+    } else if (state.currentIssue && state.currentIssue.part_task_key) {
+        displayTitle = `${state.currentIssue.part_task_key} (${state.currentIssue.key})`;
+    } else if (state.currentIssue && state.currentIssue.key) {
+        displayTitle = state.currentIssue.key;
+    } else {
+        displayTitle = taskTitle.textContent || 'Görev';
     }
+    taskTitle.textContent = displayTitle;
+    
+    if (!machineName.textContent) {
+        machineName.textContent = state.currentMachine.name;
+    }
+    
+    // Update task status
+    updateTaskStatus(hasActiveTimer);
+    
+    // Update the new task details grid structure
+    updateTaskDetailsGrid();
     
     // Update button states based on timer status
     updateButtonStates(hasActiveTimer);
+    
+    // Update timer card style (remove non-productive classes if not applicable)
+    updateTimerCardStyle();
 }
 
 function updateTaskStatus(hasActiveTimer) {
@@ -122,7 +128,7 @@ function updateTaskDetailsGrid() {
 }
 
 function updateButtonStates(hasActiveTimer) {
-    const { startBtn, doneBtn, faultBtn } = getUIElements();
+    const { startBtn } = getUIElements();
     
     if (hasActiveTimer) {
         // Timer is running
@@ -130,25 +136,23 @@ function updateButtonStates(hasActiveTimer) {
         startBtn.classList.remove('btn-primary');
         startBtn.classList.add('btn-danger', 'running');
         
-        // Disable other buttons while timer is running
-        doneBtn.disabled = true;
-        faultBtn.disabled = true;
-        
-        doneBtn.classList.add('disabled');
-        faultBtn.classList.add('disabled');
+        // Check if timer can be stopped by user (for break/downtime timers linked to faults)
+        if (state.currentTimer && state.currentTimer.can_be_stopped_by_user === false) {
+            startBtn.disabled = true;
+            startBtn.title = 'Bu zamanlayıcı manuel olarak durdurulamaz. Arıza çözüldüğünde otomatik olarak durdurulacaktır.';
+            startBtn.classList.add('disabled');
+        } else {
+            startBtn.disabled = false;
+            startBtn.title = '';
+            startBtn.classList.remove('disabled');
+        }
     } else {
         // Timer is stopped
         startBtn.innerHTML = '<i class="fas fa-play"></i><span>Başlat</span>';
         startBtn.classList.remove('btn-danger', 'running');
         startBtn.classList.add('btn-primary');
         startBtn.disabled = false; // Explicitly enable the start button
-        
-        // Enable other buttons
-        doneBtn.disabled = false;
-        faultBtn.disabled = false;
-        
-        doneBtn.classList.remove('disabled');
-        faultBtn.classList.remove('disabled');
+        startBtn.title = '';
     }
 }
 
@@ -164,6 +168,36 @@ export function startTimerUpdate() {
     // Update button states
     updateButtonStates(true);
     updateTaskStatus(true);
+    updateTimerCardStyle();
+}
+
+function updateTimerCardStyle() {
+    const timerCard = document.querySelector('.timer-card');
+    const headerSection = document.querySelector('.task-header-section');
+    
+    // Check if this is a break/downtime timer
+    // Only apply non-productive styling if:
+    // 1. We have a current timer
+    // 2. The timer type is explicitly NOT 'productive' (could be 'break', 'downtime', etc.)
+    const isNonProductive = state.currentTimer && 
+                            state.currentTimer.timer_type && 
+                            state.currentTimer.timer_type !== 'productive';
+    
+    if (timerCard) {
+        if (isNonProductive) {
+            timerCard.classList.add('non-productive-timer');
+        } else {
+            timerCard.classList.remove('non-productive-timer');
+        }
+    }
+    
+    if (headerSection) {
+        if (isNonProductive) {
+            headerSection.classList.add('non-productive-header');
+        } else {
+            headerSection.classList.remove('non-productive-header');
+        }
+    }
 }
 
 export function stopTimerUpdate() {
@@ -178,6 +212,7 @@ export function stopTimerUpdate() {
     // Update button states
     updateButtonStates(false);
     updateTaskStatus(false);
+    updateTimerCardStyle();
 }
 
 // ============================================================================

@@ -4,6 +4,9 @@
 import { TimerWidget } from './timerWidget.js';
 import { guardRoute, isAdmin } from '../authService.js';
 
+// Track if event listener has been added to prevent duplicates
+let timerUpdateListenerAdded = false;
+
 // Initialize timer widget globally
 function initializeTimerWidget() {
     // Only initialize if user is authenticated, not admin, and is in machining or cutting team
@@ -14,12 +17,15 @@ function initializeTimerWidget() {
             console.log('Initializing timer widget...');
             window.timerWidget = new TimerWidget();
             
-            // Add global event listener for timer updates
-            window.addEventListener('timerUpdated', async () => {
-                if (window.timerWidget) {
-                    await window.timerWidget.refreshTimerWidget();
-                }
-            });
+            // Add global event listener for timer updates (only once)
+            if (!timerUpdateListenerAdded) {
+                window.addEventListener('timerUpdated', async () => {
+                    if (window.timerWidget) {
+                        await window.timerWidget.refreshTimerWidget();
+                    }
+                });
+                timerUpdateListenerAdded = true;
+            }
         }
     }
 }

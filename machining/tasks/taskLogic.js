@@ -3,7 +3,7 @@
 
 import { state } from '../operationsService.js';
 import { startOperationTimer, stopOperationTimer } from '../../generic/machining/operations.js';
-import { fetchTimers } from '../../generic/timers.js';
+import { fetchTimers, stopTimerShared } from '../../generic/timers.js';
 import { extractFirstResultFromResponse } from '../../generic/paginationHelper.js';
 import { updateTimerDisplay, setupTaskDisplay, stopTimerUpdate } from './taskUI.js';
 import { TimerWidget } from '../../components/timerWidget.js';
@@ -16,13 +16,15 @@ import { navigateTo } from '../../authService.js';
 // ============================================================================
 
 export function setupTimerHandlers(restoring = false) {
-    if (restoring) {
+    if (restoring && state.currentTimer) {
         state.currentTimer.start_time = parseInt(state.currentTimer.start_time);
         updateTimerDisplay();
         state.intervalId = setInterval(updateTimerDisplay, 1000);
-    } else {
+    } else if (state.currentTimer) {
+        // Only set start_time to null if timer exists
         state.currentTimer.start_time = null;
     }
+    // If state.currentTimer is null, do nothing (timer hasn't been started yet)
 }
 
 export async function handleStartTimer() {
@@ -87,15 +89,57 @@ export async function handleStopTimer(save_to_jira=true) {
     startBtn.textContent = 'İşleniyor...';
     
     try {
-        // Stop timer using operation-specific endpoint
-        const result = await stopOperationTimer(state.currentIssue.key);
+        // Check if this is a break/downtime timer (no operation) or productive timer
+        const isProductiveTimer = state.currentTimer && 
+                                  state.currentTimer.timer_type === 'productive' && 
+                                  state.currentTimer.issue_key &&
+                                  state.currentIssue.key &&
+                                  !state.currentIssue.key.startsWith('TIMER-');
         
-        if (!result || !result.timer_id) {
-            alert("Hata oluştu. Lütfen tekrar deneyin.");
-            // Re-enable button on error
-            startBtn.disabled = false;
-            startBtn.classList.remove('disabled');
-            return;
+        let result = null;
+        
+        if (isProductiveTimer) {
+            // For productive timers, use operation-specific endpoint
+            result = await stopOperationTimer(state.currentIssue.key);
+            
+            if (!result || !result.timer_id) {
+                alert("Hata oluştu. Lütfen tekrar deneyin.");
+                startBtn.disabled = false;
+                startBtn.classList.remove('disabled');
+                return;
+            }
+        } else {
+            // For break/downtime timers, use generic timer stop endpoint
+            if (!state.currentTimer || !state.currentTimer.id) {
+                alert("Zamanlayıcı bilgisi bulunamadı.");
+                startBtn.disabled = false;
+                startBtn.classList.remove('disabled');
+                return;
+            }
+            
+            // Check if timer can be stopped by user
+            if (state.currentTimer.can_be_stopped_by_user === false) {
+                alert("Bu zamanlayıcı manuel olarak durdurulamaz. Arıza çözüldüğünde otomatik olarak durdurulacaktır.");
+                startBtn.disabled = false;
+                startBtn.classList.remove('disabled');
+                return;
+            }
+            
+            const success = await stopTimerShared({
+                timerId: state.currentTimer.id,
+                finishTime: getSyncedNow(),
+                syncToJira: save_to_jira
+            }, 'machining');
+            
+            if (!success) {
+                alert("Hata oluştu. Lütfen tekrar deneyin.");
+                startBtn.disabled = false;
+                startBtn.classList.remove('disabled');
+                return;
+            }
+            
+            // Create a result-like object for consistency
+            result = { timer_id: state.currentTimer.id };
         }
         
         // Call stopTimerUpdate to properly reset timer display and button states

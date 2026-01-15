@@ -198,8 +198,7 @@ export async function fetchDowntimeReasons() {
  * @param {number} [logData.current_timer_id] - Optional timer ID to stop
  * @param {number} logData.reason_id - Required downtime reason ID
  * @param {string} [logData.comment] - Optional description
- * @param {number} logData.machine_id - Required machine ID
- * @param {string} logData.operation_key - Required operation key
+ * @param {number} logData.machine_id - Required machine ID (when no current_timer_id provided)
  * @returns {Promise<Object>} Response with stopped_timer_id, new_timer_id, timer, fault_id, operation_completed, message
  */
 export async function logReason(logData) {
