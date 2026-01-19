@@ -8,9 +8,6 @@ import { createCardGrid } from '../components/genericCard/genericCard.js';
 // FIRE SACLAR TAB FUNCTIONALITY
 // ============================================================================
 
-// Store all remnants for filtering
-let allRemnants = [];
-
 export function loadFireSaclarContent() {
     createFireSaclarHTML();
     bindFireSaclarEvents();
@@ -224,8 +221,9 @@ function createFireSaclarHTML() {
 
 /**
  * Load remnant plates and display them as cards
+ * @param {Object} filterParams - Optional filter parameters to send to backend
  */
-async function loadRemnantPlates() {
+async function loadRemnantPlates(filterParams = null) {
     const loadingDiv = document.getElementById('fire-saclar-loading');
     const errorDiv = document.getElementById('fire-saclar-error');
     const emptyDiv = document.getElementById('fire-saclar-empty');
@@ -239,14 +237,11 @@ async function loadRemnantPlates() {
     gridContainer.innerHTML = '';
     
     try {
-        // Fetch remnant plates
-        const data = await getRemnantPlates();
+        // Fetch remnant plates with filter parameters (backend filtering)
+        const data = await getRemnantPlates(filterParams);
         
         // Handle paginated response or direct array
         const remnants = data.results || data;
-        
-        // Store all remnants for filtering
-        allRemnants = remnants || [];
         
         // Hide loading state
         loadingDiv.style.display = 'none';
@@ -257,44 +252,8 @@ async function loadRemnantPlates() {
             return;
         }
         
-        // Check if filters are active and apply them, otherwise display all
-        if (hasActiveFilters()) {
-            applyFilters();
-        } else {
-            displayRemnants(allRemnants);
-        }
-        
-    } catch (error) {
-        console.error('Error loading remnant plates:', error);
-        
-        // Hide loading state
-        loadingDiv.style.display = 'none';
-        
-        // Show error state
-        errorMessage.textContent = error.message || 'Fire saclar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.';
-        errorDiv.style.display = 'block';
-    }
-}
-
-/**
- * Display remnants with optional filtering
- */
-function displayRemnants(remnants) {
-    const emptyDiv = document.getElementById('fire-saclar-empty');
-    const gridContainer = document.getElementById('fire-saclar-grid');
-    
-    if (!remnants || remnants.length === 0) {
-        // Show empty state
-        emptyDiv.style.display = 'block';
-        gridContainer.innerHTML = '';
-        return;
-    }
-    
-    // Hide empty state
-    emptyDiv.style.display = 'none';
-    
-    // Map remnants to card data format
-    const cardsData = remnants.map(remnant => ({
+        // Map remnants to card data format
+        const cardsData = remnants.map(remnant => ({
             title: remnant.id ? `Fire Sac #${remnant.id}` : 'Fire Sac',
             subtitle: `${remnant.material || 'N/A'} - ${remnant.dimensions || 'N/A'}`,
             icon: 'fas fa-fire',
@@ -328,12 +287,23 @@ function displayRemnants(remnants) {
             className: 'remnant-card'
         }));
         
-    // Create card grid
-    createCardGrid(gridContainer, cardsData, {
-        columns: 3,
-        gap: '1.5rem',
-        className: 'fire-saclar-card-grid'
-    });
+        // Create card grid
+        createCardGrid(gridContainer, cardsData, {
+            columns: 3,
+            gap: '1.5rem',
+            className: 'fire-saclar-card-grid'
+        });
+        
+    } catch (error) {
+        console.error('Error loading remnant plates:', error);
+        
+        // Hide loading state
+        loadingDiv.style.display = 'none';
+        
+        // Show error state
+        errorMessage.textContent = error.message || 'Fire saclar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.';
+        errorDiv.style.display = 'block';
+    }
 }
 
 /**
@@ -412,7 +382,7 @@ function bindFireSaclarEvents() {
         });
     }
     
-    // Apply filters button
+    // Apply filters button - triggers backend request with filter parameters
     const applyFiltersBtn = document.getElementById('fire-saclar-apply-filters');
     if (applyFiltersBtn) {
         applyFiltersBtn.addEventListener('click', applyFilters);
@@ -563,48 +533,39 @@ function hideFireSaclarMessage() {
 }
 
 /**
- * Apply filters to remnants
+ * Apply filters - sends filter parameters to backend
+ * NOTE: All filtering is handled by the backend API
  */
 function applyFilters() {
-    const materialFilter = document.getElementById('filter-material')?.value.trim().toLowerCase() || '';
+    // Collect filter values from inputs
+    const materialFilter = document.getElementById('filter-material')?.value.trim() || '';
     const thicknessFilter = document.getElementById('filter-thickness_mm')?.value.trim() || '';
-    const dimensionsFilter = document.getElementById('filter-dimensions')?.value.trim().toLowerCase() || '';
+    const dimensionsFilter = document.getElementById('filter-dimensions')?.value.trim() || '';
     
-    let filtered = [...allRemnants];
+    // Build filter parameters object for backend
+    const filterParams = {};
     
-    // Filter by material
     if (materialFilter) {
-        filtered = filtered.filter(remnant => {
-            const material = (remnant.material || '').toLowerCase();
-            return material.includes(materialFilter);
-        });
+        filterParams.material = materialFilter;
     }
     
-    // Filter by thickness_mm
     if (thicknessFilter) {
         const thicknessValue = parseFloat(thicknessFilter);
         if (!isNaN(thicknessValue)) {
-            filtered = filtered.filter(remnant => {
-                const remnantThickness = parseFloat(remnant.thickness_mm);
-                return !isNaN(remnantThickness) && remnantThickness === thicknessValue;
-            });
+            filterParams.thickness_mm = thicknessValue;
         }
     }
     
-    // Filter by dimensions
     if (dimensionsFilter) {
-        filtered = filtered.filter(remnant => {
-            const dimensions = (remnant.dimensions || '').toLowerCase();
-            return dimensions.includes(dimensionsFilter);
-        });
+        filterParams.dimensions = dimensionsFilter;
     }
     
-    // Display filtered results
-    displayRemnants(filtered);
+    // Reload remnants with backend filtering
+    loadRemnantPlates(filterParams);
 }
 
 /**
- * Clear all filters
+ * Clear all filters and reload all remnants
  */
 function clearFilters() {
     const materialInput = document.getElementById('filter-material');
@@ -615,17 +576,6 @@ function clearFilters() {
     if (thicknessInput) thicknessInput.value = '';
     if (dimensionsInput) dimensionsInput.value = '';
     
-    // Display all remnants
-    displayRemnants(allRemnants);
-}
-
-/**
- * Check if any filters are currently active
- */
-function hasActiveFilters() {
-    const materialFilter = document.getElementById('filter-material')?.value.trim() || '';
-    const thicknessFilter = document.getElementById('filter-thickness_mm')?.value.trim() || '';
-    const dimensionsFilter = document.getElementById('filter-dimensions')?.value.trim() || '';
-    
-    return !!(materialFilter || thicknessFilter || dimensionsFilter);
+    // Reload all remnants without filters
+    loadRemnantPlates();
 }
