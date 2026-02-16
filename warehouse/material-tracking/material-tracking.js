@@ -229,6 +229,7 @@ function initializeTable() {
                 field: 'job_no',
                 label: 'İş No',
                 sortable: true,
+                width: '150px',
                 formatter: (value) => `<span class="job-no">${value || '-'}</span>`
             },
             {
@@ -285,6 +286,7 @@ function initializeTable() {
         ],
         data: [],
         pagination: true,
+        serverSidePagination: true,  // Enable server-side pagination
         itemsPerPage: 20,
         currentPage: 1,
         totalItems: 0,
@@ -303,6 +305,10 @@ function initializeTable() {
             loadItems();
         }
     });
+    
+    // Handle row clicks for selection using event delegation
+    // Attach to results container so it works even after table re-renders
+    setupRowClickHandler();
     
     // Bind checkbox events for bulk selection using event delegation
     document.addEventListener('change', (e) => {
@@ -324,18 +330,18 @@ function initializeTable() {
         }
     });
     
-    // Add bulk actions to container
+    // Add bulk actions to container (always visible, buttons disabled until selection)
     if (bulkActionsContainer) {
         bulkActionsContainer.innerHTML = `
-            <div class="bulk-actions" id="bulk-actions" style="display: none;">
+            <div class="bulk-actions" id="bulk-actions">
                 <div class="bulk-actions-info">
                     <i class="fas fa-check-square me-2"></i>
                     <span id="selected-count">0</span> öğe seçildi
                 </div>
-                <button type="button" class="btn btn-success btn-sm" id="bulk-mark-delivered-btn">
+                <button type="button" class="btn btn-success btn-sm" id="bulk-mark-delivered-btn" disabled>
                     <i class="fas fa-check-double me-2"></i>Seçilenleri Teslim Al
                 </button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-selection-btn">
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="clear-selection-btn" disabled>
                     <i class="fas fa-times me-2"></i>Seçimi Temizle
                 </button>
             </div>
@@ -360,6 +366,80 @@ function initializeTable() {
 }
 
 // ============================================================================
+// ROW CLICK HANDLER SETUP
+// ============================================================================
+
+function setupRowClickHandler() {
+    // Initial setup - will be re-attached after each render
+    attachRowClickHandler();
+}
+
+function attachRowClickHandler() {
+    const resultsContainer = document.getElementById('results-container');
+    if (!resultsContainer) return;
+    
+    // Find the tbody element
+    const tbody = resultsContainer.querySelector('tbody');
+    if (!tbody) return;
+    
+    // Remove any existing listener by cloning and replacing (clean way to remove listeners)
+    const newTbody = tbody.cloneNode(true);
+    tbody.parentNode.replaceChild(newTbody, tbody);
+    
+    // Attach click handler directly to tbody
+    newTbody.addEventListener('click', (e) => {
+        // Find the clicked row
+        const row = e.target.closest('tr');
+        if (!row) return;
+        
+        // Only exclude clicks on action buttons (the last column with buttons)
+        const target = e.target;
+        const clickedCell = target.closest('td');
+        
+        // Check if we clicked in the action buttons column (last column)
+        if (clickedCell) {
+            const allCells = row.querySelectorAll('td');
+            const lastCell = allCells[allCells.length - 1];
+            if (clickedCell === lastCell && target.closest('button')) {
+                // Clicked on action button, don't toggle selection
+                return;
+            }
+        }
+        
+        // Also exclude checkbox clicks (they have their own handler)
+        if (target.classList.contains('item-checkbox') || target.closest('.item-checkbox')) {
+            return;
+        }
+        
+        // Get the row index
+        const rowIndex = Array.from(newTbody.querySelectorAll('tr')).indexOf(row);
+        if (rowIndex === -1 || !itemsTable) return;
+        
+        // Get the row data from the current page's data
+        const rowData = itemsTable.options.data[rowIndex];
+        if (!rowData) return;
+        
+        // Only allow selection of non-delivered items
+        if (!rowData.is_delivered) {
+            const itemId = rowData.id;
+            if (selectedItems.has(itemId)) {
+                selectedItems.delete(itemId);
+            } else {
+                selectedItems.add(itemId);
+            }
+            
+            // Update checkbox state
+            const checkbox = row.querySelector(`.item-checkbox[data-item-id="${itemId}"]`);
+            if (checkbox) {
+                checkbox.checked = selectedItems.has(itemId);
+            }
+            
+            updateBulkActions();
+        }
+    });
+}
+
+// ============================================================================
 // DATA LOADING
 // ============================================================================
 
@@ -374,7 +454,7 @@ async function loadItems() {
             ...currentFilters,
             page: currentPage,
             page_size: 20,  // Items per page
-            ordering: '-id'
+            ordering: 'job_no'
         };
         
         const data = await getPlanningRequestItems(filters);
@@ -394,8 +474,11 @@ async function loadItems() {
         selectedItems.clear();
         updateBulkActions();
         
-        // Re-bind checkbox states after render
+        // Re-attach row click handler after table re-renders
         setTimeout(() => {
+            attachRowClickHandler();
+            
+            // Re-bind checkbox states after render
             document.querySelectorAll('.item-checkbox').forEach(checkbox => {
                 const itemId = parseInt(checkbox.dataset.itemId);
                 checkbox.checked = selectedItems.has(itemId);
@@ -502,33 +585,127 @@ async function handleBulkMarkDelivered() {
     
     try {
         const ids = Array.from(selectedItems);
-        await confirmationModal.show({
-            message: `${ids.length} öğeyi teslim almak istediğinizden emin misiniz?`,
-            onConfirm: async () => {
-                try {
-                    const result = await bulkMarkItemsDelivered(ids);
-                    alert(result.detail || `${result.updated_count || ids.length} öğe başarıyla teslim alındı.`);
-                    // Reload items
-                    loadItems();
-                } catch (error) {
-                    console.error('Error bulk marking items as delivered:', error);
-                    alert(error.message || 'Öğeler teslim alınırken bir hata oluştu.');
-                }
-            }
-        });
+        // Get selected items data for display
+        const selectedItemsData = itemsTable.options.data.filter(item => ids.includes(item.id));
+        
+        // Show modal with selected items list
+        showBulkConfirmModal(selectedItemsData, ids);
     } catch (error) {
         console.error('Error showing confirmation:', error);
     }
 }
 
+/**
+ * Show confirmation modal with list of selected items
+ */
+function showBulkConfirmModal(selectedItems, ids) {
+    // Create modal HTML with items list
+    const itemsListHtml = selectedItems.map(item => `
+        <div class="selected-item-row">
+            <div class="selected-item-info">
+                <strong>${item.item_code || '-'}</strong>
+                <span class="text-muted ms-2">${item.item_name || '-'}</span>
+            </div>
+            <div class="selected-item-details">
+                <small class="text-muted">
+                    İş No: ${item.job_no || '-'} | 
+                    Miktar: ${item.quantity || '0'} ${item.item_unit || ''}
+                </small>
+            </div>
+        </div>
+    `).join('');
+    
+    const modalHtml = `
+        <div class="modal fade" id="bulkConfirmModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-check-double me-2"></i>
+                            Seçilen Öğeleri Teslim Al
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">
+                            <strong>${ids.length}</strong> öğeyi teslim almak istediğinizden emin misiniz?
+                        </p>
+                        <div class="selected-items-list">
+                            ${itemsListHtml}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="button" class="btn btn-success" id="confirm-bulk-delivery-btn">
+                            <i class="fas fa-check me-2"></i>Teslim Al
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('bulkConfirmModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Initialize Bootstrap modal
+    const modalElement = document.getElementById('bulkConfirmModal');
+    const modal = new bootstrap.Modal(modalElement);
+    
+    // Handle confirm button click
+    const confirmBtn = document.getElementById('confirm-bulk-delivery-btn');
+    confirmBtn.addEventListener('click', async () => {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
+        
+        try {
+            const result = await bulkMarkItemsDelivered(ids);
+            modal.hide();
+            
+            // Show success message
+            alert(result.detail || `${result.updated_count || ids.length} öğe başarıyla teslim alındı.`);
+            
+            // Reload items
+            loadItems();
+        } catch (error) {
+            console.error('Error bulk marking items as delivered:', error);
+            alert(error.message || 'Öğeler teslim alınırken bir hata oluştu.');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Teslim Al';
+        }
+    });
+    
+    // Clean up modal when hidden
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        modalElement.remove();
+    });
+    
+    // Show modal
+    modal.show();
+}
+
 function updateBulkActions() {
     const bulkActions = document.getElementById('bulk-actions');
     const selectedCount = document.getElementById('selected-count');
+    const bulkMarkBtn = document.getElementById('bulk-mark-delivered-btn');
+    const clearSelectionBtn = document.getElementById('clear-selection-btn');
     
-    if (selectedItems.size > 0) {
-        bulkActions.style.display = 'flex';
-        selectedCount.textContent = selectedItems.size;
-    } else {
-        bulkActions.style.display = 'none';
+    if (!bulkActions || !selectedCount) return;
+    
+    const count = selectedItems.size;
+    selectedCount.textContent = count;
+    
+    // Enable/disable buttons based on selection count
+    if (bulkMarkBtn) {
+        bulkMarkBtn.disabled = count === 0;
+    }
+    if (clearSelectionBtn) {
+        clearSelectionBtn.disabled = count === 0;
     }
 }

@@ -82,6 +82,18 @@
     background-color: #f8f9fa;
 }
 
+.items-table tbody tr {
+    cursor: pointer;
+}
+
+.items-table tbody tr td:last-child {
+    cursor: default;
+}
+
+.items-table tbody tr td:last-child button {
+    cursor: pointer;
+}
+
 .item-code {
     font-weight: 600;
     color: #495057;
@@ -96,6 +108,15 @@
     font-family: 'Courier New', monospace;
     font-weight: 600;
     color: #007bff;
+    white-space: nowrap;
+}
+
+/* Make job_no column wider to prevent wrapping */
+.items-table tbody td:nth-child(4),
+.items-table thead th:nth-child(4) {
+    min-width: 120px;
+    white-space: nowrap;
+    width: auto;
 }
 
 .quantity-badge {
@@ -176,6 +197,12 @@
     padding: 1rem;
     background: #f8f9fa;
     border-radius: 8px;
+    min-height: 50px; /* Prevent layout shift */
+}
+
+.bulk-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .bulk-actions-info {
@@ -233,4 +260,45 @@
 .pagination-info {
     color: #6c757d;
     font-size: 0.875rem;
+}
+
+/* Selected Items Modal Styles */
+.selected-items-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+}
+
+.selected-item-row {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.selected-item-row:last-child {
+    margin-bottom: 0;
+}
+
+.selected-item-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.selected-item-info strong {
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.selected-item-details {
+    margin-top: 0.25rem;
+}
+
+.selected-item-details small {
+    font-size: 0.8rem;
 }
