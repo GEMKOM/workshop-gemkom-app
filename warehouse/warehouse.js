@@ -39,6 +39,14 @@ function loadWarehouseContent() {
             iconColor: 'info',
             link: 'weight-reduction/',
             features: []
+        },
+        {
+            title: 'Malzeme Takibi',
+            description: 'Planlama talebi öğelerini görüntüleyin ve teslim durumunu yönetin',
+            icon: 'fas fa-boxes',
+            iconColor: 'success',
+            link: 'material-tracking/',
+            features: []
         }
     ];
     
