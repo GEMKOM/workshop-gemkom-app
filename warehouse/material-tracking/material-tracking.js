@@ -645,18 +645,34 @@ function showBulkConfirmModal(selectedItems, ids) {
         </div>
     `;
     
-    // Remove existing modal if any
+    // Remove existing modal and backdrop if any
     const existingModal = document.getElementById('bulkConfirmModal');
     if (existingModal) {
+        const existingBackdrop = document.querySelector('.modal-backdrop');
+        if (existingBackdrop) {
+            existingBackdrop.remove();
+        }
         existingModal.remove();
     }
+    
+    // Remove any existing backdrops
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+    
+    // Clean up body classes that Bootstrap might have added
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
     
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     
-    // Initialize Bootstrap modal
+    // Initialize Bootstrap modal with proper options
     const modalElement = document.getElementById('bulkConfirmModal');
-    const modal = new bootstrap.Modal(modalElement);
+    const modal = new bootstrap.Modal(modalElement, {
+        backdrop: true,
+        keyboard: true,
+        focus: true
+    });
     
     // Handle confirm button click
     const confirmBtn = document.getElementById('confirm-bulk-delivery-btn');
@@ -683,7 +699,17 @@ function showBulkConfirmModal(selectedItems, ids) {
     
     // Clean up modal when hidden
     modalElement.addEventListener('hidden.bs.modal', () => {
+        // Remove backdrop if still exists
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        // Remove modal
         modalElement.remove();
+        // Remove body class that Bootstrap adds
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
     });
     
     // Show modal
