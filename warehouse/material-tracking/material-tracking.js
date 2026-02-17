@@ -616,8 +616,8 @@ function showBulkConfirmModal(selectedItems, ids) {
     `).join('');
     
     const modalHtml = `
-        <div class="modal fade" id="bulkConfirmModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
+        <div class="modal fade" id="bulkConfirmModal" tabindex="-1" style="z-index: 10060;">
+            <div class="modal-dialog modal-lg" style="z-index: 10061;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
@@ -645,7 +645,7 @@ function showBulkConfirmModal(selectedItems, ids) {
         </div>
     `;
     
-    // Remove existing modal and backdrop if any
+    // Remove existing modal and any backdrops if any
     const existingModal = document.getElementById('bulkConfirmModal');
     if (existingModal) {
         const existingBackdrop = document.querySelector('.modal-backdrop');
@@ -655,65 +655,99 @@ function showBulkConfirmModal(selectedItems, ids) {
         existingModal.remove();
     }
     
-    // Remove any existing backdrops
+    // Check if there's a confirmation modal open and wait for it to close
+    const confirmationModalElement = document.getElementById('confirmationModal');
+    if (confirmationModalElement && confirmationModalElement.classList.contains('show')) {
+        // Wait for confirmation modal to close first
+        confirmationModalElement.addEventListener('hidden.bs.modal', () => {
+            showBulkModalAfterDelay(modalHtml, ids);
+        }, { once: true });
+        return;
+    }
+    
+    // Clean up any orphaned backdrops
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
     
-    // Clean up body classes that Bootstrap might have added
+    // Clean up body classes
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
     
+    showBulkModalAfterDelay(modalHtml, ids);
+}
+
+function showBulkModalAfterDelay(modalHtml, ids) {
     // Add modal to body
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     
-    // Initialize Bootstrap modal with proper options
-    const modalElement = document.getElementById('bulkConfirmModal');
-    const modal = new bootstrap.Modal(modalElement, {
-        backdrop: true,
-        keyboard: true,
-        focus: true
-    });
-    
-    // Handle confirm button click
-    const confirmBtn = document.getElementById('confirm-bulk-delivery-btn');
-    confirmBtn.addEventListener('click', async () => {
-        confirmBtn.disabled = true;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
+    // Wait for DOM to be ready
+    setTimeout(() => {
+        // Initialize Bootstrap modal
+        const modalElement = document.getElementById('bulkConfirmModal');
+        if (!modalElement) return;
         
-        try {
-            const result = await bulkMarkItemsDelivered(ids);
-            modal.hide();
-            
-            // Show success message
-            alert(result.detail || `${result.updated_count || ids.length} öğe başarıyla teslim alındı.`);
-            
-            // Reload items
-            loadItems();
-        } catch (error) {
-            console.error('Error bulk marking items as delivered:', error);
-            alert(error.message || 'Öğeler teslim alınırken bir hata oluştu.');
-            confirmBtn.disabled = false;
-            confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Teslim Al';
+        const modal = new bootstrap.Modal(modalElement, {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
+        
+        // Ensure modal has proper z-index (higher than ConfirmationModal)
+        modalElement.style.zIndex = '10060';
+        
+        // Handle confirm button click
+        const confirmBtn = document.getElementById('confirm-bulk-delivery-btn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', async () => {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
+                
+                try {
+                    const result = await bulkMarkItemsDelivered(ids);
+                    modal.hide();
+                    
+                    // Reload items
+                    loadItems();
+                } catch (error) {
+                    console.error('Error bulk marking items as delivered:', error);
+                    alert(error.message || 'Öğeler teslim alınırken bir hata oluştu.');
+                    confirmBtn.disabled = false;
+                    confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Teslim Al';
+                }
+            });
         }
-    });
-    
-    // Clean up modal when hidden
-    modalElement.addEventListener('hidden.bs.modal', () => {
-        // Remove backdrop if still exists
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) {
-            backdrop.remove();
-        }
-        // Remove modal
-        modalElement.remove();
-        // Remove body class that Bootstrap adds
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-    });
-    
-    // Show modal
-    modal.show();
+        
+        // Clean up modal when hidden
+        modalElement.addEventListener('hidden.bs.modal', () => {
+            // Remove backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            // Remove modal
+            modalElement.remove();
+            // Clean up body
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+        
+        // Show modal
+        modal.show();
+        
+        // Ensure backdrop z-index is correct after showing (higher than ConfirmationModal backdrop)
+        setTimeout(() => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.zIndex = '10059';
+            }
+            // Also ensure modal dialog is on top
+            const modalDialog = modalElement.querySelector('.modal-dialog');
+            if (modalDialog) {
+                modalDialog.style.zIndex = '10061';
+            }
+        }, 10);
+    }, 50);
 }
 
 function updateBulkActions() {

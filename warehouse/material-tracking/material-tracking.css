@@ -302,16 +302,3 @@
 .selected-item-details small {
     font-size: 0.8rem;
 }
-
-/* Ensure modal is on top */
-#bulkConfirmModal.modal {
-    z-index: 1055 !important;
-}
-
-.modal-backdrop {
-    z-index: 1050 !important;
-}
-
-.modal.show {
-    display: block !important;
-}
