@@ -232,7 +232,6 @@ async function loadOperationsForMachine(machineId) {
             machine_fk: machineId,
             completion_date__isnull: true,
             in_plan: true,
-            ordering: 'order'
         });
         allOperations = data.results || data;
         
@@ -349,7 +348,7 @@ function formatOperationsForResultsTable(operations) {
                 {
                     icon: 'fas fa-sort-numeric-up',
                     label: 'Sıra:',
-                    value: operation.order || '-'
+                    value: operation.plan_order || '-'
                 },
                 ...(operation.part_job_no ? [{
                     icon: 'fas fa-file-alt',
