@@ -5,6 +5,7 @@ import { backendBase } from '../base.js';
 import { authedFetch, navigateTo, ROUTES } from '../authService.js';
 import { extractResultsFromResponse } from '../generic/paginationHelper.js';
 import { fetchTimers } from '../generic/timers.js';
+import { fetchFaultTimers } from '../generic/faultTimers.js';
 
 /* <button class="timer-widget-stop" onclick="window.timerWidget.stopTimer(${timer.id})">
     Durdur
@@ -335,25 +336,36 @@ export class TimerWidget {
         
         this.isLoading = true;
         try {
-            // Fetch timers from both modules
-            const [machiningResponse, cncCuttingResponse] = await Promise.all([
+            // Fetch timers from machining + cnc cutting + maintenance faults
+            const [machiningResponse, cncCuttingResponse, faultTimersResponse] = await Promise.all([
                 fetchTimers({ is_active: true }, 'machining'),
-                fetchTimers({ is_active: true }, 'cnc_cutting')
+                fetchTimers({ is_active: true }, 'cnc_cutting'),
+                fetchFaultTimers({})
             ]);
             
             const machiningTimers = extractResultsFromResponse(machiningResponse);
             const cncCuttingTimers = extractResultsFromResponse(cncCuttingResponse);
+            const faultTimers = extractResultsFromResponse(faultTimersResponse);
             
             // Filter out any timers that have finish_time (shouldn't happen with is_active: true, but safety check)
             const activeMachiningTimers = machiningTimers.filter(timer => !timer.finish_time);
             const activeCncCuttingTimers = cncCuttingTimers.filter(timer => !timer.finish_time);
+            // Fault timers: treat "no finish_time/end_time" as active
+            const activeFaultTimers = (faultTimers || []).filter(timer => {
+                const hasFinish = timer.finish_time !== null && timer.finish_time !== undefined;
+                const hasEnd = timer.end_time !== null && timer.end_time !== undefined;
+                // Also ignore timers for already resolved faults if serializer provides it
+                if (timer.fault_is_resolved === true) return false;
+                return !hasFinish && !hasEnd;
+            });
             
             // Mark each timer with its module
             const machiningTimersWithModule = activeMachiningTimers.map(timer => ({ ...timer, module: 'machining' }));
             const cncCuttingTimersWithModule = activeCncCuttingTimers.map(timer => ({ ...timer, module: 'cnc_cutting' }));
+            const faultTimersWithModule = activeFaultTimers.map(timer => ({ ...timer, module: 'maintenance_fault' }));
             
             // Combine timers from both modules and deduplicate by timer ID
-            const allTimers = [...machiningTimersWithModule, ...cncCuttingTimersWithModule];
+            const allTimers = [...machiningTimersWithModule, ...cncCuttingTimersWithModule, ...faultTimersWithModule];
             const seenTimerIds = new Set();
             this.activeTimers = allTimers.filter(timer => {
                 if (seenTimerIds.has(timer.id)) {
@@ -402,21 +414,31 @@ export class TimerWidget {
             const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
             
             // Build URL - for break/downtime timers, use timer_id instead of issue_key
-            let url = `/${modulePath}/tasks/?machine_id=${timer.machine_fk}`;
-            if (timer.timer_type === 'productive' && timer.issue_key) {
-                url += `&key=${timer.issue_key}`;
-                if (timer.issue_is_hold_task) {
-                    url += '&hold=1';
-                }
+            let url = '';
+            if (module === 'maintenance_fault') {
+                // Fault timers route to maintenance fault timer page
+                // task_key is the fault id; backend may also return issue_key
+                const faultId = timer.task_key || timer.issue_key;
+                url = `/maintenance/faults/task/?fault_id=${encodeURIComponent(faultId)}`;
             } else {
-                // For break/downtime timers, use timer_id
-                url += `&timer_id=${timer.id}`;
+                url = `/${modulePath}/tasks/?machine_id=${timer.machine_fk}`;
+                if (timer.timer_type === 'productive' && timer.issue_key) {
+                    url += `&key=${timer.issue_key}`;
+                    if (timer.issue_is_hold_task) {
+                        url += '&hold=1';
+                    }
+                } else {
+                    // For break/downtime timers, use timer_id
+                    url += `&timer_id=${timer.id}`;
+                }
             }
             
             // For CNC cutting tasks, show nesting_id if available, otherwise fall back to issue_key
             // For break/downtime timers, show downtime reason name
             let displayKey;
-            if (module === 'cnc_cutting' && timer.nesting_id) {
+            if (module === 'maintenance_fault') {
+                displayKey = `ARIZA-${timer.task_key || timer.issue_key || timer.id}`;
+            } else if (module === 'cnc_cutting' && timer.nesting_id) {
                 displayKey = timer.nesting_id;
             } else if (timer.timer_type !== 'productive' && timer.downtime_reason_name) {
                 displayKey = timer.downtime_reason_name;

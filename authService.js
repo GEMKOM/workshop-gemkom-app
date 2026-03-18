@@ -16,7 +16,7 @@ export const ROUTES = {
     CNC_CUTTING: '/cnc_cutting/',
     CNC_CUTTING_TASKS: '/cnc_cutting/tasks/',
     MAINTENANCE: '/maintenance/',
-    MAINTENANCE_LIST: '/maintenance/list/'
+    MAINTENANCE_LIST: '/maintenance/?tab=fault-requests'
 };
 
 // Track if we're currently redirecting to prevent loops

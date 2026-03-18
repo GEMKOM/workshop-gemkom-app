@@ -25,29 +25,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     initNavbar();
-    setupHeader();
-    setupRefreshButton();
-    loadCreateRequestContent();
+    mountMaintenanceCreate({
+        headerContainerId: 'header-placeholder',
+        contentContainerId: 'create-request-content',
+        showBackButton: true,
+        backUrl: '../index.html'
+    });
 });
 
 // ============================================================================
 // HEADER SETUP
 // ============================================================================
 
-function setupHeader() {
+function setupHeader({ containerId, showBackButton, backUrl }) {
+    if (!containerId) return;
+
     const headerConfig = {
         title: 'Yeni Bakım Talebi',
         subtitle: 'Yeni bir bakım veya arıza talebi oluşturun. Detaylı bilgi vererek daha hızlı çözüm sağlayabilirsiniz.',
         icon: 'plus-circle',
-        containerId: 'header-placeholder',
-        showBackButton: 'block',
+        containerId,
+        showBackButton: showBackButton ? 'block' : 'none',
         showCreateButton: 'none',
         showBulkCreateButton: 'none',
         showExportButton: 'none',
         showRefreshButton: 'none',
-        backUrl: '../index.html'
+        backUrl: backUrl || '../index.html'
     };
-    
+
     new HeaderComponent(headerConfig);
 }
 
@@ -55,8 +60,8 @@ function setupHeader() {
 // CONTENT LOADING
 // ============================================================================
 
-async function loadCreateRequestContent() {
-    const contentContainer = document.getElementById('create-request-content');
+async function loadCreateRequestContent(contentContainerId) {
+    const contentContainer = document.getElementById(contentContainerId);
     
     // Add loading state
     contentContainer.innerHTML = `
@@ -88,6 +93,30 @@ async function loadCreateRequestContent() {
             </div>
         `;
     }
+}
+
+// ============================================================================
+// PUBLIC MOUNT (used by tabs + standalone page)
+// ============================================================================
+
+export function mountMaintenanceCreate({
+    headerContainerId = 'header-placeholder',
+    contentContainerId = 'create-request-content',
+    showBackButton = true,
+    backUrl = '../index.html'
+} = {}) {
+    // Render header (optional)
+    setupHeader({ containerId: headerContainerId, showBackButton, backUrl });
+
+    // Ensure main container exists
+    const contentContainer = document.getElementById(contentContainerId);
+    if (!contentContainer) {
+        console.error('Create request content container not found:', contentContainerId);
+        return;
+    }
+
+    setupRefreshButton(contentContainerId);
+    loadCreateRequestContent(contentContainerId);
 }
 
 // ============================================================================
@@ -791,11 +820,12 @@ function selectMachine(machineId, machineName, machineType, machineCode, machine
 // REFRESH FUNCTIONALITY
 // ============================================================================
 
-function setupRefreshButton() {
+function setupRefreshButton(contentContainerId) {
+    // eslint-disable-next-line no-undef
     const refreshButton = new RefreshButton('refresh-btn-container', {
         onRefresh: async () => {
             // Reload the create request content
-            await loadCreateRequestContent();
+            await loadCreateRequestContent(contentContainerId || 'create-request-content');
         }
     });
 }

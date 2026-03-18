@@ -162,3 +162,23 @@ export async function fetchMachineFaults() {
     
     return response.json();
 }
+
+/**
+ * Fetch a single machine fault (maintenance request)
+ * @param {number|string} faultId - Fault ID
+ * @returns {Promise<Object>} Fault detail
+ */
+export async function fetchMachineFault(faultId) {
+    const response = await authedFetch(`${backendBase}/machines/faults/${faultId}/`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch machine fault');
+    }
+
+    return response.json();
+}

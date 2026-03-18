@@ -60,13 +60,13 @@ function setupHomeMenu(user) {
                     label: 'Yeni Talep Oluştur',
                     icon: 'fas fa-calendar',
                     iconColor: 'rgba(139, 0, 0, 1)',
-                    link: 'maintenance/create'
+                    link: 'maintenance/?tab=create-request'
                 },
                 {
                     label: 'Bakım Talepleri',
                     icon: 'fas fa-wrench',
                     iconColor: 'rgba(139, 0, 0, 1)',
-                    link: 'maintenance/list'
+                    link: 'maintenance/?tab=fault-requests'
                 }
             ],
             // Visible to all users

@@ -9,9 +9,9 @@ let timerUpdateListenerAdded = false;
 
 // Initialize timer widget globally
 function initializeTimerWidget() {
-    // Only initialize if user is authenticated, not admin, and is in machining or cutting team
+    // Only initialize if user is authenticated, not admin, and is in machining/cutting/maintenance team
     const user = JSON.parse(localStorage.getItem('user'));
-    if (guardRoute() && !isAdmin() && user && (user.team === 'machining' || user.team === 'cutting')) {
+    if (guardRoute() && !isAdmin() && user && (user.team === 'machining' || user.team === 'cutting' || user.team === 'maintenance')) {
         // Check if timer widget already exists
         if (!window.timerWidget) {
             console.log('Initializing timer widget...');
