@@ -1,7 +1,5 @@
 // login/login.js
 import { login, navigateTo, ROUTES, forgotPassword, navigateByTeam } from '../authService.js';
-import { fetchUsers } from '../generic/users.js';
-import { ModernDropdown } from '../components/dropdown/dropdown.js';
 
 // Enhanced error handling and display
 function showError(message) {
@@ -49,40 +47,7 @@ function setLoadingState(isLoading, buttonId = 'login-button') {
     }
 }
 
-// Initialize modern dropdown
-let userDropdown = null;
-let currentMode = 'dropdown'; // 'dropdown' or 'manual'
-
-function initializeUserDropdown(users) {
-    const container = document.getElementById('user-dropdown-container');
-    if (!container) {
-        console.error('User dropdown container not found!');
-        return;
-    }
-
-    // Create dropdown items from users
-    const dropdownItems = users.map(user => ({
-        value: user.username,
-        text: user.first_name ? `${user.first_name} ${user.last_name}` : user.username
-    }));
-
-    // Initialize the dropdown
-    userDropdown = new ModernDropdown(container, {
-        placeholder: 'Kullanıcı seçiniz...',
-        searchable: true,
-        multiple: false,
-        maxHeight: 250
-    });
-
-    // Set items
-    userDropdown.setItems(dropdownItems);
-
-    // Listen for selection events
-    container.addEventListener('dropdown:select', (e) => {
-        const selectedValue = e.detail.value;
-        console.log('Selected user:', selectedValue);
-    });
-}
+let currentMode = 'manual';
 
 // Password toggle functionality
 function setupPasswordToggle() {
@@ -120,67 +85,18 @@ function setupAdminPasswordToggle() {
     }
 }
 
-// Toggle between dropdown and manual entry modes
-function setupModeToggle() {
-    const dropdownModeBtn = document.getElementById('dropdown-mode-btn');
-    const manualModeBtn = document.getElementById('manual-mode-btn');
-    const dropdownMode = document.getElementById('dropdown-mode');
-    const manualMode = document.getElementById('manual-mode');
-    
-    if (dropdownModeBtn && manualModeBtn && dropdownMode && manualMode) {
-        dropdownModeBtn.addEventListener('click', () => {
-            currentMode = 'dropdown';
-            dropdownModeBtn.classList.add('active');
-            manualModeBtn.classList.remove('active');
-            dropdownMode.style.display = 'block';
-            manualMode.style.display = 'none';
-            
-            // Clear manual input
-            const manualInput = document.getElementById('manual-username');
-            if (manualInput) {
-                manualInput.value = '';
-            }
-        });
-        
-        manualModeBtn.addEventListener('click', () => {
-            currentMode = 'manual';
-            manualModeBtn.classList.add('active');
-            dropdownModeBtn.classList.remove('active');
-            manualMode.style.display = 'block';
-            dropdownMode.style.display = 'none';
-            
-            // Clear dropdown selection
-            if (userDropdown) {
-                userDropdown.setValue(null);
-            }
-        });
-    }
-}
-
 // Enhanced form validation
 function validateForm() {
     const passwordInput = document.getElementById('password');
-    let username = null;
-    
-    if (currentMode === 'dropdown') {
-        username = userDropdown ? userDropdown.getValue() : null;
-        if (!username) {
-            showError('Lütfen bir kullanıcı seçin.');
-            if (userDropdown) {
-                userDropdown.dropdown.focus();
-            }
-            return false;
+    const manualInput = document.getElementById('manual-username');
+    const username = manualInput ? manualInput.value.trim() : null;
+
+    if (!username) {
+        showError('Lütfen kullanıcı adınızı girin.');
+        if (manualInput) {
+            manualInput.focus();
         }
-    } else if (currentMode === 'manual') {
-        const manualInput = document.getElementById('manual-username');
-        username = manualInput ? manualInput.value.trim() : null;
-        if (!username) {
-            showError('Lütfen kullanıcı adınızı girin.');
-            if (manualInput) {
-                manualInput.focus();
-            }
-            return false;
-        }
+        return false;
     }
     
     if (!passwordInput.value.trim()) {
@@ -230,57 +146,6 @@ async function handleLogin(username, password) {
         console.error('Login error:', error);
         showError('Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.');
         setLoadingState(false);
-    }
-}
-
-// Enhanced user fetching with retry mechanism
-async function fetchUsersWithRetry(maxRetries = 3, delay = 1000) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            console.log(`Fetching users (attempt ${attempt}/${maxRetries})`);
-            const users = await fetchUsers();
-            
-            if (users && users.length > 0) {
-                console.log(`Successfully fetched ${users.length} users`);
-                return users;
-            } else {
-                console.warn(`No users returned (attempt ${attempt}/${maxRetries})`);
-                if (attempt < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, delay * attempt));
-                }
-            }
-        } catch (error) {
-            console.error(`Error fetching users (attempt ${attempt}/${maxRetries}):`, error);
-            if (attempt < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, delay * attempt));
-            } else {
-                throw error;
-            }
-        }
-    }
-    throw new Error('Failed to fetch users after all retry attempts');
-}
-
-// Enhanced dropdown initialization with loading state
-function showDropdownLoading() {
-    const container = document.getElementById('user-dropdown-container');
-    if (container) {
-        container.innerHTML = `
-            <div class="dropdown-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Kullanıcılar yükleniyor...</span>
-            </div>
-        `;
-    }
-}
-
-function hideDropdownLoading() {
-    const container = document.getElementById('user-dropdown-container');
-    if (container) {
-        const loadingElement = container.querySelector('.dropdown-loading');
-        if (loadingElement) {
-            loadingElement.remove();
-        }
     }
 }
 
@@ -456,82 +321,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize password toggles
     setupPasswordToggle();
     setupAdminPasswordToggle();
-    
-    // Initialize mode toggle
-    setupModeToggle();
-    
+
     // Initialize forgot password modal
     setupForgotPasswordModal();
-
-    // Show loading state for dropdown
-    showDropdownLoading();
-
-    // Fetch and populate users with retry mechanism
-    try {
-        const users = await fetchUsersWithRetry();
-        hideDropdownLoading();
-        initializeUserDropdown(users);
-    } catch (error) {
-        console.error('Error fetching users after retries:', error);
-        hideDropdownLoading();
-        
-        // Show specific error message based on error type
-        let errorMessage = 'Kullanıcı listesi yüklenirken hata oluştu.';
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            errorMessage = 'İnternet bağlantısı hatası. Lütfen bağlantınızı kontrol edin.';
-        } else if (error.message.includes('timeout')) {
-            errorMessage = 'Bağlantı zaman aşımı. Lütfen tekrar deneyin.';
-        }
-        
-        showError(errorMessage);
-        
-        // Show retry button and auto-switch to manual mode
-        const container = document.getElementById('user-dropdown-container');
-        if (container) {
-            container.innerHTML = `
-                <div class="dropdown-error">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>Kullanıcı listesi yüklenemedi</span>
-                    <div class="mt-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm me-2" id="retry-users-btn">
-                            <i class="fas fa-redo"></i> Tekrar Dene
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" id="switch-to-manual-btn">
-                            <i class="fas fa-keyboard"></i> Manuel Giriş
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            // Add retry functionality
-            const retryBtn = document.getElementById('retry-users-btn');
-            if (retryBtn) {
-                retryBtn.addEventListener('click', async () => {
-                    showDropdownLoading();
-                    try {
-                        const users = await fetchUsersWithRetry();
-                        hideDropdownLoading();
-                        initializeUserDropdown(users);
-                    } catch (retryError) {
-                        hideDropdownLoading();
-                        showError('Tekrar deneme başarısız. Manuel giriş kullanabilirsiniz.');
-                    }
-                });
-            }
-            
-            // Add switch to manual mode functionality
-            const switchToManualBtn = document.getElementById('switch-to-manual-btn');
-            if (switchToManualBtn) {
-                switchToManualBtn.addEventListener('click', () => {
-                    // Switch to manual mode
-                    const manualModeBtn = document.getElementById('manual-mode-btn');
-                    if (manualModeBtn) {
-                        manualModeBtn.click();
-                    }
-                });
-            }
-        }
-    }
 
     // Form submission handler
     const loginForm = document.getElementById('login-form');
@@ -548,14 +340,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             const passwordInput = document.getElementById('password');
-            let username = null;
-            
-            if (currentMode === 'dropdown') {
-                username = userDropdown ? userDropdown.getValue() : null;
-            } else if (currentMode === 'manual') {
-                const manualInput = document.getElementById('manual-username');
-                username = manualInput ? manualInput.value.trim() : null;
-            }
+            const manualInput = document.getElementById('manual-username');
+            const username = manualInput ? manualInput.value.trim() : null;
             
             const password = passwordInput.value;
             
