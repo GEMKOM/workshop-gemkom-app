@@ -92,11 +92,10 @@ async function loadFaultsData() {
     }
 
     try {
-        const faultsResponse = await fetchMachineFaults();
+        // Server-side filtering: unresolved = true lists open/unresolved faults only
+        const faultsResponse = await fetchMachineFaults({ unresolved: true });
         const faults = extractResultsFromResponse(faultsResponse);
-
-        // Only show unresolved machine faults (not maintenance requests)
-        allFaults = (faults || []).filter(f => !f.resolved_at && f.is_maintenance === false);
+        allFaults = faults || [];
         filterAndDisplayFaults();
     } catch (error) {
         console.error('Error loading faults:', error);

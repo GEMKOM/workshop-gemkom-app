@@ -88,11 +88,10 @@ async function loadResolvedData() {
     }
 
     try {
-        const response = await fetchMachineFaults();
+        // Server-side filtering: unresolved = false lists resolved faults only
+        const response = await fetchMachineFaults({ unresolved: false });
         const requests = extractResultsFromResponse(response) || [];
-
-        // Resolved requests (maintenance + faults)
-        allResolved = requests.filter(r => !!r.resolved_at);
+        allResolved = requests;
         filterAndDisplay();
     } catch (error) {
         console.error('Error loading resolved requests:', error);

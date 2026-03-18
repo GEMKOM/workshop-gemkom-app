@@ -146,10 +146,22 @@ export async function resolveMaintenanceRequest(requestId, resolutionDescription
 
 /**
  * Fetches all machine faults (maintenance requests)
+ * Supports server-side filtering, e.g.
+ * - { unresolved: true }  → open/unresolved only
+ * - { unresolved: false } → resolved only
+ * @param {Object} [filters={}] - Query params to send
  * @returns {Promise<Object>} Machine faults data with pagination info
  */
-export async function fetchMachineFaults() {
-    const response = await authedFetch(`${backendBase}/machines/faults/?page_size=1000`, {
+export async function fetchMachineFaults(filters = {}) {
+    const params = new URLSearchParams();
+    params.append('page_size', '1000');
+    Object.entries(filters || {}).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+            params.append(key, String(value));
+        }
+    });
+
+    const response = await authedFetch(`${backendBase}/machines/faults/?${params.toString()}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json'
