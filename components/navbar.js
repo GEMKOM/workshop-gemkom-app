@@ -1,4 +1,4 @@
-import { logout, isAdmin, isLoggedIn, getUser, navigateTo, ROUTES } from '../authService.js';
+import { logout, isLoggedIn, getUser, navigateTo, ROUTES, hasPermission } from '../authService.js';
 
 // Navbar component
 export function createNavbar() {
@@ -72,18 +72,17 @@ export function createNavbar() {
         });
     });
     
-    // Show machining tab if user is machining team or admin
+    // Show machining tab based on permission map
     const machiningTab = navbar.querySelector('.machining-only');
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (isAdmin() || (user && user.team === 'machining')) {
+    if (hasPermission('access_machining')) {
         machiningTab.style.display = 'block';
     } else {
         machiningTab.style.display = 'none';
     }
     
-    // Show CNC cutting tab if user is cutting team or admin
+    // Show CNC cutting tab based on permission map
     const cncCuttingTab = navbar.querySelector('.cnc-cutting-only');
-    if (isAdmin() || (user && user.team === 'cutting')) {
+    if (hasPermission('access_cnc_cutting')) {
         cncCuttingTab.style.display = 'block';
     } else {
         cncCuttingTab.style.display = 'none';
@@ -249,7 +248,6 @@ export function initNavbar() {
                                 <li><a class="dropdown-item" href="#" id="edit-profile-btn">
                                     <i class="fas fa-user-edit me-2"></i>Profili Düzenle
                                 </a></li>
-                                <li><h6 class="dropdown-item">Takım: ${user.team_label || 'Atanmamış'}</h6></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item text-danger" href="#" id="logout-button">
                                     <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
@@ -279,18 +277,6 @@ export function initNavbar() {
           });
       }
       
-      const teamInfoBtn = document.getElementById('team-info-btn');
-      if (teamInfoBtn) {
-          teamInfoBtn.addEventListener('click', (e) => {
-              e.preventDefault();
-              // Show team info in a simple alert for now
-              const teamName = user.team ? 
-                  (user.team === 'machining' ? 'Talaşlı İmalat' : 
-                   user.team === 'maintenance' ? 'Bakım' : user.team) : 'Atanmamış';
-              alert(`Takımınız: ${teamName}`);
-          });
-      }
-
       const logoutButton = document.getElementById('logout-button');
       if (logoutButton) {
           logoutButton.addEventListener('click', (e) => {
@@ -320,25 +306,25 @@ export function initNavbar() {
           }
       });
       
-      // Show machining tab if user is machining team or admin
+      // Show machining tab based on permission map
       const machiningTab = navbarContainer.querySelector('.machining-only');
-      if (isAdmin() || user.team === 'machining') {
+      if (hasPermission('access_machining')) {
           machiningTab.style.display = 'block';
       } else {
           machiningTab.style.display = 'none';
       }
       
-      // Show CNC cutting tab if user is cutting team or admin
+      // Show CNC cutting tab based on permission map
       const cncCuttingTab = navbarContainer.querySelector('.cnc-cutting-only');
-      if (isAdmin() || user.team === 'cutting') {
+      if (hasPermission('access_cnc_cutting')) {
           cncCuttingTab.style.display = 'block';
       } else {
           cncCuttingTab.style.display = 'none';
       }
       
-      // Show warehouse tab if user is warehouse team or admin
+      // Show warehouse tab based on permission map
       const warehouseTab = navbarContainer.querySelector('.warehouse-only');
-      if (isAdmin() || user.team === 'warehouse') {
+      if (hasPermission('access_warehouse')) {
           warehouseTab.style.display = 'block';
       } else {
           warehouseTab.style.display = 'none';
@@ -352,8 +338,7 @@ export function setupLogoutButton() {
     const logoutButton = document.getElementById('logout-button');
     if (logoutButton) {
         logoutButton.onclick = () => {
-            localStorage.clear();
-            navigateTo(ROUTES.LOGIN);
+            logout();
         };
     }
 }

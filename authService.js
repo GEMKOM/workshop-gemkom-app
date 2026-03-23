@@ -2,13 +2,23 @@ import { backendBase } from './base.js';
 
 const API_URL = backendBase;
 
-let accessToken = localStorage.getItem('accessToken');
-let refreshToken = localStorage.getItem('refreshToken');
+const STORAGE_KEYS = {
+    ACCESS: 'access',
+    REFRESH: 'refresh',
+    USER: 'user',
+    PERMISSIONS: 'permissions',
+    LEGACY_ACCESS: 'accessToken',
+    LEGACY_REFRESH: 'refreshToken'
+};
+
+let accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS) || localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS);
+let refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH) || localStorage.getItem(STORAGE_KEYS.LEGACY_REFRESH);
 
 // Centralized routing to prevent infinite redirects
 export const ROUTES = {
     LOGIN: '/login/',
     RESET_PASSWORD: '/login/reset-password/',
+    UNAUTHORIZED: '/unauthorized/',
     HOME: '/',
     ADMIN: '/admin/',
     MACHINING: '/machining/',
@@ -22,30 +32,40 @@ export const ROUTES = {
 // Track if we're currently redirecting to prevent loops
 let isRedirecting = false;
 
-// Track if this is a fresh login to prevent redirects on manual navigation
-// This flag is set to true only when a user successfully logs in
-// and is reset to false after the first team-based navigation
-let isFreshLogin = false;
-
 export async function getUser() {
     const user_data = await authedFetch(`${backendBase}/users/me/`);
     return await user_data.json();
 }
 
+export async function getPermissions() {
+    const response = await authedFetch(`${backendBase}/users/me/permissions/`);
+    return await response.json();
+}
+
 function setTokens(newAccessToken, newRefreshToken) {
     accessToken = newAccessToken;
     refreshToken = newRefreshToken;
-    localStorage.setItem('accessToken', newAccessToken);
+    localStorage.setItem(STORAGE_KEYS.ACCESS, newAccessToken);
+    localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS);
     if (newRefreshToken) {
-        localStorage.setItem('refreshToken', newRefreshToken);
+        localStorage.setItem(STORAGE_KEYS.REFRESH, newRefreshToken);
+        localStorage.removeItem(STORAGE_KEYS.LEGACY_REFRESH);
     }
 }
 
 function clearTokens() {
     accessToken = null;
     refreshToken = null;
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem(STORAGE_KEYS.ACCESS);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH);
+    localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS);
+    localStorage.removeItem(STORAGE_KEYS.LEGACY_REFRESH);
+}
+
+function clearAuthStorage() {
+    clearTokens();
+    localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.PERMISSIONS);
 }
 
 export async function login(username, password) {
@@ -62,25 +82,30 @@ export async function login(username, password) {
     const data = await response.json();
     setTokens(data.access, data.refresh);
     const user_data = await getUser();
-    localStorage.setItem('user', JSON.stringify(user_data));
-    
-    // Mark this as a fresh login
-    isFreshLogin = true;
-    
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user_data));
+
+    const permissions = await getPermissions();
+    localStorage.setItem(STORAGE_KEYS.PERMISSIONS, JSON.stringify(permissions));
+
+    if (!hasPermission('workshop_access')) {
+        clearAuthStorage();
+        throw new Error('No workshop access');
+    }
+
     return data;
 }
 
 export function logout() {
-    clearTokens();
+    clearAuthStorage();
     navigateTo(ROUTES.LOGIN);
 }
 
 export function isLoggedIn() {
-    return !!localStorage.getItem('refreshToken');
+    return !!(localStorage.getItem(STORAGE_KEYS.REFRESH) || localStorage.getItem(STORAGE_KEYS.LEGACY_REFRESH));
 }
 
 export function mustResetPassword() {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
     if (user) {
         return user.must_reset_password;
     } else {
@@ -89,7 +114,7 @@ export function mustResetPassword() {
 }
 
 export function isAdmin() {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
     if (user) { 
         return user?.is_superuser || user?.is_admin;
     } else {
@@ -98,7 +123,7 @@ export function isAdmin() {
 }
 
 export function isLead() {
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(localStorage.getItem(STORAGE_KEYS.USER));
     if (user) { 
         return user?.is_lead;
     } else {
@@ -119,20 +144,54 @@ export function navigateTo(path, options = {}) {
     }, 100);
 }
 
-export function navigateByTeam(user) {
-    if (isAdmin() || user.team === null){
-        navigateTo(ROUTES.HOME);
-        return;
+export function hasPermission(codename) {
+    const raw = localStorage.getItem(STORAGE_KEYS.PERMISSIONS);
+    if (!raw || !codename) return false;
+    try {
+        const perms = JSON.parse(raw);
+        return perms?.[codename]?.granted === true;
+    } catch (_) {
+        return false;
     }
-    if (user.team === 'machining') {
-        navigateTo(ROUTES.MACHINING);
-    } else if (user.team === 'maintenance') {
-        navigateTo(ROUTES.MAINTENANCE_LIST);
-    } else if (user.team === 'cutting') {
-        navigateTo(ROUTES.CNC_CUTTING);
-    } else {
-        navigateTo(ROUTES.HOME);
+}
+
+export function getRoutePermissionCodename(pathname = window.location.pathname) {
+    const rawPath = String(pathname || '').split('#')[0];
+    const [pathOnly, query = ''] = rawPath.split('?');
+    const normalizedPath = `/${String(pathOnly || '').replace(/^\/+|\/+$/g, '')}/`.replace('//', '/');
+
+    const routePermissionMap = {
+        '/cnc_cutting/': 'access_cnc_cutting',
+        '/cnc_cutting/tasks/': 'access_cnc_cutting_tasks',
+        '/department-requests/': 'access_department_requests',
+        '/department-requests/create/': 'access_department_requests_create',
+        '/machining/': 'access_machining',
+        '/machining/tasks/': 'access_machining_tasks',
+        '/maintenance/': 'access_maintenance',
+        '/maintenance/create/': 'access_maintenance_create',
+        '/maintenance/list/': 'access_maintenance_list',
+        '/warehouse/': 'access_warehouse',
+        '/warehouse/inventory-allocation/': 'access_warehouse_inventory_allocation',
+        '/warehouse/material-tracking/': 'access_warehouse_material_tracking',
+        '/warehouse/weight-reduction/': 'access_warehouse_weight_reduction'
+    };
+
+    // Legacy compatibility: maintenance tab URL behaves like list page.
+    if (normalizedPath === '/maintenance/' && query.includes('tab=fault-requests')) {
+        return routePermissionMap['/maintenance/list/'];
     }
+
+    return routePermissionMap[normalizedPath] || null;
+}
+
+export function hasRouteAccess(pathname = window.location.pathname) {
+    const codename = getRoutePermissionCodename(pathname);
+    if (!codename) return true;
+    return hasPermission(codename);
+}
+
+export function navigateByPermissions() {
+    navigateTo(ROUTES.HOME);
 }
 
 
@@ -149,6 +208,7 @@ export function shouldBeOnMainPage() {
 // Route guard utility for pages
 export function guardRoute() {
     const currentPath = window.location.pathname;
+    const normalizedPath = currentPath.endsWith('/') ? currentPath : `${currentPath}/`;
     
     // If we're already redirecting, don't do anything
     if (isRedirecting) {
@@ -157,7 +217,7 @@ export function guardRoute() {
     
     // If not logged in, should be on login page
     if (!isLoggedIn()) {
-        if (currentPath !== ROUTES.LOGIN) {
+        if (normalizedPath !== ROUTES.LOGIN) {
             navigateTo(ROUTES.LOGIN);
             return false;
         }
@@ -166,7 +226,7 @@ export function guardRoute() {
     
     // If logged in but must reset password, should be on reset password page
     if (mustResetPassword()) {
-        if (currentPath !== ROUTES.RESET_PASSWORD) {
+        if (normalizedPath !== ROUTES.RESET_PASSWORD) {
             navigateTo(ROUTES.RESET_PASSWORD);
             return false;
         }
@@ -175,8 +235,13 @@ export function guardRoute() {
     
     // If logged in and doesn't need password reset, should be on main page
     // (not on login or reset password pages)
-    if (currentPath === ROUTES.LOGIN || currentPath === ROUTES.RESET_PASSWORD) {
+    if (normalizedPath === ROUTES.LOGIN || normalizedPath === ROUTES.RESET_PASSWORD) {
         navigateTo(ROUTES.HOME);
+        return false;
+    }
+
+    if (normalizedPath !== ROUTES.UNAUTHORIZED && !hasRouteAccess(currentPath)) {
+        navigateTo(ROUTES.UNAUTHORIZED);
         return false;
     }
     
@@ -208,17 +273,19 @@ async function refreshAccessToken() {
         }
 
         const data = await response.json();
-        setTokens(data.access, refreshToken); // Keep the same refresh token
+        setTokens(data.access, refreshToken);
         return accessToken;
     } catch(e) {
-        logout();
+        clearAuthStorage();
+        navigateTo(ROUTES.LOGIN);
         throw e;
     }
 }
 
 export async function authedFetch(url, options = {}) {
     if (!accessToken) {
-       logout();
+       clearAuthStorage();
+       navigateTo(ROUTES.LOGIN);
        throw new Error('Not authenticated');
     }
 
@@ -231,9 +298,15 @@ export async function authedFetch(url, options = {}) {
     let response = await fetch(url, options);
 
     if (response.status === 401) {
-        await refreshAccessToken();
-        options.headers['Authorization'] = `Bearer ${accessToken}`;
-        response = await fetch(url, options); // Retry the request with the new token
+        try {
+            await refreshAccessToken();
+            options.headers['Authorization'] = `Bearer ${accessToken}`;
+            response = await fetch(url, options);
+        } catch (e) {
+            clearAuthStorage();
+            navigateTo(ROUTES.LOGIN);
+            throw e;
+        }
     }
 
     return response;

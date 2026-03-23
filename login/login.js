@@ -1,5 +1,5 @@
 // login/login.js
-import { login, navigateTo, ROUTES, forgotPassword, navigateByTeam } from '../authService.js';
+import { login, navigateTo, ROUTES, forgotPassword, navigateByPermissions } from '../authService.js';
 
 // Enhanced error handling and display
 function showError(message) {
@@ -140,11 +140,15 @@ async function handleLogin(username, password) {
         if (user.must_reset_password) {
             navigateTo(ROUTES.RESET_PASSWORD);
         } else {
-            navigateByTeam(user);
+            navigateByPermissions();
         }
     } catch (error) {
         console.error('Login error:', error);
-        showError('Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.');
+        if (error.message === 'No workshop access') {
+            showError('Bu portala giris yetkiniz bulunmuyor.');
+        } else {
+            showError('Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.');
+        }
         setLoadingState(false);
     }
 }

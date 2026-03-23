@@ -2,16 +2,19 @@
 // Global timer widget initialization for all pages
 
 import { TimerWidget } from './timerWidget.js';
-import { guardRoute, isAdmin } from '../authService.js';
+import { guardRoute, hasPermission } from '../authService.js';
 
 // Track if event listener has been added to prevent duplicates
 let timerUpdateListenerAdded = false;
 
 // Initialize timer widget globally
 function initializeTimerWidget() {
-    // Only initialize if user is authenticated, not admin, and is in machining/cutting/maintenance team
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (guardRoute() && !isAdmin() && user && (user.team === 'machining' || user.team === 'cutting' || user.team === 'maintenance')) {
+    const canUseTimerWidget =
+        hasPermission('access_machining') ||
+        hasPermission('access_cnc_cutting') ||
+        hasPermission('access_maintenance');
+
+    if (guardRoute() && canUseTimerWidget) {
         // Check if timer widget already exists
         if (!window.timerWidget) {
             console.log('Initializing timer widget...');

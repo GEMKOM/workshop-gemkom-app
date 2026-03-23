@@ -1,4 +1,4 @@
-import { guardRoute, isAdmin } from './authService.js';
+import { guardRoute, hasPermission } from './authService.js';
 import { initNavbar } from './components/navbar.js';
 import { MenuComponent } from './components/menu/menu.js';
 
@@ -26,8 +26,7 @@ function setupHomeMenu(user) {
             iconColor: 'primary',
             link: 'machining/',
             features: [],
-            // Only visible to machining team or admins
-            visibleTo: ['machining', 'admin']
+            requiredPermission: 'access_machining'
         },
         {
             title: 'CNC Kesim',
@@ -36,8 +35,7 @@ function setupHomeMenu(user) {
             iconColor: 'danger',
             link: 'cnc_cutting/',
             features: [],
-            // Only visible to cutting team or admins
-            visibleTo: ['cutting', 'admin', 'planning']
+            requiredPermission: 'access_cnc_cutting'
         },
         {
             title: 'Depo',
@@ -46,8 +44,7 @@ function setupHomeMenu(user) {
             iconColor: 'warning',
             link: 'warehouse/',
             features: [],
-            // Only visible to warehouse team or admins
-            visibleTo: ['warehouse', 'admin', 'planning']
+            requiredPermission: 'access_warehouse'
         },
         {
             title: 'Bakım',
@@ -69,39 +66,21 @@ function setupHomeMenu(user) {
                     link: 'maintenance/?tab=fault-requests'
                 }
             ],
-            // Visible to all users
-            visibleTo: ['all']
+            requiredPermission: 'access_maintenance'
         }
     ];
     
-    // Filter cards based on user permissions
+    // Filter cards by permission map from /users/me/permissions/
     const visibleCards = allCards.filter(card => {
-        // If user is admin, show all cards
-        if (isAdmin()) {
-            return true;
-        }
-        
-        // If card is visible to all users
-        if (card.visibleTo.includes('all')) {
-            return true;
-        }
-        
-        // If user has a team and card is visible to that team
-        if (user.team && card.visibleTo.includes(user.team)) {
-            return true;
-        }
-        
-        // Otherwise, hide the card
-        return false;
+        return hasPermission(card.requiredPermission);
     });
     
     // Create menu config with filtered cards
     const menuConfig = {
         title: 'Çalışma Alanları',
-        subtitle: 'Takımınıza göre ilgili alanı seçin',
+        subtitle: 'Yetkinize gore ilgili alani secin',
         cards: visibleCards.map(card => {
-            // Remove the visibleTo property before passing to MenuComponent
-            const { visibleTo, ...cardWithoutVisibility } = card;
+            const { requiredPermission, ...cardWithoutVisibility } = card;
             return cardWithoutVisibility;
         })
     };

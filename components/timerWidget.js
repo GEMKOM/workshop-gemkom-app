@@ -2,7 +2,7 @@
 import { formatTime } from '../generic/formatters.js';
 import { syncServerTime, getSyncedNow } from '../generic/timeService.js';
 import { backendBase } from '../base.js';
-import { authedFetch, navigateTo, ROUTES } from '../authService.js';
+import { authedFetch, navigateTo, ROUTES, hasPermission } from '../authService.js';
 import { extractResultsFromResponse } from '../generic/paginationHelper.js';
 import { fetchTimers } from '../generic/timers.js';
 import { fetchFaultTimers } from '../generic/faultTimers.js';
@@ -82,13 +82,12 @@ export class TimerWidget {
 
         // Add event listeners
         document.getElementById('timer-widget-new').addEventListener('click', () => {
-            // Navigate to the appropriate module based on user's team
-            const user = JSON.parse(localStorage.getItem('user'));
-            const userTeam = user?.team;
-            if (userTeam === 'cutting') {
+            if (hasPermission('access_cnc_cutting')) {
                 navigateTo(ROUTES.CNC_CUTTING);
-            } else {
+            } else if (hasPermission('access_machining')) {
                 navigateTo(ROUTES.MACHINING);
+            } else {
+                navigateTo(ROUTES.HOME);
             }
         });
 
