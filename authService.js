@@ -145,6 +145,9 @@ export function navigateTo(path, options = {}) {
 }
 
 export function hasPermission(codename) {
+    // Safety: superusers should never be blocked client-side.
+    if (isAdmin()) return true;
+
     const raw = localStorage.getItem(STORAGE_KEYS.PERMISSIONS);
     if (!raw || !codename) return false;
     try {
