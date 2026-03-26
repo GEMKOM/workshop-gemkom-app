@@ -47,6 +47,14 @@ function loadWarehouseContent() {
             iconColor: 'success',
             link: 'material-tracking/',
             features: []
+        },
+        {
+            title: 'Hakediş ve Boya Düşüşleri',
+            description: 'Hakediş ve boya düşüşlerini görüntüleyin ve Excel olarak dışa aktarın',
+            icon: 'fas fa-file-excel',
+            iconColor: 'success',
+            link: 'accounting-export/',
+            features: []
         }
     ];
     

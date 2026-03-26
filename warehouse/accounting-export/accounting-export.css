@@ -1,0 +1,9 @@
+.accounting-export-muted {
+    color: rgba(0, 0, 0, 0.65);
+}
+
+.accounting-export-error {
+    color: #b00020;
+    font-weight: 600;
+}
+
