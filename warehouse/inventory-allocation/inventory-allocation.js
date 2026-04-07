@@ -348,10 +348,10 @@ async function showInventoryAllocationModal(requestData) {
         // Add event listeners
         if (isWarehouseRequest) {
             // Simple close handler for read-only modal
-            setupReadOnlyModalEventListeners();
+            setupReadOnlyModalEventListeners(request, isWarehouseRequest);
         } else {
             // Full event listeners for editable modal
-            setupModalEventListeners(request);
+            setupModalEventListeners(request, isWarehouseRequest);
         }
         
     } catch (error) {
@@ -419,6 +419,11 @@ function createInventoryAllocationModalHTML(request, isWarehouseRequest = false)
                             <h6 class="section-title mb-3">
                                 <i class="fas fa-boxes me-2"></i>${sectionTitle}
                             </h6>
+                            <div class="d-flex justify-content-end align-items-center mb-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="export-items-btn">
+                                    <i class="fas fa-file-export me-2"></i>Dışa Aktar (CSV)
+                                </button>
+                            </div>
                             ${!isWarehouseRequest ? `
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
@@ -664,10 +669,117 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
     }
 }
 
+// ============================================================================
+// EXPORT (CSV)
+// ============================================================================
+
+function exportItemsListToCSV(request, isWarehouseRequest = false) {
+    try {
+        const items = request?.items || [];
+        if (items.length === 0) {
+            alert('Dışa aktarılacak ürün bulunmuyor.');
+            return;
+        }
+
+        const delimiter = ';'; // TR locale friendly (comma used as decimal separator)
+        const header = isWarehouseRequest
+            ? [
+                '#',
+                'Ürün',
+                'Kod',
+                'Açıklama',
+                'İş No',
+                'Talep Edilen Miktar',
+                'Envanterden Alınan'
+            ]
+            : [
+                '#',
+                'Ürün',
+                'Kod',
+                'Açıklama',
+                'İş No',
+                'Talep Edilen Miktar',
+                'Birim',
+                'Bulunan Miktar'
+            ];
+
+        const escapeCell = (value) => {
+            const s = value === null || value === undefined ? '' : String(value);
+            const needsQuotes = s.includes('"') || s.includes('\n') || s.includes('\r') || s.includes(delimiter);
+            const escaped = s.replace(/"/g, '""');
+            return needsQuotes ? `"${escaped}"` : escaped;
+        };
+
+        const getFoundQuantityForItem = (item) => {
+            const input = document.querySelector(`.quantity-found-input[data-item-id="${item.id}"]`);
+            const raw = input?.value?.trim();
+            if (raw === '' || raw === undefined) return '';
+            const n = parseFloat(raw);
+            if (Number.isNaN(n)) return raw;
+            return formatDecimalTurkish(n, 2);
+        };
+
+        const rows = items.map((item, index) => {
+            const name = item.item_name || item.item_display || '-';
+            const code = item.item_code || '';
+            const desc = item.item_description || '';
+            const jobNo = (item.job_no && item.job_no !== '1000') ? item.job_no : '';
+            const requested = formatDecimalTurkish(item.quantity || 0, 2);
+
+            if (isWarehouseRequest) {
+                const fromInventory = formatDecimalTurkish(item.quantity_from_inventory || 0, 2);
+                return [
+                    index + 1,
+                    name,
+                    code,
+                    desc,
+                    jobNo,
+                    requested,
+                    fromInventory
+                ].map(escapeCell).join(delimiter);
+            }
+
+            const unit = item.item_unit || item.unit || 'Adet';
+            const found = getFoundQuantityForItem(item);
+            return [
+                index + 1,
+                name,
+                code,
+                desc,
+                jobNo,
+                requested,
+                unit,
+                found
+            ].map(escapeCell).join(delimiter);
+        });
+
+        const csv = [header.map(escapeCell).join(delimiter), ...rows].join('\r\n');
+        const bom = '\uFEFF'; // helps Excel open UTF-8 correctly
+        const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+
+        const safeRequestNo = (request.request_number || `talep-${request.id || ''}`).toString().replace(/[^\w\-]+/g, '_');
+        const now = new Date();
+        const dateStamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const filename = `${safeRequestNo}-urunler-${dateStamp}.csv`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Error exporting items list to CSV:', error);
+        alert('Dışa aktarma sırasında bir hata oluştu: ' + error.message);
+    }
+}
+
 /**
  * Setup event listeners for read-only modal
  */
-function setupReadOnlyModalEventListeners() {
+function setupReadOnlyModalEventListeners(request, isWarehouseRequest = true) {
     // Close button handler
     const closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
     closeButtons.forEach(btn => {
@@ -675,6 +787,12 @@ function setupReadOnlyModalEventListeners() {
             closeModal();
         });
     });
+
+    // Export button handler
+    const exportBtn = document.getElementById('export-items-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => exportItemsListToCSV(request, isWarehouseRequest));
+    }
     
     // Escape key to close modal
     document.addEventListener('keydown', handleEscapeKey);
@@ -683,7 +801,7 @@ function setupReadOnlyModalEventListeners() {
 /**
  * Setup event listeners for modal
  */
-function setupModalEventListeners(request) {
+function setupModalEventListeners(request, isWarehouseRequest = false) {
     // Close button handler
     const closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
     closeButtons.forEach(btn => {
@@ -691,6 +809,12 @@ function setupModalEventListeners(request) {
             closeModal();
         });
     });
+
+    // Export button handler
+    const exportBtn = document.getElementById('export-items-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => exportItemsListToCSV(request, isWarehouseRequest));
+    }
     
     // Submit button handler
     const submitBtn = document.getElementById('submit-allocation-btn');
