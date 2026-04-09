@@ -710,6 +710,32 @@ function exportItemsListToCSV(request, isWarehouseRequest = false) {
             return needsQuotes ? `"${escaped}"` : escaped;
         };
 
+        // Excel (TR) can auto-convert values like "12.5" to a date (12.May).
+        // Ensure numeric fields are serialized with Turkish separators (comma decimal).
+        const formatNumericForCsvTR = (value, decimals = 2) => {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'number' && Number.isFinite(value)) {
+                return formatDecimalTurkish(value, decimals);
+            }
+            if (typeof value === 'string') {
+                const raw = value.trim();
+                if (raw === '') return '';
+
+                // Remove spaces and try to parse both "12,5" and "12.5" styles.
+                const normalized = raw.replace(/\s+/g, '').replace(',', '.');
+                const n = Number(normalized);
+                if (Number.isFinite(n)) return formatDecimalTurkish(n, decimals);
+
+                // As a last resort, try to avoid date coercion by normalizing dot to comma
+                // for simple decimal-like strings (e.g. "12.5" -> "12,5").
+                if (/^\d+(\.\d+)+$/.test(raw)) return raw.replace(/\./g, ',');
+                return raw;
+            }
+            const n = Number(value);
+            if (Number.isFinite(n)) return formatDecimalTurkish(n, decimals);
+            return String(value);
+        };
+
         const getFoundQuantityForItem = (item) => {
             const input = document.querySelector(`.quantity-found-input[data-item-id="${item.id}"]`);
             const raw = input?.value?.trim();
@@ -724,10 +750,10 @@ function exportItemsListToCSV(request, isWarehouseRequest = false) {
             const code = item.item_code || '';
             const desc = item.item_description || '';
             const jobNo = (item.job_no && item.job_no !== '1000') ? item.job_no : '';
-            const requested = formatDecimalTurkish(item.quantity || 0, 2);
+            const requested = formatNumericForCsvTR(item.quantity ?? 0, 2);
 
             if (isWarehouseRequest) {
-                const fromInventory = formatDecimalTurkish(item.quantity_from_inventory || 0, 2);
+                const fromInventory = formatNumericForCsvTR(item.quantity_from_inventory ?? 0, 2);
                 return [
                     index + 1,
                     name,
