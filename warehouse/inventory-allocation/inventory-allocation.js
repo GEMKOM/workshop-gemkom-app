@@ -3,7 +3,15 @@ import { initNavbar } from '../../components/navbar.js';
 import { HeaderComponent } from '../../components/header/header.js';
 import { ResultsTable } from '../../components/resultsTable/resultsTable.js';
 import { TableComponent } from '../../components/table/table.js';
-import { getPlanningRequests, getPlanningRequest, updateInventoryQuantities, completeInventoryControl, getWarehouseRequests } from '../../generic/warehouse.js';
+import {
+    getPlanningRequests,
+    getPlanningRequest,
+    updateInventoryQuantities,
+    completeInventoryControl,
+    getWarehouseRequests,
+    createLinearCuttingStockBars,
+    patchLinearCuttingSession
+} from '../../generic/warehouse.js';
 import { formatDecimalTurkish } from '../../generic/formatters.js';
 import { ConfirmationModal } from '../../components/confirmation-modal/confirmation-modal.js';
 
@@ -13,6 +21,7 @@ import { ConfirmationModal } from '../../components/confirmation-modal/confirmat
 
 // Global confirmation modal instance
 let confirmationModal;
+const stockEntryIncompleteSessionKeys = new Set();
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize navbar
@@ -326,7 +335,22 @@ async function showInventoryAllocationModal(requestData) {
         
         // Fetch full request details from the API
         console.log('Fetching full request details for ID:', requestSummary.id);
-        const request = await getPlanningRequest(requestSummary.id);
+        const requestDetails = await getPlanningRequest(requestSummary.id);
+        const request = {
+            ...requestDetails,
+            is_from_cutting_session: requestDetails?.is_from_cutting_session ?? requestSummary?.is_from_cutting_session ?? false,
+            cutting_session_key: requestDetails?.cutting_session_key || requestSummary?.cutting_session_key || null
+        };
+
+        if (Array.isArray(request.items) && request.is_from_cutting_session) {
+            request.items = request.items.map(item => ({
+                ...item,
+                is_from_cutting_session: typeof item?.is_from_cutting_session === 'boolean'
+                    ? item.is_from_cutting_session
+                    : true,
+                cutting_session_key: item?.cutting_session_key || request.cutting_session_key || null
+            }));
+        }
         
         console.log('Received full request data:', request);
         
@@ -395,9 +419,10 @@ function showLoadingModal() {
  * Creates the HTML for inventory allocation modal
  */
 function createInventoryAllocationModalHTML(request, isWarehouseRequest = false) {
+    const isCuttingRequest = isRequestFromCuttingSession(request);
     const modalTitle = isWarehouseRequest 
         ? `${request.request_number || `Talep #${request.id}`} - Envanter Durumu`
-        : `${request.request_number || `Talep #${request.id}`} - Envanter Tahsisi`;
+        : `${request.request_number || `Talep #${request.id}`} - ${isCuttingRequest ? 'Kesim Stok Girisi' : 'Envanter Tahsisi'}`;
     
     const sectionTitle = isWarehouseRequest
         ? 'Ürünler ve Envanter Miktarları'
@@ -425,6 +450,12 @@ function createInventoryAllocationModalHTML(request, isWarehouseRequest = false)
                                 </button>
                             </div>
                             ${!isWarehouseRequest ? `
+                            ${isCuttingRequest ? `
+                            <div class="alert alert-info">
+                                <i class="fas fa-ruler-combined me-2"></i>
+                                <strong>Kesim Stok Girişi:</strong> Önce satırları girin ve <strong>Stok Satırlarını Kaydet</strong> butonuna basın. Tüm giriş bittiğinde <strong>Stok Girişini Tamamla</strong> ile oturumu kapatın.
+                            </div>
+                            ` : `
                             <div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 <strong>Önemli:</strong> Her ürün için envanterde bulunan miktarı girmeniz zorunludur. Hiç bulunamayanlar için "0" yazın.
@@ -438,15 +469,25 @@ function createInventoryAllocationModalHTML(request, isWarehouseRequest = false)
                                     <div id="progress-bar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
                                 </div>
                             </div>
+                            `}
                             ` : ''}
                             <div id="items-table-container"></div>
                         </div>
                     </div>
                     ${!isWarehouseRequest ? `
                     <div class="modal-footer">
+                        ${isCuttingRequest ? `
+                        <button type="button" class="btn btn-outline-primary" id="save-cutting-stock-btn">
+                            <i class="fas fa-save me-2"></i>Stok Satırlarını Kaydet
+                        </button>
+                        <button type="button" class="btn btn-success" id="complete-cutting-entry-btn" disabled>
+                            <i class="fas fa-check-circle me-2"></i>Stok Girişini Tamamla
+                        </button>
+                        ` : `
                         <button type="button" class="btn btn-primary" id="submit-allocation-btn">
                             <i class="fas fa-check me-2"></i>Envanter Miktarlarını Güncelle
                         </button>
+                        `}
                     </div>
                     ` : `
                     <div class="modal-footer">
@@ -457,6 +498,216 @@ function createInventoryAllocationModalHTML(request, isWarehouseRequest = false)
                     `}
                 </div>
             </div>
+        </div>
+    `;
+}
+
+function isFromCuttingSession(item, request = null) {
+    if (typeof item?.is_from_cutting_session === 'boolean') {
+        return item.is_from_cutting_session;
+    }
+    return Boolean(request?.is_from_cutting_session);
+}
+
+function isRequestFromCuttingSession(request) {
+    if (typeof request?.is_from_cutting_session === 'boolean') {
+        return request.is_from_cutting_session;
+    }
+    return (request?.items || []).some(item => Boolean(item?.is_from_cutting_session));
+}
+
+function getCuttingSessionKey(item, request) {
+    return item?.cutting_session_key || request?.cutting_session_key || null;
+}
+
+function extractIdFromValue(value) {
+    if (typeof value === 'number' || typeof value === 'string') return value;
+    if (!value || typeof value !== 'object') return null;
+
+    if (typeof value.id === 'number' || typeof value.id === 'string') return value.id;
+    if (typeof value.pk === 'number' || typeof value.pk === 'string') return value.pk;
+    if (typeof value.item_id === 'number' || typeof value.item_id === 'string') return value.item_id;
+    return null;
+}
+
+function getStockItemId(item) {
+    const candidates = [
+        item?.item,
+        item?.item_id,
+        item?.item_pk,
+        item?.material_item,
+        item?.material_item_id,
+        item?.stock_item,
+        item?.stock_item_id,
+        item?.inventory_item,
+        item?.inventory_item_id,
+        item?.product,
+        item?.product_id
+    ];
+
+    for (const candidate of candidates) {
+        const resolved = extractIdFromValue(candidate);
+        if (resolved !== null && resolved !== undefined) {
+            return resolved;
+        }
+    }
+
+    return null;
+}
+
+function normalizeComparableId(value) {
+    if (value === null || value === undefined) return null;
+    if (typeof value === 'object') {
+        if (value.id !== undefined && value.id !== null) return String(value.id);
+        return null;
+    }
+    return String(value);
+}
+
+function isStockBarLike(value) {
+    if (!value || typeof value !== 'object') return false;
+    const hasLength = value.length_mm !== undefined && value.length_mm !== null;
+    const hasQuantity = value.quantity !== undefined && value.quantity !== null;
+    return hasLength && hasQuantity;
+}
+
+function findStockBarsDeep(node, depth = 0, maxDepth = 5) {
+    if (depth > maxDepth || node === null || node === undefined) return [];
+
+    if (Array.isArray(node)) {
+        if (node.length > 0 && node.every(isStockBarLike)) {
+            return node;
+        }
+
+        for (const child of node) {
+            const found = findStockBarsDeep(child, depth + 1, maxDepth);
+            if (found.length > 0) return found;
+        }
+        return [];
+    }
+
+    if (typeof node !== 'object') return [];
+
+    for (const value of Object.values(node)) {
+        const found = findStockBarsDeep(value, depth + 1, maxDepth);
+        if (found.length > 0) return found;
+    }
+
+    return [];
+}
+
+function getStockBarsFromRequest(request, item) {
+    if (Array.isArray(request?.stock_bars)) return request.stock_bars;
+    if (Array.isArray(request?.stockBars)) return request.stockBars;
+    if (Array.isArray(request?.linear_cutting?.stock_bars)) return request.linear_cutting.stock_bars;
+    if (Array.isArray(request?.cutting_session?.stock_bars)) return request.cutting_session.stock_bars;
+    if (Array.isArray(request?.cutting?.stock_bars)) return request.cutting.stock_bars;
+    if (Array.isArray(request?.session?.stock_bars)) return request.session.stock_bars;
+    if (Array.isArray(item?.stock_bars)) return item.stock_bars;
+    if (request?.stock_bars && Array.isArray(request.stock_bars.results)) return request.stock_bars.results;
+
+    // Final fallback: discover any stock-bar-like array nested in detail response.
+    return findStockBarsDeep(request);
+}
+
+function getExistingStockBarsForItem(item, request) {
+    const stockBars = getStockBarsFromRequest(request, item);
+    const stockItemId = getStockItemId(item);
+    const normalizedStockItemId = normalizeComparableId(stockItemId);
+    if (!normalizedStockItemId) {
+        const cuttingItems = (request?.items || []).filter(row => isFromCuttingSession(row, request));
+        if (cuttingItems.length === 1) {
+            return stockBars;
+        }
+        return [];
+    }
+
+    // Match strictly by "item" as requested.
+    const matchedBars = stockBars.filter(stockBar =>
+        normalizeComparableId(stockBar?.item) === normalizedStockItemId
+    );
+    if (matchedBars.length > 0) return matchedBars;
+
+    const cuttingItems = (request?.items || []).filter(row => isFromCuttingSession(row, request));
+    if (cuttingItems.length === 1) {
+        return stockBars;
+    }
+
+    return [];
+}
+
+function createCuttingStockRowHTML(itemId, rowIndex, values = {}) {
+    const lengthValue = values.length_mm ?? '';
+    const quantityValue = values.quantity ?? '';
+
+    return `
+        <div class="cutting-stock-row" data-item-id="${itemId}" data-row-index="${rowIndex}">
+            <div class="cutting-stock-field">
+                <label class="mobile-label">Uzunluk (mm)</label>
+                <input type="number"
+                       class="form-control cutting-length-input"
+                       data-item-id="${itemId}"
+                       data-row-index="${rowIndex}"
+                       step="1"
+                       min="1"
+                       inputmode="numeric"
+                       placeholder="Uzunluk (mm)"
+                       aria-label="Uzunluk (mm)"
+                       value="${lengthValue}">
+            </div>
+            <div class="cutting-stock-field">
+                <label class="mobile-label">Adet</label>
+                <input type="number"
+                       class="form-control cutting-quantity-input"
+                       data-item-id="${itemId}"
+                       data-row-index="${rowIndex}"
+                       step="1"
+                       min="1"
+                       inputmode="numeric"
+                       placeholder="Adet"
+                       aria-label="Adet"
+                       value="${quantityValue}">
+            </div>
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm cutting-stock-remove-btn"
+                    data-item-id="${itemId}"
+                    title="Satırı sil">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+}
+
+function createCuttingStockInputHTML(item, request) {
+    const sessionKey = getCuttingSessionKey(item, request);
+    const existingStockBars = getExistingStockBarsForItem(item, request);
+    const sessionInfo = sessionKey
+        ? `<small class="text-primary d-block mt-2"><i class="fas fa-ruler-combined me-1"></i>Kesim Oturumu: ${sessionKey}</small>`
+        : `<small class="text-danger d-block mt-2"><i class="fas fa-exclamation-circle me-1"></i>Kesim oturumu bulunamadı</small>`;
+    const rowsHTML = existingStockBars.length > 0
+        ? existingStockBars.map((stockBar, index) => createCuttingStockRowHTML(item.id, index, {
+            length_mm: stockBar.length_mm,
+            quantity: stockBar.quantity
+        })).join('')
+        : createCuttingStockRowHTML(item.id, 0);
+    const existingInfo = existingStockBars.length > 0
+        ? `<small class="text-success d-block mt-1"><i class="fas fa-check-circle me-1"></i>${existingStockBars.length} kayıtlı stok satırı yüklendi.</small>`
+        : '';
+
+    return `
+        <div class="cutting-stock-editor" data-item-id="${item.id}">
+            <div class="cutting-stock-header">
+                <span class="desktop-label">Kesim Stok Girisi</span>
+                <small class="text-muted">Barları satır satır girin: Uzunluk (mm) + Adet.</small>
+                ${sessionInfo}
+                ${existingInfo}
+            </div>
+            <div class="cutting-stock-rows" data-item-id="${item.id}">
+                ${rowsHTML}
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm cutting-stock-add-btn" data-item-id="${item.id}">
+                <i class="fas fa-plus me-1"></i>Satır Ekle
+            </button>
         </div>
     `;
 }
@@ -537,8 +788,9 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
         container.innerHTML = itemsHTML;
     } else {
         // Editable view for pending inventory requests
+        const hasCuttingItems = items.some(item => isFromCuttingSession(item, request));
         const itemsHTML = `
-            <div class="items-container">
+            <div class="items-container ${hasCuttingItems ? 'items-container-cutting' : ''}">
                 <!-- Header row for desktop table view -->
                 <div class="item-row header-row">
                     <div class="item-col item-number">
@@ -554,7 +806,7 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
                         <span class="desktop-label">Birim</span>
                     </div>
                     <div class="item-col item-input">
-                        <span class="desktop-label">Bulunan Miktar</span>
+                        <span class="desktop-label">${hasCuttingItems ? 'Stok Girisi' : 'Bulunan Miktar'}</span>
                     </div>
                 </div>
                 ${items.map((item, index) => `
@@ -583,21 +835,28 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
                             <span class="item-value">${item.item_unit || item.unit || 'Adet'}</span>
                         </div>
                         <div class="item-col item-input">
-                            <label for="qty-${item.id}" class="mobile-label">
-                                <i class="fas fa-box me-2"></i>Bulunan Miktar
-                            </label>
-                            <span class="desktop-label">Bulunan Miktar</span>
-                            <input type="number" 
-                                   id="qty-${item.id}"
-                                   class="form-control quantity-found-input" 
-                                   data-item-id="${item.id}"
-                                   data-requested-quantity="${item.quantity || 0}"
-                                   step="0.01"
-                                   min="0"
-                                   max="${item.quantity || 0}"
-                                   placeholder="Miktar girin"
-                                   inputmode="decimal"
-                                   required>
+                            ${isFromCuttingSession(item, request) ? `
+                                <label class="mobile-label">
+                                    <i class="fas fa-ruler-combined me-2"></i>Bar Stok Girisi
+                                </label>
+                                ${createCuttingStockInputHTML(item, request)}
+                            ` : `
+                                <label for="qty-${item.id}" class="mobile-label">
+                                    <i class="fas fa-box me-2"></i>Bulunan Miktar
+                                </label>
+                                <span class="desktop-label">Bulunan Miktar</span>
+                                <input type="number" 
+                                       id="qty-${item.id}"
+                                       class="form-control quantity-found-input" 
+                                       data-item-id="${item.id}"
+                                       data-requested-quantity="${item.quantity || 0}"
+                                       step="0.01"
+                                       min="0"
+                                       max="${item.quantity || 0}"
+                                       placeholder="Miktar girin"
+                                       inputmode="decimal"
+                                       required>
+                            `}
                         </div>
                     </div>
                 `).join('')}
@@ -606,66 +865,321 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
         
         container.innerHTML = itemsHTML;
         
-        // Add event listeners to remove validation errors and update progress
         setTimeout(() => {
-            const inputs = document.querySelectorAll('.quantity-found-input');
-            const totalItems = inputs.length;
-            
-            // Show progress indicator if there are items
-            if (totalItems > 0) {
-                const progressIndicator = document.getElementById('progress-indicator');
-                if (progressIndicator) {
-                    progressIndicator.style.display = 'block';
-                }
-            }
-            
-            // Function to update progress
-            const updateProgress = () => {
-                let filledCount = 0;
-                inputs.forEach(input => {
-                    if (input.value && input.value.trim() !== '') {
-                        filledCount++;
-                    }
-                });
-                
-                const progressPercent = (filledCount / totalItems) * 100;
-                const progressBar = document.getElementById('progress-bar');
-                const progressText = document.getElementById('progress-text');
-                
-                if (progressBar) {
-                    progressBar.style.width = progressPercent + '%';
-                    // Change color based on progress
-                    if (progressPercent === 100) {
-                        progressBar.className = 'progress-bar bg-success';
-                    } else if (progressPercent >= 50) {
-                        progressBar.className = 'progress-bar bg-info';
-                    } else {
-                        progressBar.className = 'progress-bar bg-warning';
-                    }
-                }
-                
-                if (progressText) {
-                    progressText.textContent = `${filledCount} / ${totalItems}`;
-                }
-            };
-            
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    this.classList.remove('is-invalid');
-                    // Remove error from item row
-                    const itemRow = this.closest('.item-row');
-                    if (itemRow) {
-                        itemRow.classList.remove('has-error');
-                    }
-                    
-                    // Update progress
-                    updateProgress();
-                });
-            });
-            
-            // Initial progress update
-            updateProgress();
+            initializeEditableInputsBehavior(request);
         }, 100);
+    }
+}
+
+function initializeEditableInputsBehavior(request) {
+    const quantityInputs = document.querySelectorAll('.quantity-found-input');
+    const progressIndicator = document.getElementById('progress-indicator');
+    const totalItems = quantityInputs.length;
+
+    if (progressIndicator) {
+        progressIndicator.style.display = totalItems > 0 ? 'block' : 'none';
+    }
+
+    const updateProgress = () => {
+        if (totalItems === 0) return;
+
+        let filledCount = 0;
+        quantityInputs.forEach(input => {
+            if (input.value && input.value.trim() !== '') {
+                filledCount++;
+            }
+        });
+
+        const progressPercent = (filledCount / totalItems) * 100;
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        if (progressBar) {
+            progressBar.style.width = progressPercent + '%';
+            if (progressPercent === 100) {
+                progressBar.className = 'progress-bar bg-success';
+            } else if (progressPercent >= 50) {
+                progressBar.className = 'progress-bar bg-info';
+            } else {
+                progressBar.className = 'progress-bar bg-warning';
+            }
+        }
+
+        if (progressText) {
+            progressText.textContent = `${filledCount} / ${totalItems}`;
+        }
+    };
+
+    quantityInputs.forEach(input => {
+        input.addEventListener('input', function () {
+            this.classList.remove('is-invalid');
+            const itemRow = this.closest('.item-row');
+            if (itemRow) {
+                itemRow.classList.remove('has-error');
+            }
+            updateProgress();
+        });
+    });
+
+    const addButtons = document.querySelectorAll('.cutting-stock-add-btn');
+    addButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            const itemId = button.getAttribute('data-item-id');
+            const rowsContainer = document.querySelector(`.cutting-stock-rows[data-item-id="${itemId}"]`);
+            if (!rowsContainer) return;
+
+            const rowCount = rowsContainer.querySelectorAll('.cutting-stock-row').length;
+            rowsContainer.insertAdjacentHTML('beforeend', createCuttingStockRowHTML(itemId, rowCount));
+            setCuttingCompleteButtonEnabled(false);
+            await setSessionEntryIncompleteForItem(request, itemId);
+        });
+    });
+
+    document.querySelectorAll('.cutting-stock-editor').forEach(editor => {
+        editor.addEventListener('click', async (event) => {
+            const removeBtn = event.target.closest('.cutting-stock-remove-btn');
+            if (!removeBtn) return;
+
+            const itemId = removeBtn.getAttribute('data-item-id');
+            const row = removeBtn.closest('.cutting-stock-row');
+            const rowsContainer = row?.closest('.cutting-stock-rows');
+            if (!row || !rowsContainer) return;
+
+            row.remove();
+
+            // Keep one empty row available for fast entry.
+            if (rowsContainer.querySelectorAll('.cutting-stock-row').length === 0) {
+                rowsContainer.insertAdjacentHTML('beforeend', createCuttingStockRowHTML(itemId, 0));
+            }
+
+            setCuttingCompleteButtonEnabled(false);
+            await setSessionEntryIncompleteForItem(request, itemId);
+        });
+
+        editor.addEventListener('input', (event) => {
+            const isCuttingInput = event.target.classList.contains('cutting-length-input') ||
+                event.target.classList.contains('cutting-quantity-input');
+
+            if (!isCuttingInput) return;
+
+            event.target.classList.remove('is-invalid');
+            const itemRow = event.target.closest('.item-row');
+            if (itemRow) {
+                itemRow.classList.remove('has-error');
+            }
+
+            const itemId = event.target.getAttribute('data-item-id');
+            setCuttingCompleteButtonEnabled(false);
+            if (itemId) {
+                setSessionEntryIncompleteForItem(request, itemId);
+            }
+        });
+    });
+
+    if (isRequestFromCuttingSession(request)) {
+        setCuttingCompleteButtonEnabled(false);
+    }
+
+    updateProgress();
+}
+
+function setCuttingCompleteButtonEnabled(enabled) {
+    const completeButton = document.getElementById('complete-cutting-entry-btn');
+    if (!completeButton) return;
+    completeButton.disabled = !enabled;
+}
+
+async function setSessionEntryIncompleteForItem(request, itemId) {
+    const item = (request.items || []).find(x => String(x.id) === String(itemId));
+    if (!item || !isFromCuttingSession(item, request)) return;
+
+    const sessionKey = getCuttingSessionKey(item, request);
+    if (!sessionKey) return;
+
+    if (stockEntryIncompleteSessionKeys.has(sessionKey)) {
+        return;
+    }
+
+    try {
+        await patchLinearCuttingSession(sessionKey, { stock_entry_complete: false });
+        stockEntryIncompleteSessionKeys.add(sessionKey);
+    } catch (error) {
+        console.warn(`Failed to reset stock entry completion for session ${sessionKey}:`, error);
+    }
+}
+
+function parseIntegerInput(value) {
+    const parsed = parseInt(String(value || '').trim(), 10);
+    return Number.isInteger(parsed) ? parsed : null;
+}
+
+function collectCuttingStockBars(request) {
+    const stockBars = [];
+    const invalidInputs = [];
+    const missingSessionItems = [];
+    const missingEntryItems = [];
+    const missingItemFieldItems = [];
+    const itemsWithEntries = new Set();
+
+    (request.items || []).forEach(item => {
+        if (!isFromCuttingSession(item, request)) return;
+
+        const sessionKey = getCuttingSessionKey(item, request);
+        if (!sessionKey) {
+            missingSessionItems.push(item);
+            return;
+        }
+
+        const stockItemId = getStockItemId(item);
+        if (!stockItemId) {
+            missingItemFieldItems.push(item);
+            return;
+        }
+
+        const rows = document.querySelectorAll(`.cutting-stock-row[data-item-id="${item.id}"]`);
+        rows.forEach(row => {
+            const lengthInput = row.querySelector('.cutting-length-input');
+            const quantityInput = row.querySelector('.cutting-quantity-input');
+            if (!lengthInput || !quantityInput) return;
+
+            const lengthValue = lengthInput.value.trim();
+            const quantityValue = quantityInput.value.trim();
+            const isEmptyRow = lengthValue === '' && quantityValue === '';
+            if (isEmptyRow) return;
+
+            const lengthMm = parseIntegerInput(lengthValue);
+            const quantity = parseIntegerInput(quantityValue);
+            const isValid = lengthMm && lengthMm > 0 && quantity && quantity > 0;
+
+            if (!isValid) {
+                invalidInputs.push(lengthInput, quantityInput);
+                return;
+            }
+
+            stockBars.push({
+                session: sessionKey,
+                item: stockItemId,
+                length_mm: lengthMm,
+                quantity: quantity
+            });
+            itemsWithEntries.add(String(item.id));
+        });
+
+        if (!itemsWithEntries.has(String(item.id))) {
+            missingEntryItems.push(item);
+        }
+    });
+
+    return { stockBars, invalidInputs, missingSessionItems, missingEntryItems, missingItemFieldItems };
+}
+
+function getCuttingSessionKeys(request) {
+    const keys = new Set();
+    (request.items || []).forEach(item => {
+        if (!isFromCuttingSession(item, request)) return;
+        const sessionKey = getCuttingSessionKey(item, request);
+        if (sessionKey) keys.add(sessionKey);
+    });
+    if (keys.size === 0 && request?.cutting_session_key) {
+        keys.add(request.cutting_session_key);
+    }
+    return Array.from(keys);
+}
+
+async function handleCuttingStockSave(request) {
+    const saveButton = document.getElementById('save-cutting-stock-btn');
+    const originalButtonText = saveButton?.innerHTML;
+
+    try {
+        const { stockBars, invalidInputs, missingSessionItems, missingItemFieldItems } = collectCuttingStockBars(request);
+
+        if (invalidInputs.length > 0) {
+            invalidInputs.forEach((input, index) => {
+                input.classList.add('is-invalid');
+                const itemRow = input.closest('.item-row');
+                if (itemRow) itemRow.classList.add('has-error');
+                if (index === 0) {
+                    input.focus();
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+            return;
+        }
+
+        if (missingSessionItems.length > 0) {
+            alert('Bazı kesim ürünlerinde oturum anahtarı yok. Kayıt yapılamadı.');
+            return;
+        }
+
+        if (missingItemFieldItems.length > 0) {
+            alert('Bazı kesim ürünlerinde item alanı eksik. Kayıt yapılamadı.');
+            return;
+        }
+
+        if (saveButton) {
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Kaydediliyor...';
+        }
+
+        const sessionKeys = getCuttingSessionKeys(request);
+        if (sessionKeys.length > 0) {
+            await Promise.all(sessionKeys.map(sessionKey =>
+                patchLinearCuttingSession(sessionKey, { stock_entry_complete: false })
+            ));
+            sessionKeys.forEach(sessionKey => stockEntryIncompleteSessionKeys.add(sessionKey));
+        }
+
+        await createLinearCuttingStockBars(stockBars, sessionKeys[0] || null);
+        setCuttingCompleteButtonEnabled(true);
+        alert(
+            stockBars.length === 0
+                ? 'Boş stok satırı listesi kaydedildi.'
+                : `${stockBars.length} stok satırı kaydedildi.`
+        );
+    } catch (error) {
+        console.error('Error saving cutting stock bars:', error);
+        alert('Stok satırları kaydedilirken hata oluştu: ' + error.message);
+    } finally {
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = originalButtonText || '<i class="fas fa-save me-2"></i>Stok Satırlarını Kaydet';
+        }
+    }
+}
+
+async function handleCuttingSessionComplete(request) {
+    const completeButton = document.getElementById('complete-cutting-entry-btn');
+    const originalButtonText = completeButton?.innerHTML;
+
+    try {
+        const sessionKeys = getCuttingSessionKeys(request);
+        if (sessionKeys.length === 0) {
+            alert('Tamamlanacak kesim oturumu bulunamadı.');
+            return;
+        }
+
+        if (completeButton) {
+            completeButton.disabled = true;
+            completeButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Tamamlanıyor...';
+        }
+
+        await Promise.all(sessionKeys.map(sessionKey =>
+            patchLinearCuttingSession(sessionKey, { stock_entry_complete: true })
+        ));
+        sessionKeys.forEach(sessionKey => stockEntryIncompleteSessionKeys.delete(sessionKey));
+
+        alert('Kesim stok girişi tamamlandı.');
+        closeModal();
+        loadPendingInventoryRequests();
+        loadWarehouseRequests();
+    } catch (error) {
+        console.error('Error completing cutting session stock entry:', error);
+        alert('Stok girişi tamamlanırken hata oluştu: ' + error.message);
+    } finally {
+        if (completeButton) {
+            completeButton.disabled = false;
+            completeButton.innerHTML = originalButtonText || '<i class="fas fa-check-circle me-2"></i>Stok Girişini Tamamla';
+        }
     }
 }
 
@@ -842,12 +1356,29 @@ function setupModalEventListeners(request, isWarehouseRequest = false) {
         exportBtn.addEventListener('click', () => exportItemsListToCSV(request, isWarehouseRequest));
     }
     
-    // Submit button handler
-    const submitBtn = document.getElementById('submit-allocation-btn');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', async () => {
-            await handleAllocationSubmit(request);
-        });
+    const isCuttingRequest = isRequestFromCuttingSession(request);
+    if (isCuttingRequest) {
+        const saveCuttingBtn = document.getElementById('save-cutting-stock-btn');
+        if (saveCuttingBtn) {
+            saveCuttingBtn.addEventListener('click', async () => {
+                await handleCuttingStockSave(request);
+            });
+        }
+
+        const completeCuttingBtn = document.getElementById('complete-cutting-entry-btn');
+        if (completeCuttingBtn) {
+            completeCuttingBtn.addEventListener('click', async () => {
+                await handleCuttingSessionComplete(request);
+            });
+        }
+    } else {
+        // Submit button handler
+        const submitBtn = document.getElementById('submit-allocation-btn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', async () => {
+                await handleAllocationSubmit(request);
+            });
+        }
     }
     
     // Escape key to close modal
@@ -862,9 +1393,9 @@ async function handleAllocationSubmit(request) {
         console.log('handleAllocationSubmit called');
         console.log('confirmationModal:', confirmationModal);
         
-        // Collect quantity found data from inputs
+        // Collect quantity found data for normal items
         const quantityInputs = document.querySelectorAll('.quantity-found-input');
-        const items = [];
+        const inventoryItems = [];
         let totalWithInventory = 0;
         let totalWithoutInventory = 0;
         let emptyFields = [];
@@ -896,16 +1427,20 @@ async function handleAllocationSubmit(request) {
             }
             
             // Include all items (even with 0 quantity)
-            items.push({
+            inventoryItems.push({
                 planning_request_item_id: parseInt(itemId),
                 quantity_found: quantityFound.toFixed(2)
             });
         });
+
+        const { stockBars, invalidInputs, missingSessionItems, missingEntryItems, missingItemFieldItems } = collectCuttingStockBars(request);
+        const totalCuttingItems = (request.items || []).filter(item => isFromCuttingSession(item, request)).length;
         
-        // Check if there are empty fields
-        if (emptyFields.length > 0) {
+        // Check if there are empty quantity fields (non-cutting items)
+        if (emptyFields.length > 0 || invalidInputs.length > 0) {
             // Highlight empty fields with visual feedback only
-            emptyFields.forEach((input, index) => {
+            const allInvalidInputs = [...emptyFields, ...invalidInputs];
+            allInvalidInputs.forEach((input, index) => {
                 input.classList.add('is-invalid');
                 
                 // Mark parent item row as having error
@@ -924,9 +1459,38 @@ async function handleAllocationSubmit(request) {
             
             return;
         }
+
+        if (missingSessionItems.length > 0) {
+            alert('Bazı kesim ürünlerinde oturum anahtarı bulunamadı. Lütfen yöneticinizle iletişime geçin.');
+            return;
+        }
+
+        if (missingItemFieldItems.length > 0) {
+            alert('Bazı kesim ürünlerinde item alanı bulunamadı. Lütfen yöneticinizle iletişime geçin.');
+            return;
+        }
+
+        if (missingEntryItems.length > 0) {
+            const firstMissingItem = missingEntryItems[0];
+            const firstRow = document.querySelector(`.cutting-stock-row[data-item-id="${firstMissingItem.id}"]`);
+            const firstLengthInput = firstRow?.querySelector('.cutting-length-input');
+            const firstQuantityInput = firstRow?.querySelector('.cutting-quantity-input');
+
+            if (firstLengthInput) firstLengthInput.classList.add('is-invalid');
+            if (firstQuantityInput) firstQuantityInput.classList.add('is-invalid');
+
+            const itemRow = firstRow?.closest('.item-row');
+            if (itemRow) itemRow.classList.add('has-error');
+
+            if (firstLengthInput) {
+                firstLengthInput.focus();
+                firstLengthInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
         
         // Remove any previous validation classes
-        quantityInputs.forEach(input => {
+        document.querySelectorAll('.quantity-found-input, .cutting-length-input, .cutting-quantity-input').forEach(input => {
             input.classList.remove('is-invalid');
             // Remove error from item row
             const itemRow = input.closest('.item-row');
@@ -936,18 +1500,20 @@ async function handleAllocationSubmit(request) {
         });
         
         // Prepare summary for confirmation
-        const totalItems = items.length;
+        const totalItems = (request.items || []).length;
         const detailsHTML = `
             <div class="text-start">
                 <p class="mb-2"><strong>Talep No:</strong> ${request.request_number || '-'}</p>
                 <p class="mb-2"><strong>Toplam Ürün:</strong> ${totalItems}</p>
                 <p class="mb-2"><strong>Envanterde Bulunan:</strong> ${totalWithInventory} ürün</p>
-                <p class="mb-0"><strong>Envanterde Bulunmayan:</strong> ${totalWithoutInventory} ürün</p>
+                <p class="mb-2"><strong>Envanterde Bulunmayan:</strong> ${totalWithoutInventory} ürün</p>
+                <p class="mb-0"><strong>Kesim Stok Satırı:</strong> ${stockBars.length} ${totalCuttingItems > 0 ? `(Kesim Ürünü: ${totalCuttingItems})` : ''}</p>
             </div>
         `;
         
         console.log('About to show confirmation modal');
-        console.log('Items to update:', items.length);
+        console.log('Items to update:', inventoryItems.length);
+        console.log('Cutting stock rows to save:', stockBars.length);
         
         // Check if confirmation modal is available
         if (!confirmationModal) {
@@ -969,7 +1535,7 @@ async function handleAllocationSubmit(request) {
             onConfirm: async () => {
                 // This will be executed when user confirms
                 console.log('User confirmed, performing update...');
-                return await performInventoryUpdate(request, items);
+                return await performInventoryUpdate(request, inventoryItems, stockBars);
             },
             onCancel: (reason) => {
                 console.log('User cancelled, reason:', reason);
@@ -988,7 +1554,7 @@ async function handleAllocationSubmit(request) {
 /**
  * Perform the actual inventory update after confirmation
  */
-async function performInventoryUpdate(request, items) {
+async function performInventoryUpdate(request, inventoryItems, stockBars) {
     try {
         // Disable the confirm button in the confirmation modal
         const confirmBtn = document.getElementById('confirm-action-btn');
@@ -996,19 +1562,45 @@ async function performInventoryUpdate(request, items) {
             confirmBtn.disabled = true;
             confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
         }
-        
-        // Prepare data for API
-        const updateData = {
-            items: items
-        };
-        
-        console.log('Updating inventory quantities:', updateData);
-        
-        // Call update inventory quantities endpoint
-        const response = await updateInventoryQuantities(request.id, updateData);
-        
-        // Show success message
-        alert(`Envanter miktarları başarıyla güncellendi!\n\n${response.updated_count} ürün güncellendi.`);
+
+        let inventoryResponse = null;
+        if (inventoryItems.length > 0) {
+            const updateData = {
+                items: inventoryItems
+            };
+
+            console.log('Updating inventory quantities:', updateData);
+            inventoryResponse = await updateInventoryQuantities(request.id, updateData);
+        }
+
+        const touchedSessionKeys = new Set();
+        if (stockBars.length > 0) {
+            stockBars.forEach(stockBar => {
+                if (stockBar.session) touchedSessionKeys.add(stockBar.session);
+            });
+
+            await Promise.all(Array.from(touchedSessionKeys).map(sessionKey =>
+                patchLinearCuttingSession(sessionKey, { stock_entry_complete: false })
+            ));
+
+            console.log('Creating cutting stock bars:', stockBars);
+            await createLinearCuttingStockBars(stockBars);
+        }
+
+        if (touchedSessionKeys.size > 0) {
+            await Promise.all(Array.from(touchedSessionKeys).map(sessionKey =>
+                patchLinearCuttingSession(sessionKey, { stock_entry_complete: true })
+            ));
+            touchedSessionKeys.forEach(sessionKey => stockEntryIncompleteSessionKeys.delete(sessionKey));
+        }
+
+        const updatedCount = inventoryResponse?.updated_count ?? inventoryItems.length;
+        const cuttingCount = stockBars.length;
+        alert(
+            `Kayit basariyla tamamlandi!\n\n` +
+            `Envanter guncellenen urun: ${updatedCount}\n` +
+            `Kaydedilen kesim stok satırı: ${cuttingCount}`
+        );
         
         // Close modals
         closeModal();
@@ -1022,7 +1614,7 @@ async function performInventoryUpdate(request, items) {
         
     } catch (error) {
         console.error('Error updating inventory quantities:', error);
-        alert('Envanter miktarları güncellenirken bir hata oluştu: ' + error.message);
+        alert('Kayit sirasinda bir hata olustu: ' + error.message);
         
         // Re-enable confirm button
         const confirmBtn = document.getElementById('confirm-action-btn');

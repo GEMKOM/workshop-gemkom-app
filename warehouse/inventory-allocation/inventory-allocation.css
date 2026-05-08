@@ -168,6 +168,10 @@
         border-bottom: 1px solid #e9ecef;
         transition: background-color 0.2s ease;
     }
+
+    .items-container-cutting .item-row {
+        grid-template-columns: 60px 1fr 170px 90px 320px;
+    }
     
     /* Read-only view (warehouse requests) - 4 columns */
     .items-container-readonly .item-row {
@@ -230,6 +234,48 @@
     .mobile-label {
         display: none;
     }
+}
+
+.cutting-stock-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cutting-stock-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.cutting-stock-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cutting-stock-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+.cutting-stock-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.cutting-stock-field .mobile-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+.cutting-stock-remove-btn {
+    min-height: 42px;
 }
 
 /* ============================================================================
@@ -637,6 +683,14 @@
     
     .item-input {
         margin-top: 0;
+    }
+
+    .cutting-stock-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .cutting-stock-remove-btn {
+        grid-column: 1 / -1;
     }
     
     .item-input label {

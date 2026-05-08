@@ -262,3 +262,67 @@ export async function getWarehouseRequests(filters = {}) {
         throw error;
     }
 }
+
+/**
+ * Create linear cutting stock bar entries in bulk.
+ * Endpoint accepts a single request with an array payload.
+ *
+ * @param {Array} stockBars - Array of stock bar objects
+ * @param {string} stockBars[].session - Cutting session key
+ * @param {number} stockBars[].item - Planning request item ID
+ * @param {number|string} stockBars[].length_mm - Bar length in mm
+ * @param {number|string} stockBars[].quantity - Available quantity
+ * @param {string} [sessionKey] - Optional session key fallback (sent as query param)
+ * @returns {Promise<Object|Array>} API response
+ */
+export async function createLinearCuttingStockBars(stockBars, sessionKey = null) {
+    try {
+        const query = sessionKey ? `?session=${encodeURIComponent(sessionKey)}` : '';
+        const response = await authedFetch(`${backendBase}/linear_cutting/stock-bars/${query}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(stockBars)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || errorData.error || 'Stok barları kaydedilirken hata oluştu');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating linear cutting stock bars:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update linear cutting session fields by session key.
+ *
+ * @param {string} sessionKey - Session key (e.g. LC-0007)
+ * @param {Object} data - Partial session update data
+ * @returns {Promise<Object>} Updated session
+ */
+export async function patchLinearCuttingSession(sessionKey, data) {
+    try {
+        const response = await authedFetch(`${backendBase}/linear_cutting/sessions/${sessionKey}/`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || errorData.error || 'Kesim oturumu güncellenirken hata oluştu');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error patching linear cutting session:', error);
+        throw error;
+    }
+}
