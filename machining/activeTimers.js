@@ -18,6 +18,8 @@ let allMachines = [];
 let allOperations = [];
 let downtimeReasonsCache = null;
 let currentMachineId = null;
+let searchDebounceTimer = null;
+let operationsRequestSeq = 0;
 
 export function loadActiveTimersContent() {
     createActiveTimersHTML();
@@ -119,12 +121,18 @@ function createResultsTable() {
 
 /**
  * Sets up the search input functionality
+ * Search runs on the backend, so re-fetch operations (debounced) on input
  */
 function setupSearchInput() {
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            filterAndDisplayOperations();
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                if (currentMachineId) {
+                    fetchAndDisplayOperations();
+                }
+            }, 300);
         });
     }
 }
