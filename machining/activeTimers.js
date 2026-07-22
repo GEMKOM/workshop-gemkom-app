@@ -58,8 +58,8 @@ function createActiveTimersHTML() {
                 <div class="search-container">
                     <div class="search-input-wrapper">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="search-input" class="form-control search-input" 
-                               placeholder="Operasyon numarası ile ara...">
+                        <input type="text" id="search-input" class="form-control search-input"
+                               placeholder="TI, operasyon, iş emri, resim no veya parça adı ile ara...">
                     </div>
                 </div>
             </div>
@@ -221,32 +221,65 @@ function setupMachineDropdown() {
  */
 async function loadOperationsForMachine(machineId) {
     currentMachineId = machineId;
-    
+
     if (resultsTableInstance) {
         resultsTableInstance.showLoadingState();
     }
-    
+
+    // Fetch downtime reasons for this machine
     try {
-        // Fetch downtime reasons for this machine
-        try {
-            downtimeReasonsCache = await fetchDowntimeReasons();
-        } catch (error) {
-            console.error('Error fetching downtime reasons:', error);
-            downtimeReasonsCache = null;
-        }
-        
-        // Fetch operations for the machine, filtering for incomplete operations in plan
-        const data = await getOperations({ 
-            machine_fk: machineId,
-            completion_date__isnull: true,
-            in_plan: true,
-        });
-        allOperations = data.results || data;
-        
-        // Display operations
-        filterAndDisplayOperations();
-        
+        downtimeReasonsCache = await fetchDowntimeReasons();
     } catch (error) {
+        console.error('Error fetching downtime reasons:', error);
+        downtimeReasonsCache = null;
+    }
+
+    await fetchAndDisplayOperations();
+}
+
+/**
+ * Fetches operations from the backend (search runs server-side) and displays them
+ */
+async function fetchAndDisplayOperations() {
+    if (!currentMachineId) {
+        return;
+    }
+
+    const requestId = ++operationsRequestSeq;
+
+    if (resultsTableInstance) {
+        resultsTableInstance.showLoadingState();
+    }
+
+    // Get search term from the main search input
+    const searchInput = document.getElementById('search-input');
+    const searchTerm = searchInput ? searchInput.value.trim() : '';
+
+    // Fetch operations for the machine, filtering for incomplete operations in plan
+    const filters = {
+        machine_fk: currentMachineId,
+        completion_date__isnull: true,
+        in_plan: true,
+    };
+    if (searchTerm) {
+        filters.search = searchTerm;
+    }
+
+    try {
+        const data = await getOperations(filters);
+
+        // Ignore stale responses (a newer fetch has been started since)
+        if (requestId !== operationsRequestSeq) {
+            return;
+        }
+
+        allOperations = data.results || data;
+        displayOperations();
+
+    } catch (error) {
+        if (requestId !== operationsRequestSeq) {
+            return;
+        }
         console.error('Error loading operations:', error);
         if (resultsTableInstance) {
             resultsTableInstance.showErrorState(error);
@@ -255,43 +288,19 @@ async function loadOperationsForMachine(machineId) {
 }
 
 /**
- * Filters and displays operations based on search
+ * Displays the currently loaded operations
  */
-function filterAndDisplayOperations() {
+function displayOperations() {
     if (!resultsTableInstance) {
         return;
     }
-    
-    // Get search term from the main search input
-    const searchInput = document.getElementById('search-input');
-    const searchTerm = searchInput ? searchInput.value : '';
-    
-    // Filter operations (downtime reason item is always shown, so we don't filter it)
-    const filteredOperations = searchTerm ? filterOperationsBySearch(allOperations, searchTerm) : allOperations;
-    
-    // Convert operations to ResultsTable format (downtime reason item is added here)
-    const formattedOperations = formatOperationsForResultsTable(filteredOperations);
-    
-    if (resultsTableInstance) {
-        resultsTableInstance.setItems(formattedOperations);
-        // Count includes downtime reason item if present
-        resultsTableInstance.updateResultsInfo(formattedOperations.length);
-    }
-}
 
-/**
- * Filters operations based on search term
- */
-function filterOperationsBySearch(operations, searchTerm) {
-    if (!searchTerm) return operations;
-    
-    const term = searchTerm.toLowerCase();
-    return operations.filter(operation =>
-        (operation.key && operation.key.toLowerCase().includes(term)) ||
-        (operation.part_key && operation.part_key.toLowerCase().includes(term)) ||
-        (operation.part_name && operation.part_name.toLowerCase().includes(term)) ||
-        (operation.name && operation.name.toLowerCase().includes(term))
-    );
+    // Convert operations to ResultsTable format (downtime reason item is added here)
+    const formattedOperations = formatOperationsForResultsTable(allOperations);
+
+    resultsTableInstance.setItems(formattedOperations);
+    // Count includes downtime reason item if present
+    resultsTableInstance.updateResultsInfo(formattedOperations.length);
 }
 
 /**
@@ -412,8 +421,9 @@ function bindActiveTimersEvents() {
             loadOperationsForMachine(machineId);
         } else if (machineDropdown) {
             machineDropdown.setValue(null);
+            currentMachineId = null;
             allOperations = [];
-            filterAndDisplayOperations();
+            displayOperations();
         }
     });
 }
