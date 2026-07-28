@@ -5,7 +5,7 @@ import { initNavbar } from '../../components/navbar.js';
 import { HeaderComponent } from '../../components/header/header.js';
 import { TableComponent } from '../../components/table/table.js';
 import { ConfirmationModal } from '../../components/confirmation-modal/confirmation-modal.js';
-import { getPlanningRequestItems, markItemDelivered, bulkMarkItemsDelivered } from '../../generic/planningRequestItems.js';
+import { getPlanningRequestItems, markItemDelivered, unmarkItemDelivered, bulkMarkItemsDelivered } from '../../generic/planningRequestItems.js';
 import { formatDecimalTurkish } from '../../generic/formatters.js';
 
 // ============================================================================
@@ -298,6 +298,14 @@ function initializeTable() {
                 class: 'btn-outline-success btn-sm',
                 visible: (row) => !row.is_delivered,
                 onClick: (row) => handleMarkDelivered(row.id)
+            },
+            {
+                key: 'unmark-delivered',
+                label: 'Teslimi Geri Al',
+                icon: 'fas fa-undo',
+                class: 'btn-outline-danger btn-sm',
+                visible: (row) => row.is_delivered,
+                onClick: (row) => handleUnmarkDelivered(row.id)
             }
         ],
         onPageChange: (page) => {
@@ -569,6 +577,26 @@ async function handleMarkDelivered(itemId) {
                 } catch (error) {
                     console.error('Error marking item as delivered:', error);
                     alert(error.message || 'Öğe teslim alınırken bir hata oluştu.');
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error showing confirmation:', error);
+    }
+}
+
+async function handleUnmarkDelivered(itemId) {
+    try {
+        await confirmationModal.show({
+            message: 'Bu öğenin teslim durumunu geri almak istediğinizden emin misiniz?',
+            onConfirm: async () => {
+                try {
+                    await unmarkItemDelivered(itemId);
+                    // Reload items
+                    loadItems();
+                } catch (error) {
+                    console.error('Error unmarking item as delivered:', error);
+                    alert(error.message || 'Öğenin teslim durumu geri alınırken bir hata oluştu.');
                 }
             }
         });

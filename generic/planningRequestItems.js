@@ -84,6 +84,32 @@ export async function markItemDelivered(planningRequestItemId) {
 }
 
 /**
+ * Revert a single planning request item's delivered flag
+ * @param {number} planningRequestItemId - The ID of the planning request item
+ * @returns {Promise<Object>} Full PlanningRequestItem object with is_delivered: false
+ */
+export async function unmarkItemDelivered(planningRequestItemId) {
+    try {
+        const response = await authedFetch(`${backendBase}/planning/items/${planningRequestItemId}/unmark_delivered/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || errorData.error || 'Öğenin teslim durumu geri alınırken hata oluştu');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error unmarking item as delivered:', error);
+        throw error;
+    }
+}
+
+/**
  * Bulk mark multiple planning request items as delivered
  * @param {number[]} ids - Array of planning request item IDs
  * @returns {Promise<Object>} Response with detail message and updated_count
