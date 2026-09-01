@@ -555,12 +555,13 @@ export class TableComponent {
             if (pageSizeSelect) {
                 pageSizeSelect.addEventListener('change', (e) => {
                     const newPageSize = parseInt(e.target.value);
-                    this.changePageSize(newPageSize);
-                    
-                    // Call the callback if provided
+
+                    // Call the callback if provided (before changePageSize fires onPageChange)
                     if (this.options.onPageSizeChange) {
                         this.options.onPageSizeChange(newPageSize);
                     }
+
+                    this.changePageSize(newPageSize);
                 });
             }
             

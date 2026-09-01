@@ -55,6 +55,14 @@ function loadWarehouseContent() {
             iconColor: 'success',
             link: 'accounting-export/',
             features: []
+        },
+        {
+            title: 'Malzeme Çekme Talepleri',
+            description: 'Taşeron ve kaynak ekiplerine yapılacak depo malzeme teslimatlarını yönetin',
+            icon: 'fas fa-dolly',
+            iconColor: 'danger',
+            link: 'transfer-requests/',
+            features: []
         }
     ];
     
