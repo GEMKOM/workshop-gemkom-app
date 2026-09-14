@@ -12,10 +12,11 @@ export function setCurrentIssueState(operation) {
         key: operation.key,
         part_task_key: operation.part_task_key || null,
         name: operation.part_name || operation.name || '',
-        job_no: operation.part_job_no || null,
+        job_no: operation.part_job_no || null, // display label ("254-01" / "254-01 +2")
         image_no: operation.part_image_no || null,
         position_no: operation.part_position_no || null,
-        quantity: operation.part_quantity || null,
+        quantity: operation.part_quantity || null, // total across all job orders
+        jobAllocations: Array.isArray(operation.part_job_allocations) ? operation.part_job_allocations : [],
         order: operation.order || null
     };
 }   

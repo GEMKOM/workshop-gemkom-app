@@ -88,6 +88,17 @@ function updateTaskDetailsGrid() {
     const taskDetailsGrid = document.getElementById('task-details-grid');
     if (!taskDetailsGrid) return;
     
+    // A part split across several job orders lists each "job (adet)";
+    // with a single allocation the card shows the job number exactly as before.
+    const jobAllocations = Array.isArray(state.currentIssue.jobAllocations) ? state.currentIssue.jobAllocations : [];
+    const isMultiJob = jobAllocations.length > 1;
+    const jobNoValue = isMultiJob
+        ? jobAllocations.map(a => `${a.job_no} (${a.quantity})`).join(' · ')
+        : (state.currentIssue.job_no || '-');
+    const totalQuantity = isMultiJob
+        ? jobAllocations.reduce((sum, a) => sum + (parseInt(a.quantity, 10) || 0), 0)
+        : null;
+
     const details = [
         {
             icon: 'fas fa-sort-numeric-up',
@@ -97,7 +108,7 @@ function updateTaskDetailsGrid() {
         {
             icon: 'fas fa-file-alt',
             label: 'İş Emri',
-            value: state.currentIssue.job_no || '-'
+            value: jobNoValue
         },
         {
             icon: 'fas fa-image',
@@ -112,7 +123,7 @@ function updateTaskDetailsGrid() {
         {
             icon: 'fas fa-cubes',
             label: 'Adet',
-            value: state.currentIssue.quantity || '-'
+            value: state.currentIssue.quantity || totalQuantity || '-'
         }
     ];
     
