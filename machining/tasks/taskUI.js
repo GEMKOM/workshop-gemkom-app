@@ -84,10 +84,22 @@ function updateTaskStatus(hasActiveTimer) {
     }
 }
 
+function formatDueDate(dueDate) {
+    // "2026-09-30" -> "30.09.2026" (string split; no timezone drift through Date)
+    if (!dueDate || typeof dueDate !== 'string') return '';
+    const [year, month, day] = dueDate.split('-');
+    if (!year || !month || !day) return dueDate;
+    return `${day}.${month}.${year}`;
+}
+
 function updateTaskDetailsGrid() {
     const taskDetailsGrid = document.getElementById('task-details-grid');
     if (!taskDetailsGrid) return;
-    
+
+    // Due date + late chip come from the server-side machine plan (read-only here)
+    const dueDate = formatDueDate(state.currentIssue.due_date);
+    const dueValue = `${dueDate || '—'}${state.currentIssue.projected_late ? ' <span class="detail-late-chip" title="Tahmini bitiş termini aşıyor">Geç</span>' : ''}`;
+
     // A part split across several job orders lists each "job (adet)";
     // with a single allocation the card shows the job number exactly as before.
     const jobAllocations = Array.isArray(state.currentIssue.jobAllocations) ? state.currentIssue.jobAllocations : [];
@@ -124,6 +136,11 @@ function updateTaskDetailsGrid() {
             icon: 'fas fa-cubes',
             label: 'Adet',
             value: state.currentIssue.quantity || totalQuantity || '-'
+        },
+        {
+            icon: 'fas fa-calendar-check',
+            label: 'Termin',
+            value: dueValue
         }
     ];
     

@@ -196,10 +196,10 @@ body {
     margin: 0 auto;
 }
 
-/* When there's enough space, show 5 columns side by side */
+/* When there's enough space, show all 6 cards side by side */
 @media (min-width: 1200px) {
     .task-details-grid {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         max-width: 1400px;
     }
 }
@@ -247,6 +247,23 @@ body {
     font-weight: 700;
     color: var(--primary-color);
     margin: 0;
+}
+
+/* "Geç" chip inside the Termin card: red on light red, never yellow */
+.detail-late-chip {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.35rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 0.375rem;
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    line-height: 1.4;
 }
 
 /* ============================================================================

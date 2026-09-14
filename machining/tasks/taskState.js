@@ -17,7 +17,13 @@ export function setCurrentIssueState(operation) {
         position_no: operation.part_position_no || null,
         quantity: operation.part_quantity || null, // total across all job orders
         jobAllocations: Array.isArray(operation.part_job_allocations) ? operation.part_job_allocations : [],
-        order: operation.order || null
+        order: operation.order || null,
+        // Server-side machine plan (read-only on the operator side)
+        due_date: operation.due_date || null, // "YYYY-MM-DD"
+        projected_late: Boolean(operation.projected_late),
+        plan_flags: Array.isArray(operation.plan_flags) ? operation.plan_flags : [],
+        planned_start_ms: operation.planned_start_ms || null,
+        planned_end_ms: operation.planned_end_ms || null
     };
 }   
 
