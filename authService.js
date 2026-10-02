@@ -11,8 +11,16 @@ const STORAGE_KEYS = {
     LEGACY_REFRESH: 'refreshToken'
 };
 
-let accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS) || localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS);
-let refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH) || localStorage.getItem(STORAGE_KEYS.LEGACY_REFRESH);
+// localStorage is the only copy of the tokens. Every tab shares it; a tab that
+// kept its own copy from page load would keep sending -- and, once rejected,
+// wipe -- tokens another tab has since refreshed or replaced with a new login.
+function currentAccessToken() {
+    return localStorage.getItem(STORAGE_KEYS.ACCESS) || localStorage.getItem(STORAGE_KEYS.LEGACY_ACCESS);
+}
+
+function currentRefreshToken() {
+    return localStorage.getItem(STORAGE_KEYS.REFRESH) || localStorage.getItem(STORAGE_KEYS.LEGACY_REFRESH);
+}
 
 // Centralized routing to prevent infinite redirects
 export const ROUTES = {
@@ -43,8 +51,6 @@ export async function getPermissions() {
 }
 
 function setTokens(newAccessToken, newRefreshToken) {
-    accessToken = newAccessToken;
-    refreshToken = newRefreshToken;
     localStorage.setItem(STORAGE_KEYS.ACCESS, newAccessToken);
     localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS);
     if (newRefreshToken) {
@@ -54,8 +60,6 @@ function setTokens(newAccessToken, newRefreshToken) {
 }
 
 function clearTokens() {
-    accessToken = null;
-    refreshToken = null;
     localStorage.removeItem(STORAGE_KEYS.ACCESS);
     localStorage.removeItem(STORAGE_KEYS.REFRESH);
     localStorage.removeItem(STORAGE_KEYS.LEGACY_ACCESS);
@@ -260,58 +264,87 @@ export function enforceAuth() {
     return guardRoute();
 }
 
-async function refreshAccessToken() {
-    if (!refreshToken) {
+// One refresh per tab at a time: when the access token lapses, every request in
+// flight gets a 401, and they should all wait on the same refresh.
+let refreshInFlight = null;
+
+function refreshAccessToken() {
+    if (!refreshInFlight) {
+        refreshInFlight = requestNewAccessToken().finally(() => {
+            refreshInFlight = null;
+        });
+    }
+    return refreshInFlight;
+}
+
+// Only a refresh token the server actually rejects (401/400) ends the session.
+// A network blip or a 5xx -- or the retried request failing -- used to log the
+// user out as well; now just this request fails and the next one tries again.
+async function requestNewAccessToken() {
+    const sentRefresh = currentRefreshToken();
+    if (!sentRefresh) {
         logout();
         throw new Error('No refresh token available');
     }
 
-    try {
-        const response = await fetch(`${API_URL}/token/refresh/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refresh: refreshToken }),
-        });
+    const response = await fetch(`${API_URL}/token/refresh/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: sentRefresh }),
+    });
 
-        if (!response.ok) {
-           throw new Error('Failed to refresh token');
+    if (response.status === 401 || response.status === 400) {
+        // Another tab may have logged in again while this was out -- typically
+        // right after the same expiry sent it to the login screen. Carry on
+        // with its tokens instead of wiping them.
+        const latestRefresh = currentRefreshToken();
+        if (latestRefresh && latestRefresh !== sentRefresh) {
+            return requestNewAccessToken();
         }
-
-        const data = await response.json();
-        setTokens(data.access, refreshToken);
-        return accessToken;
-    } catch(e) {
-        clearAuthStorage();
-        navigateTo(ROUTES.LOGIN);
-        throw e;
+        logout();
+        throw new Error('Session expired');
     }
+    if (!response.ok) {
+        throw new Error(`Token refresh failed (${response.status})`);
+    }
+
+    const data = await response.json();
+    if (!currentRefreshToken()) {
+        // Signed out in another tab while this was out: don't revive the session.
+        logout();
+        throw new Error('Not authenticated');
+    }
+    // The backend hands back a new refresh token on every refresh; keeping it is
+    // what lets an active session outlive the refresh token's 7-day lifetime.
+    setTokens(data.access, data.refresh || sentRefresh);
+    return data.access;
 }
 
 export async function authedFetch(url, options = {}) {
-    if (!accessToken) {
-       clearAuthStorage();
-       navigateTo(ROUTES.LOGIN);
+    if (!currentRefreshToken()) {
+       logout();
        throw new Error('Not authenticated');
     }
+
+    const sentAccess = currentAccessToken() || await refreshAccessToken();
 
     options.headers = {
         ...options.headers,
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${sentAccess}`,
     };
 
     let response = await fetch(url, options);
 
     if (response.status === 401) {
-        try {
-            await refreshAccessToken();
-            options.headers['Authorization'] = `Bearer ${accessToken}`;
-            response = await fetch(url, options);
-        } catch (e) {
-            clearAuthStorage();
-            navigateTo(ROUTES.LOGIN);
-            throw e;
-        }
+        // A parallel request or another tab may already have replaced the token
+        // this one went out with; use that rather than refreshing again.
+        const latestAccess = currentAccessToken();
+        const freshAccess = latestAccess && latestAccess !== sentAccess
+            ? latestAccess
+            : await refreshAccessToken();
+        options.headers['Authorization'] = `Bearer ${freshAccess}`;
+        response = await fetch(url, options);
     }
 
     return response;
