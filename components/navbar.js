@@ -219,6 +219,12 @@ export function initNavbar() {
                                 <span>Depo</span>
                             </a>
                         </li>
+                        <li class="nav-item welding-only" style="display: none;">
+                            <a class="nav-link" href="/welding/timesheet/">
+                                <i class="fas fa-fire me-1"></i>
+                                <span>Kaynak Puantaj</span>
+                            </a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/maintenance">
                                 <i class="fas fa-tools me-1"></i>
@@ -328,6 +334,12 @@ export function initNavbar() {
           warehouseTab.style.display = 'block';
       } else {
           warehouseTab.style.display = 'none';
+      }
+
+      // Welders' daily timesheet
+      const weldingTab = navbarContainer.querySelector('.welding-only');
+      if (weldingTab) {
+          weldingTab.style.display = hasPermission('access_welding_timesheet') ? 'block' : 'none';
       }
     }
     

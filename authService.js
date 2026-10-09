@@ -182,7 +182,8 @@ export function getRoutePermissionCodename(pathname = window.location.pathname) 
         '/warehouse/material-tracking/': 'access_warehouse_material_tracking',
         '/warehouse/weight-reduction/': 'access_warehouse_weight_reduction',
         '/warehouse/accounting-export/': 'access_warehouse',
-        '/warehouse/transfer-requests/': 'access_warehouse'
+        '/warehouse/transfer-requests/': 'access_warehouse',
+        '/welding/timesheet/': 'access_welding_timesheet'
     };
 
     // Legacy compatibility: maintenance tab URL behaves like list page.

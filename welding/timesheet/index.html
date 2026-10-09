@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>GEMKOM - Kaynak Puantaj</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../style.css">
+    <link rel="stylesheet" href="../../components/navbar.css">
+    <link rel="stylesheet" href="timesheet.css">
+    <link rel="icon" type="image/png" href="../../images/gemkom.png">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <main class="wt-page">
+        <div class="wt-container">
+            <div id="wt-app">
+                <div class="wt-loading"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>
+            </div>
+        </div>
+    </main>
+
+    <div class="wt-bottom-bar" id="wt-bottom-bar" hidden>
+        <div class="wt-total">
+            <span class="wt-total-label">Toplam</span>
+            <span class="wt-total-value" id="wt-total">0 saat</span>
+        </div>
+        <button type="button" class="wt-submit" id="wt-submit" disabled>
+            <i class="fas fa-paper-plane"></i> GÖNDER
+        </button>
+    </div>
+
+    <div class="wt-toast" id="wt-toast" hidden></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="timesheet.js"></script>
+</body>
+</html>

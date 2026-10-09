@@ -20,6 +20,15 @@ function setupHomeMenu(user) {
     // Define all available cards
     const allCards = [
         {
+            title: 'Kaynak Puantaj',
+            description: 'Bugün hangi işlerde kaç saat çalıştığınızı girin.',
+            icon: 'fas fa-fire',
+            iconColor: 'danger',
+            link: 'welding/timesheet/',
+            features: [],
+            requiredPermission: 'access_welding_timesheet'
+        },
+        {
             title: 'Talaşlı İmalat',
             description: 'Makine görevlerini yönetin, zamanlayıcıları kullanın ve üretim süreçlerini takip edin.',
             icon: 'fas fa-cogs',
