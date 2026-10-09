@@ -144,7 +144,7 @@ function render() {
         const when = sub.submitted_at ? new Date(sub.submitted_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
         banner = `<div class="wt-banner pending"><i class="fas fa-clock"></i><div><strong>Gönderildi${when ? ' · ' + esc(when) : ''}.</strong> Ofis onayı bekleniyor. Yanlış bir şey varsa düzeltip tekrar gönderin.</div></div>`;
     } else {
-        banner = `<div class="wt-banner none"><i class="fas fa-pen"></i><div>Bugün hangi işlerde, hangi saatlerde çalıştınız? İşi seçin, saatlere dokunun, <strong>GÖNDER</strong>'e basın.</div></div>`;
+        banner = `<div class="wt-banner none"><i class="fas fa-pen"></i><div>Bugün hangi işlerde, hangi saatlerde çalıştınız? İşi seçin, çalıştığınız saat aralıklarına dokunun, <strong>GÖNDER</strong>'e basın.<br><small>Her kutu bir saat aralığıdır: <strong>08–09</strong> = saat 8'den 9'a kadar.</small></div></div>`;
     }
     const kindBanner = day.kind !== 'weekday'
         ? `<div class="wt-banner kind"><i class="fas fa-calendar-day"></i><div>${esc(day.kind_label)}</div></div>` : '';
@@ -219,11 +219,14 @@ function render() {
 }
 
 function renderJob(row, cells) {
+    // Each cell is a time range and is labelled as one ("08–09"), never as a
+    // single hour, so "8" cannot be read as 7-8 or 8-9.
+    const short = (t) => (t.endsWith(':00') ? t.slice(0, 2) : t);
     const grid = cells.map((cell, idx) => {
         const on = row.cells[idx];
         const owner = on ? null : cellOwner(idx, row.job_no);
         const classes = ['wt-cell', idx >= REGULAR_CELLS ? 'ot' : '', Number(cell.hours) < 1 ? 'half' : '', on ? 'on' : '', owner ? 'used' : ''].filter(Boolean).join(' ');
-        const label = cell.start.endsWith(':00') ? cell.start.slice(0, 2) : cell.start;
+        const label = `${short(cell.start)}–${short(cell.end)}`;
         const sub = owner ? (owner === '1000' ? 'GENEL' : owner) : (Number(cell.hours) < 1 ? '½ saat' : (idx >= REGULAR_CELLS ? 'mesai' : ''));
         return `<button type="button" class="${classes}" data-job="${esc(row.job_no)}" data-cell="${idx}" aria-label="${cell.start}-${cell.end}">${label}<small>${esc(sub)}</small></button>`;
     }).join('');

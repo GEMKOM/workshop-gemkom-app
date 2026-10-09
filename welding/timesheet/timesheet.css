@@ -216,7 +216,7 @@
 
 .wt-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(5, 1fr);   /* ~60 px cells on a 375 px phone: room for "07:30–08" */
     gap: 6px;
 }
 
@@ -225,16 +225,23 @@
     border: 2px solid #ced4da;
     background: #fff;
     border-radius: 10px;
-    min-height: 56px;
+    min-height: 58px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.86rem;
     font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
     color: var(--text-color, #2c3e50);
-    padding: 4px 2px;
-    line-height: 1.1;
+    padding: 4px 1px;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.wt-cell.half {
+    font-size: 0.72rem;
 }
 
 .wt-cell small {
@@ -441,7 +448,7 @@
     opacity: 0.8;
 }
 
-@media (min-width: 480px) {
+@media (min-width: 520px) {
     .wt-grid {
         grid-template-columns: repeat(7, 1fr);
     }
