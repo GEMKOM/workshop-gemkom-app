@@ -72,11 +72,14 @@ function initializeHeader() {
         showBackButton: 'block',
         showRefreshButton: 'block',
         refreshButtonText: 'Yenile',
+        showExportButton: 'block',
+        exportButtonText: "Excel'e Aktar",
         backUrl: '../',
         onRefreshClick: () => {
             loadPendingRequests();
             loadHistory();
-        }
+        },
+        onExportClick: () => exportHistoryExcel()
     });
 }
 
@@ -214,6 +217,20 @@ function initializeHistoryFilters() {
                     </div>
 
                     <div class="tr-filter-group">
+                        <label for="filter-confirmed-after">
+                            <i class="fas fa-calendar me-2"></i>Teslim Tarihi (başlangıç)
+                        </label>
+                        <input type="date" id="filter-confirmed-after" class="form-control form-control-sm">
+                    </div>
+
+                    <div class="tr-filter-group">
+                        <label for="filter-confirmed-before">
+                            <i class="fas fa-calendar me-2"></i>Teslim Tarihi (bitiş)
+                        </label>
+                        <input type="date" id="filter-confirmed-before" class="form-control form-control-sm">
+                    </div>
+
+                    <div class="tr-filter-group">
                         <label for="filter-search">
                             <i class="fas fa-search me-2"></i>Arama
                         </label>
@@ -285,6 +302,8 @@ function applyHistoryFilters() {
 function clearHistoryFilters() {
     document.getElementById('filter-status').value = 'transferred';
     document.getElementById('filter-search').value = '';
+    document.getElementById('filter-confirmed-after').value = '';
+    document.getElementById('filter-confirmed-before').value = '';
 
     historyFilters = {
         status: 'transferred'
@@ -298,9 +317,164 @@ function currentHistoryFiltersFromInputs() {
 
     const status = document.getElementById('filter-status')?.value;
     const search = document.getElementById('filter-search')?.value.trim();
+    const confirmedAfter = document.getElementById('filter-confirmed-after')?.value;
+    const confirmedBefore = document.getElementById('filter-confirmed-before')?.value;
 
     if (status) historyFilters.status = status;
     if (search) historyFilters.search = search;
+    if (confirmedAfter) historyFilters.confirmed_after = confirmedAfter;
+    if (confirmedBefore) historyFilters.confirmed_before = confirmedBefore;
+}
+
+// ============================================================================
+// EXCEL EXPORT (history, current filters, one row per material line)
+// ============================================================================
+
+const EXPORT_PAGE_SIZE = 500;
+
+async function fetchAllHistoryForExport() {
+    const rows = [];
+    let page = 1;
+    for (;;) {
+        const data = await getMaterialPullRequests({
+            ...historyFilters,
+            ordering: historyOrdering,
+            with_items: 'true',
+            page,
+            page_size: EXPORT_PAGE_SIZE
+        });
+        const batch = data.results || data || [];
+        rows.push(...batch);
+        if (!data.next || batch.length < EXPORT_PAGE_SIZE || rows.length > 20000) break;
+        page += 1;
+    }
+    return rows;
+}
+
+function exportDateCell(value) {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d;                      // real Excel date, formatted by the cell number format
+}
+
+function destinationTypeLabel(type) {
+    if (type === 'subcontractor') return 'Taşeron';
+    if (type === 'team') return 'Ekip';
+    return type || '';
+}
+
+async function exportHistoryExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Excel kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
+        return;
+    }
+    const exportBtn = document.getElementById('export-btn');
+    const originalLabel = exportBtn ? exportBtn.innerHTML : '';
+    if (exportBtn) {
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Hazırlanıyor...';
+    }
+    try {
+        currentHistoryFiltersFromInputs();
+        const requests = await fetchAllHistoryForExport();
+        if (!requests.length) {
+            alert('Seçili filtrelerle dışa aktarılacak transfer bulunamadı.');
+            return;
+        }
+
+        const headers = [
+            'Talep No', 'Durum', 'Hedef', 'Hedef Türü', 'İş Emri', 'Stok Kodu', 'Malzeme', 'Miktar', 'Birim',
+            'Talep Eden', 'Talep Tarihi', 'Teslim Eden', 'Teslim Tarihi', 'İptal Eden', 'İptal Tarihi', 'Not'
+        ];
+        const lines = [];
+        const summary = [['Talep No', 'Durum', 'Hedef', 'Hedef Türü', 'Kalem', 'İş Emirleri', 'Talep Eden', 'Talep Tarihi', 'Teslim Eden', 'Teslim Tarihi', 'Not']];
+        requests.forEach((r) => {
+            const base = [
+                r.number || '', r.status_label || r.status || '', r.destination_name || '', destinationTypeLabel(r.destination_type)
+            ];
+            const tail = [
+                r.requested_by_name || r.requested_by_username || '', exportDateCell(r.requested_at),
+                r.confirmed_by_name || r.confirmed_by_username || '', exportDateCell(r.confirmed_at),
+                r.cancelled_by_name || '', exportDateCell(r.cancelled_at),
+                r.note || ''
+            ];
+            const items = Array.isArray(r.items) && r.items.length ? r.items : [null];
+            items.forEach((item) => {
+                lines.push([
+                    ...base,
+                    item ? (item.job_no || '') : '',
+                    item ? (item.item_code || '') : '',
+                    item ? (item.item_name || '') : '',
+                    item ? Number(item.quantity ?? 0) : '',
+                    item ? (item.item_unit || '') : '',
+                    ...tail
+                ]);
+            });
+            summary.push([
+                r.number || '', r.status_label || r.status || '', r.destination_name || '', destinationTypeLabel(r.destination_type),
+                Array.isArray(r.items) ? r.items.length : (r.item_count ?? 0),
+                (r.job_nos || []).join(', '),
+                r.requested_by_name || r.requested_by_username || '', exportDateCell(r.requested_at),
+                r.confirmed_by_name || r.confirmed_by_username || '', exportDateCell(r.confirmed_at),
+                r.note || ''
+            ]);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const wsLines = XLSX.utils.aoa_to_sheet([headers, ...lines], { cellDates: true });
+        wsLines['!cols'] = [14, 14, 26, 10, 14, 18, 36, 10, 8, 20, 16, 20, 16, 18, 16, 30].map((wch) => ({ wch }));
+        styleSheet(wsLines, { dateCols: [10, 12, 14] });
+        XLSX.utils.book_append_sheet(wb, wsLines, 'Malzemeler');
+
+        const wsSummary = XLSX.utils.aoa_to_sheet(summary, { cellDates: true });
+        wsSummary['!cols'] = [14, 14, 26, 10, 8, 30, 20, 16, 20, 16, 30].map((wch) => ({ wch }));
+        styleSheet(wsSummary, { dateCols: [7, 9] });
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Talepler');
+
+        const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+        const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const from = historyFilters.confirmed_after || '';
+        const to = historyFilters.confirmed_before || '';
+        const today = new Date().toISOString().slice(0, 10);
+        const fileName = `malzeme-transferleri_${from && to ? `${from}_${to}` : today}.xlsx`;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 200);
+    } catch (error) {
+        console.error('Excel export failed:', error);
+        alert(error.message || 'Excel dışa aktarma başarısız oldu.');
+    } finally {
+        if (exportBtn) {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalLabel;
+        }
+    }
+}
+
+function styleSheet(ws, { dateCols = [] }) {
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const font = { name: 'Segoe UI', sz: 9 };
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: C });
+            const cell = ws[addr];
+            if (!cell) continue;
+            cell.s = { font: R === 0 ? { ...font, bold: true } : font };
+            if (R === 0) {
+                cell.s.fill = { fgColor: { rgb: 'F1F3F5' } };
+            } else if (dateCols.includes(C) && cell.v instanceof Date) {
+                // xlsx-js-style keeps the number format in the style object
+                cell.z = 'dd.mm.yyyy hh:mm';
+                cell.s.numFmt = 'dd.mm.yyyy hh:mm';
+            }
+            // quantities stay in Excel's General format (600.5, 400), no forced decimals
+        }
+    }
 }
 
 // ============================================================================
