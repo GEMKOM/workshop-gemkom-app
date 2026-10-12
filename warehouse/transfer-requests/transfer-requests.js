@@ -72,14 +72,11 @@ function initializeHeader() {
         showBackButton: 'block',
         showRefreshButton: 'block',
         refreshButtonText: 'Yenile',
-        showExportButton: 'block',
-        exportButtonText: "Excel'e Aktar",
         backUrl: '../',
         onRefreshClick: () => {
             loadPendingRequests();
             loadHistory();
-        },
-        onExportClick: () => exportHistoryExcel()
+        }
     });
 }
 
@@ -217,20 +214,6 @@ function initializeHistoryFilters() {
                     </div>
 
                     <div class="tr-filter-group">
-                        <label for="filter-confirmed-after">
-                            <i class="fas fa-calendar me-2"></i>Teslim Tarihi (başlangıç)
-                        </label>
-                        <input type="date" id="filter-confirmed-after" class="form-control form-control-sm">
-                    </div>
-
-                    <div class="tr-filter-group">
-                        <label for="filter-confirmed-before">
-                            <i class="fas fa-calendar me-2"></i>Teslim Tarihi (bitiş)
-                        </label>
-                        <input type="date" id="filter-confirmed-before" class="form-control form-control-sm">
-                    </div>
-
-                    <div class="tr-filter-group">
                         <label for="filter-search">
                             <i class="fas fa-search me-2"></i>Arama
                         </label>
@@ -302,8 +285,6 @@ function applyHistoryFilters() {
 function clearHistoryFilters() {
     document.getElementById('filter-status').value = 'transferred';
     document.getElementById('filter-search').value = '';
-    document.getElementById('filter-confirmed-after').value = '';
-    document.getElementById('filter-confirmed-before').value = '';
 
     historyFilters = {
         status: 'transferred'
@@ -317,46 +298,14 @@ function currentHistoryFiltersFromInputs() {
 
     const status = document.getElementById('filter-status')?.value;
     const search = document.getElementById('filter-search')?.value.trim();
-    const confirmedAfter = document.getElementById('filter-confirmed-after')?.value;
-    const confirmedBefore = document.getElementById('filter-confirmed-before')?.value;
 
     if (status) historyFilters.status = status;
     if (search) historyFilters.search = search;
-    if (confirmedAfter) historyFilters.confirmed_after = confirmedAfter;
-    if (confirmedBefore) historyFilters.confirmed_before = confirmedBefore;
 }
 
 // ============================================================================
-// EXCEL EXPORT (history, current filters, one row per material line)
+// EXCEL EXPORT (one file per request: header block + material lines)
 // ============================================================================
-
-const EXPORT_PAGE_SIZE = 500;
-
-async function fetchAllHistoryForExport() {
-    const rows = [];
-    let page = 1;
-    for (;;) {
-        const data = await getMaterialPullRequests({
-            ...historyFilters,
-            ordering: historyOrdering,
-            with_items: 'true',
-            page,
-            page_size: EXPORT_PAGE_SIZE
-        });
-        const batch = data.results || data || [];
-        rows.push(...batch);
-        if (!data.next || batch.length < EXPORT_PAGE_SIZE || rows.length > 20000) break;
-        page += 1;
-    }
-    return rows;
-}
-
-function exportDateCell(value) {
-    if (!value) return '';
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return '';
-    return d;                      // real Excel date, formatted by the cell number format
-}
 
 function destinationTypeLabel(type) {
     if (type === 'subcontractor') return 'Taşeron';
@@ -364,117 +313,89 @@ function destinationTypeLabel(type) {
     return type || '';
 }
 
-async function exportHistoryExcel() {
+function excelDate(value) {
+    if (!value) return '';
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? '' : d;
+}
+
+/**
+ * Export a single pull request as an .xlsx: a header block (who, where, when,
+ * note) and one row per material line. `request` must be the detail payload
+ * (with `items`); pass an id-only row and it is fetched first.
+ */
+async function exportRequestExcel(requestOrId) {
     if (typeof XLSX === 'undefined') {
         alert('Excel kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
         return;
     }
-    const exportBtn = document.getElementById('export-btn');
-    const originalLabel = exportBtn ? exportBtn.innerHTML : '';
-    if (exportBtn) {
-        exportBtn.disabled = true;
-        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Hazırlanıyor...';
-    }
+    let request = requestOrId;
     try {
-        currentHistoryFiltersFromInputs();
-        const requests = await fetchAllHistoryForExport();
-        if (!requests.length) {
-            alert('Seçili filtrelerle dışa aktarılacak transfer bulunamadı.');
-            return;
+        if (!request || !Array.isArray(request.items)) {
+            request = await getMaterialPullRequest(typeof requestOrId === 'object' ? requestOrId.id : requestOrId);
         }
-
-        const headers = [
-            'Talep No', 'Durum', 'Hedef', 'Hedef Türü', 'İş Emri', 'Stok Kodu', 'Malzeme', 'Miktar', 'Birim',
-            'Talep Eden', 'Talep Tarihi', 'Teslim Eden', 'Teslim Tarihi', 'İptal Eden', 'İptal Tarihi', 'Not'
-        ];
-        const lines = [];
-        const summary = [['Talep No', 'Durum', 'Hedef', 'Hedef Türü', 'Kalem', 'İş Emirleri', 'Talep Eden', 'Talep Tarihi', 'Teslim Eden', 'Teslim Tarihi', 'Not']];
-        requests.forEach((r) => {
-            const base = [
-                r.number || '', r.status_label || r.status || '', r.destination_name || '', destinationTypeLabel(r.destination_type)
-            ];
-            const tail = [
-                r.requested_by_name || r.requested_by_username || '', exportDateCell(r.requested_at),
-                r.confirmed_by_name || r.confirmed_by_username || '', exportDateCell(r.confirmed_at),
-                r.cancelled_by_name || '', exportDateCell(r.cancelled_at),
-                r.note || ''
-            ];
-            const items = Array.isArray(r.items) && r.items.length ? r.items : [null];
-            items.forEach((item) => {
-                lines.push([
-                    ...base,
-                    item ? (item.job_no || '') : '',
-                    item ? (item.item_code || '') : '',
-                    item ? (item.item_name || '') : '',
-                    item ? Number(item.quantity ?? 0) : '',
-                    item ? (item.item_unit || '') : '',
-                    ...tail
-                ]);
-            });
-            summary.push([
-                r.number || '', r.status_label || r.status || '', r.destination_name || '', destinationTypeLabel(r.destination_type),
-                Array.isArray(r.items) ? r.items.length : (r.item_count ?? 0),
-                (r.job_nos || []).join(', '),
-                r.requested_by_name || r.requested_by_username || '', exportDateCell(r.requested_at),
-                r.confirmed_by_name || r.confirmed_by_username || '', exportDateCell(r.confirmed_at),
-                r.note || ''
-            ]);
-        });
-
-        const wb = XLSX.utils.book_new();
-        const wsLines = XLSX.utils.aoa_to_sheet([headers, ...lines], { cellDates: true });
-        wsLines['!cols'] = [14, 14, 26, 10, 14, 18, 36, 10, 8, 20, 16, 20, 16, 18, 16, 30].map((wch) => ({ wch }));
-        styleSheet(wsLines, { dateCols: [10, 12, 14] });
-        XLSX.utils.book_append_sheet(wb, wsLines, 'Malzemeler');
-
-        const wsSummary = XLSX.utils.aoa_to_sheet(summary, { cellDates: true });
-        wsSummary['!cols'] = [14, 14, 26, 10, 8, 30, 20, 16, 20, 16, 30].map((wch) => ({ wch }));
-        styleSheet(wsSummary, { dateCols: [7, 9] });
-        XLSX.utils.book_append_sheet(wb, wsSummary, 'Talepler');
-
-        const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
-        const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const from = historyFilters.confirmed_after || '';
-        const to = historyFilters.confirmed_before || '';
-        const today = new Date().toISOString().slice(0, 10);
-        const fileName = `malzeme-transferleri_${from && to ? `${from}_${to}` : today}.xlsx`;
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(a.href), 200);
     } catch (error) {
-        console.error('Excel export failed:', error);
-        alert(error.message || 'Excel dışa aktarma başarısız oldu.');
-    } finally {
-        if (exportBtn) {
-            exportBtn.disabled = false;
-            exportBtn.innerHTML = originalLabel;
-        }
+        console.error('Excel export: request could not be loaded', error);
+        alert(error.message || 'Talep yüklenemedi.');
+        return;
     }
-}
 
-function styleSheet(ws, { dateCols = [] }) {
-    const range = XLSX.utils.decode_range(ws['!ref']);
+    const header = [
+        ['Talep No', request.number || ''],
+        ['Durum', request.status_label || request.status || ''],
+        ['Hedef', request.destination_name || ''],
+        ['Hedef Türü', destinationTypeLabel(request.destination_type)],
+        ['Talep Eden', request.requested_by_name || request.requested_by_username || ''],
+        ['Talep Tarihi', excelDate(request.requested_at)],
+        ['Teslim Eden', request.confirmed_by_name || request.confirmed_by_username || ''],
+        ['Teslim Tarihi', excelDate(request.confirmed_at)],
+    ];
+    if (request.status === 'cancelled') {
+        header.push(['İptal Eden', request.cancelled_by_name || '']);
+        header.push(['İptal Tarihi', excelDate(request.cancelled_at)]);
+    }
+    header.push(['Not', request.note || '']);
+
+    const tableHeader = ['#', 'İş Emri', 'Stok Kodu', 'Malzeme', 'Miktar', 'Birim'];
+    const lines = (request.items || []).map((item, i) => [
+        i + 1, item.job_no || '', item.item_code || '', item.item_name || '', Number(item.quantity ?? 0), item.item_unit || ''
+    ]);
+    const aoa = [...header, [], tableHeader, ...lines];
+    const tableHeaderRow = header.length + 1;             // 0-based row index of the table header
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
+    ws['!cols'] = [{ wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 40 }, { wch: 12 }, { wch: 8 }];
+    ws['!merges'] = header.map((_, r) => ({ s: { r, c: 1 }, e: { r, c: 5 } }));
+
     const font = { name: 'Segoe UI', sz: 9 };
+    const range = XLSX.utils.decode_range(ws['!ref']);
     for (let R = range.s.r; R <= range.e.r; R++) {
         for (let C = range.s.c; C <= range.e.c; C++) {
-            const addr = XLSX.utils.encode_cell({ r: R, c: C });
-            const cell = ws[addr];
+            const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
             if (!cell) continue;
-            cell.s = { font: R === 0 ? { ...font, bold: true } : font };
-            if (R === 0) {
-                cell.s.fill = { fgColor: { rgb: 'F1F3F5' } };
-            } else if (dateCols.includes(C) && cell.v instanceof Date) {
-                // xlsx-js-style keeps the number format in the style object
+            const isLabel = R < header.length && C === 0;
+            const isTableHeader = R === tableHeaderRow;
+            cell.s = { font: (isLabel || isTableHeader) ? { ...font, bold: true } : font };
+            if (isTableHeader) cell.s.fill = { fgColor: { rgb: 'F1F3F5' } };
+            if (cell.v instanceof Date) {
                 cell.z = 'dd.mm.yyyy hh:mm';
-                cell.s.numFmt = 'dd.mm.yyyy hh:mm';
+                cell.s.numFmt = 'dd.mm.yyyy hh:mm';     // xlsx-js-style reads the format from the style
             }
-            // quantities stay in Excel's General format (600.5, 400), no forced decimals
         }
     }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Talep');
+    const buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array', cellStyles: true });
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const safeNumber = String(request.number || request.id).replace(/[^A-Za-z0-9_-]+/g, '_');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `malzeme-cekme_${safeNumber}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 200);
 }
 
 // ============================================================================
@@ -557,6 +478,13 @@ function initializeHistoryTable() {
                 icon: 'fas fa-eye',
                 class: 'btn-outline-primary btn-sm',
                 onClick: (row) => showDetailModal(row.id)
+            },
+            {
+                key: 'excel',
+                label: 'Excel',
+                icon: 'fas fa-file-excel',
+                class: 'btn-outline-success btn-sm',
+                onClick: (row) => exportRequestExcel(row)
             }
         ],
         onSort: (field, direction) => {
@@ -764,6 +692,9 @@ function createDetailModalHTML(request) {
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">
                             <i class="fas fa-times me-2"></i>Kapat
                         </button>
+                        <button type="button" class="btn btn-outline-success" id="export-request-btn">
+                            <i class="fas fa-file-excel me-2"></i>Excel'e Aktar
+                        </button>
                         ${isPending ? `
                         <button type="button" class="btn btn-primary" id="mark-transferred-btn">
                             <i class="fas fa-check me-2"></i>Teslim Edildi Olarak İşaretle
@@ -784,6 +715,12 @@ function setupDetailModalEventListeners(request) {
             closeDetailModal();
         });
     });
+
+    // Excel export of this request
+    const exportBtn = document.getElementById('export-request-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => exportRequestExcel(request));
+    }
 
     // Mark transferred button handler
     const markTransferredBtn = document.getElementById('mark-transferred-btn');
