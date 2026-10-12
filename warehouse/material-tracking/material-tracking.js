@@ -5,7 +5,7 @@ import { initNavbar } from '../../components/navbar.js';
 import { HeaderComponent } from '../../components/header/header.js';
 import { TableComponent } from '../../components/table/table.js';
 import { ConfirmationModal } from '../../components/confirmation-modal/confirmation-modal.js';
-import { getPlanningRequestItems, markItemDelivered, unmarkItemDelivered, bulkMarkItemsDelivered } from '../../generic/planningRequestItems.js';
+import { getPlanningRequestItems, markItemDelivered, unmarkItemDelivered, bulkMarkItemsDelivered, getPlanningItemDeliveries } from '../../generic/planningRequestItems.js';
 import { formatDecimalTurkish } from '../../generic/formatters.js';
 
 // ============================================================================
@@ -132,6 +132,7 @@ function initializeFilters() {
                         <select id="filter-is-delivered" class="form-select form-select-sm">
                             <option value="">Tümü</option>
                             <option value="false" selected>Teslim Edilmedi</option>
+                            <option value="partial">Kısmi Teslim</option>
                             <option value="true">Teslim Edildi</option>
                         </select>
                     </div>
@@ -255,33 +256,21 @@ function initializeTable() {
                 field: 'is_delivered',
                 label: 'Durum',
                 sortable: true,
-                formatter: (value) => {
-                    return value 
-                        ? '<span class="status-badge delivered"><i class="fas fa-check-circle me-1"></i>Teslim Edildi</span>'
-                        : '<span class="status-badge pending"><i class="fas fa-clock me-1"></i>Beklemede</span>';
-                }
+                formatter: (value, row) => renderDeliveryStatus(row)
             },
             {
                 field: 'delivered_at',
                 label: 'Teslim Tarihi',
                 sortable: true,
-                formatter: (value) => {
-                    if (!value) return '-';
-                    const date = new Date(value);
-                    return date.toLocaleDateString('tr-TR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                }
+                // Fully delivered lines carry the completion stamp; partial
+                // lines show when the last shipment landed.
+                formatter: (value, row) => formatDateTimeTr(value || row.last_delivered_at)
             },
             {
                 field: 'delivered_by_username',
                 label: 'Teslim Eden',
                 sortable: true,
-                formatter: (value) => value || '-'
+                formatter: (value, row) => value || lastReceiptUser(row) || '-'
             }
         ],
         data: [],
@@ -297,15 +286,15 @@ function initializeTable() {
                 icon: 'fas fa-check',
                 class: 'btn-outline-success btn-sm',
                 visible: (row) => !row.is_delivered,
-                onClick: (row) => handleMarkDelivered(row.id)
+                onClick: (row) => openDeliveryModal([row])
             },
             {
                 key: 'unmark-delivered',
                 label: 'Teslimi Geri Al',
                 icon: 'fas fa-undo',
                 class: 'btn-outline-danger btn-sm',
-                visible: (row) => row.is_delivered,
-                onClick: (row) => handleUnmarkDelivered(row.id)
+                visible: (row) => row.is_delivered || row.is_partially_delivered,
+                onClick: (row) => handleUnmarkDelivered(row)
             }
         ],
         onPageChange: (page) => {
@@ -538,7 +527,10 @@ function applyFilters() {
     
     // Handle is_delivered filter - default to false if not explicitly set
     if (isDelivered === '') {
-        currentFilters.is_delivered = false;  // Default: only undelivered items
+        delete currentFilters.is_delivered;   // Tümü
+    } else if (isDelivered === 'partial') {
+        currentFilters.is_delivered = false;  // some of it arrived, still waiting for the rest
+        currentFilters.partially_delivered = true;
     } else {
         currentFilters.is_delivered = isDelivered === 'true';
     }
@@ -562,37 +554,75 @@ function clearFilters() {
 }
 
 // ============================================================================
-// MARK DELIVERED FUNCTIONS
+// DELIVERY STATE HELPERS
 // ============================================================================
 
-async function handleMarkDelivered(itemId) {
-    try {
-        await confirmationModal.show({
-            message: 'Bu öğeyi teslim almak istediğinizden emin misiniz?',
-            onConfirm: async () => {
-                try {
-                    await markItemDelivered(itemId);
-                    // Reload items
-                    loadItems();
-                } catch (error) {
-                    console.error('Error marking item as delivered:', error);
-                    alert(error.message || 'Öğe teslim alınırken bir hata oluştu.');
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error showing confirmation:', error);
-    }
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-async function handleUnmarkDelivered(itemId) {
+function toNumber(value) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+}
+
+// Quantities are shown with as many decimals as they need (12 kg, 600,5 kg), never "12,00".
+function fmtQty(value) {
+    const n = toNumber(value);
+    return n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function formatDateTimeTr(value) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('tr-TR', {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+}
+
+// Who booked the latest shipment of a partial line (fields=simple embeds the receipts).
+function lastReceiptUser(row) {
+    const receipts = Array.isArray(row.deliveries) ? row.deliveries : [];
+    const last = receipts.length ? receipts[receipts.length - 1] : null;
+    return last ? (last.delivered_by_name || last.delivered_by_username || '') : '';
+}
+
+function remainingOf(row) {
+    const remaining = toNumber(row.quantity) - toNumber(row.delivered_quantity);
+    return Math.max(Math.round(remaining * 100) / 100, 0);
+}
+
+function renderDeliveryStatus(row) {
+    if (row.is_delivered) {
+        return '<span class="status-badge delivered"><i class="fas fa-check-circle me-1"></i>Teslim Edildi</span>';
+    }
+    const delivered = toNumber(row.delivered_quantity);
+    if (delivered > 0) {
+        const unit = escapeHtml(row.item_unit || '');
+        return `<span class="status-badge partial"><i class="fas fa-adjust me-1"></i>Kısmi Teslim</span>
+            <div class="delivery-progress">${fmtQty(delivered)} / ${fmtQty(row.quantity)} ${unit} alındı · kalan ${fmtQty(remainingOf(row))} ${unit}</div>`;
+    }
+    return '<span class="status-badge pending"><i class="fas fa-clock me-1"></i>Beklemede</span>';
+}
+
+// ============================================================================
+// MARK DELIVERED (receipt modal: one amount per line, default = what is left)
+// ============================================================================
+
+async function handleUnmarkDelivered(row) {
+    const partial = !row.is_delivered && toNumber(row.delivered_quantity) > 0;
+    const message = partial
+        ? `Bu öğenin son teslimat kaydı geri alınacak (şu an ${fmtQty(row.delivered_quantity)} ${row.item_unit || ''} alınmış görünüyor). Devam edilsin mi?`
+        : 'Bu öğenin son teslimat kaydı geri alınacak ve öğe yeniden bekliyor durumuna geçecek. Devam edilsin mi?';
     try {
         await confirmationModal.show({
-            message: 'Bu öğenin teslim durumunu geri almak istediğinizden emin misiniz?',
+            message,
             onConfirm: async () => {
                 try {
-                    await unmarkItemDelivered(itemId);
-                    // Reload items
+                    await unmarkItemDelivered(row.id);
                     loadItems();
                 } catch (error) {
                     console.error('Error unmarking item as delivered:', error);
@@ -610,61 +640,96 @@ async function handleBulkMarkDelivered() {
         alert('Lütfen en az bir öğe seçin.');
         return;
     }
-    
-    try {
-        const ids = Array.from(selectedItems);
-        // Get selected items data for display
-        const selectedItemsData = itemsTable.options.data.filter(item => ids.includes(item.id));
-        
-        // Show modal with selected items list
-        showBulkConfirmModal(selectedItemsData, ids);
-    } catch (error) {
-        console.error('Error showing confirmation:', error);
-    }
+    const ids = Array.from(selectedItems);
+    const rows = itemsTable.options.data.filter(item => ids.includes(item.id));
+    openDeliveryModal(rows);
+}
+
+function deliveryItemCardHtml(row) {
+    const unit = escapeHtml(row.item_unit || '');
+    const remaining = remainingOf(row);
+    const delivered = toNumber(row.delivered_quantity);
+    return `
+        <div class="delivery-item-card" data-item-id="${row.id}">
+            <div class="delivery-item-head">
+                <div>
+                    <strong class="item-code">${escapeHtml(row.item_code || '-')}</strong>
+                    <span class="item-name ms-2">${escapeHtml(row.item_name || '-')}</span>
+                </div>
+                ${delivered > 0 ? '<span class="status-badge partial">Kısmi Teslim</span>' : ''}
+            </div>
+            <div class="delivery-grid">
+                <div><small>İş No</small><div class="job-no">${escapeHtml(row.job_no || '-')}</div></div>
+                <div><small>Planlama Talebi</small><div>${escapeHtml(row.planning_request_number || '-')}</div></div>
+                <div><small>Planlanan</small><div>${fmtQty(row.quantity)} ${unit}</div></div>
+                <div><small>Daha Önce Alınan</small><div>${fmtQty(delivered)} ${unit}</div></div>
+                <div><small>Kalan</small><div class="delivery-remaining">${fmtQty(remaining)} ${unit}</div></div>
+            </div>
+            <div class="delivery-qty-row">
+                <label for="delivery-qty-${row.id}">Teslim alınan miktar (${unit || 'birim'})</label>
+                <div class="input-group input-group-sm">
+                    <input type="number" class="form-control delivery-qty" id="delivery-qty-${row.id}"
+                           data-item-id="${row.id}" data-remaining="${remaining}"
+                           value="${remaining}" min="0.01" max="${remaining}" step="0.01" inputmode="decimal">
+                    <button type="button" class="btn btn-outline-secondary delivery-fill-btn" data-item-id="${row.id}"
+                            title="Kalanın tamamını teslim al">Tamamı</button>
+                </div>
+                <div class="delivery-qty-error text-danger small" style="display:none;"></div>
+            </div>
+            <div class="delivery-history" id="delivery-history-${row.id}"></div>
+        </div>
+    `;
+}
+
+function deliveryHistoryHtml(receipts) {
+    if (!receipts || !receipts.length) return '';
+    const rows = receipts.map((r) => `
+        <li>
+            <span>${formatDateTimeTr(r.delivered_at)}</span>
+            <strong>${fmtQty(r.quantity)}</strong>
+            <span class="text-muted">${escapeHtml(r.delivered_by_name || r.delivered_by_username || '-')}</span>
+            ${r.note ? `<span class="text-muted">· ${escapeHtml(r.note)}</span>` : ''}
+        </li>`).join('');
+    return `<small class="text-muted">Önceki teslimatlar</small><ul class="delivery-history-list">${rows}</ul>`;
 }
 
 /**
- * Show confirmation modal with list of selected items
+ * Receipt modal for one or many lines. Each line shows its full data and an
+ * amount field preset to what is still outstanding; the warehouse lowers it
+ * for a partial shipment.
  */
-function showBulkConfirmModal(selectedItems, ids) {
-    // Create modal HTML with items list
-    const itemsListHtml = selectedItems.map(item => `
-        <div class="selected-item-row">
-            <div class="selected-item-info">
-                <strong>${item.item_code || '-'}</strong>
-                <span class="text-muted ms-2">${item.item_name || '-'}</span>
-            </div>
-            <div class="selected-item-details">
-                <small class="text-muted">
-                    İş No: ${item.job_no || '-'} | 
-                    Miktar: ${item.quantity || '0'} ${item.item_unit || ''}
-                </small>
-            </div>
-        </div>
-    `).join('');
-    
+function openDeliveryModal(rows) {
+    if (!rows || !rows.length) return;
+    const many = rows.length > 1;
     const modalHtml = `
-        <div class="modal fade" id="bulkConfirmModal" tabindex="-1" style="z-index: 10060;">
-            <div class="modal-dialog modal-lg" style="z-index: 10061;">
+        <div class="modal fade" id="deliveryModal" tabindex="-1" style="z-index: 10060;">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable" style="z-index: 10061;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="fas fa-check-double me-2"></i>
-                            Seçilen Öğeleri Teslim Al
+                            <i class="fas fa-${many ? 'check-double' : 'check'} me-2"></i>
+                            ${many ? `Seçilen Öğeleri Teslim Al (${rows.length})` : 'Öğeyi Teslim Al'}
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-3">
-                            <strong>${ids.length}</strong> öğeyi teslim almak istediğinizden emin misiniz?
+                        <p class="text-muted small mb-3">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Malzemenin tamamı gelmediyse miktarı düşürün; kalan kısım beklemede kalır ve
+                            sonraki teslimatta yeniden teslim alınabilir.
                         </p>
-                        <div class="selected-items-list">
-                            ${itemsListHtml}
+                        <div class="delivery-items-list">
+                            ${rows.map(deliveryItemCardHtml).join('')}
+                        </div>
+                        <div class="mt-3">
+                            <label for="delivery-note" class="form-label small mb-1">Not (isteğe bağlı)</label>
+                            <input type="text" id="delivery-note" class="form-control form-control-sm"
+                                   maxlength="255" placeholder="Örn: irsaliye no, eksik gelen parti...">
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                        <button type="button" class="btn btn-success" id="confirm-bulk-delivery-btn">
+                        <button type="button" class="btn btn-success" id="confirm-delivery-btn">
                             <i class="fas fa-check me-2"></i>Teslim Al
                         </button>
                     </div>
@@ -672,110 +737,106 @@ function showBulkConfirmModal(selectedItems, ids) {
             </div>
         </div>
     `;
-    
-    // Remove existing modal and any backdrops if any
-    const existingModal = document.getElementById('bulkConfirmModal');
-    if (existingModal) {
-        const existingBackdrop = document.querySelector('.modal-backdrop');
-        if (existingBackdrop) {
-            existingBackdrop.remove();
-        }
-        existingModal.remove();
-    }
-    
-    // Check if there's a confirmation modal open and wait for it to close
-    const confirmationModalElement = document.getElementById('confirmationModal');
-    if (confirmationModalElement && confirmationModalElement.classList.contains('show')) {
-        // Wait for confirmation modal to close first
-        confirmationModalElement.addEventListener('hidden.bs.modal', () => {
-            showBulkModalAfterDelay(modalHtml, ids);
-        }, { once: true });
-        return;
-    }
-    
-    // Clean up any orphaned backdrops
+
+    const existing = document.getElementById('deliveryModal');
+    if (existing) existing.remove();
     document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-    
-    // Clean up body classes
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
-    
-    showBulkModalAfterDelay(modalHtml, ids);
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modalElement = document.getElementById('deliveryModal');
+    const modal = new bootstrap.Modal(modalElement, { backdrop: 'static', keyboard: true, focus: true });
+
+    // "Tamamı" resets a line to its outstanding amount
+    modalElement.querySelectorAll('.delivery-fill-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const input = modalElement.querySelector(`.delivery-qty[data-item-id="${btn.dataset.itemId}"]`);
+            if (input) {
+                input.value = input.dataset.remaining;
+                validateDeliveryInput(input);
+            }
+        });
+    });
+    modalElement.querySelectorAll('.delivery-qty').forEach((input) => {
+        input.addEventListener('input', () => validateDeliveryInput(input));
+        input.addEventListener('focus', () => input.select());
+    });
+
+    // Single partial line: show what already came in
+    if (!many && toNumber(rows[0].delivered_quantity) > 0) {
+        const box = modalElement.querySelector(`#delivery-history-${rows[0].id}`);
+        if (box) {
+            box.innerHTML = '<small class="text-muted"><i class="fas fa-spinner fa-spin me-1"></i>Teslimat geçmişi yükleniyor...</small>';
+            getPlanningItemDeliveries(rows[0].id)
+                .then((receipts) => { box.innerHTML = deliveryHistoryHtml(receipts); })
+                .catch(() => { box.innerHTML = ''; });
+        }
+    }
+
+    const confirmBtn = modalElement.querySelector('#confirm-delivery-btn');
+    confirmBtn.addEventListener('click', async () => {
+        const entries = [];
+        let valid = true;
+        modalElement.querySelectorAll('.delivery-qty').forEach((input) => {
+            if (!validateDeliveryInput(input)) valid = false;
+            entries.push({ id: parseInt(input.dataset.itemId, 10), quantity: toNumber(input.value) });
+        });
+        if (!valid) return;
+
+        const note = (modalElement.querySelector('#delivery-note')?.value || '').trim();
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
+        try {
+            if (entries.length === 1) {
+                await markItemDelivered(entries[0].id, { quantity: entries[0].quantity, note });
+            } else {
+                await bulkMarkItemsDelivered({ items: entries, note });
+            }
+            modal.hide();
+            loadItems();
+        } catch (error) {
+            console.error('Error recording delivery:', error);
+            alert(error.message || 'Teslimat kaydedilirken bir hata oluştu.');
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Teslim Al';
+        }
+    });
+
+    modalElement.addEventListener('hidden.bs.modal', () => {
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        modalElement.remove();
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }, { once: true });
+
+    modal.show();
+    setTimeout(() => {
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.style.zIndex = '10059';
+        const first = modalElement.querySelector('.delivery-qty');
+        if (first) first.focus();
+    }, 10);
 }
 
-function showBulkModalAfterDelay(modalHtml, ids) {
-    // Add modal to body
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // Wait for DOM to be ready
-    setTimeout(() => {
-        // Initialize Bootstrap modal
-        const modalElement = document.getElementById('bulkConfirmModal');
-        if (!modalElement) return;
-        
-        const modal = new bootstrap.Modal(modalElement, {
-            backdrop: true,
-            keyboard: true,
-            focus: true
-        });
-        
-        // Ensure modal has proper z-index (higher than ConfirmationModal)
-        modalElement.style.zIndex = '10060';
-        
-        // Handle confirm button click
-        const confirmBtn = document.getElementById('confirm-bulk-delivery-btn');
-        if (confirmBtn) {
-            confirmBtn.addEventListener('click', async () => {
-                confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>İşleniyor...';
-                
-                try {
-                    const result = await bulkMarkItemsDelivered(ids);
-                    modal.hide();
-                    
-                    // Reload items
-                    loadItems();
-                } catch (error) {
-                    console.error('Error bulk marking items as delivered:', error);
-                    alert(error.message || 'Öğeler teslim alınırken bir hata oluştu.');
-                    confirmBtn.disabled = false;
-                    confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Teslim Al';
-                }
-            });
-        }
-        
-        // Clean up modal when hidden
-        modalElement.addEventListener('hidden.bs.modal', () => {
-            // Remove backdrop
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-            // Remove modal
-            modalElement.remove();
-            // Clean up body
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }, { once: true });
-        
-        // Show modal
-        modal.show();
-        
-        // Ensure backdrop z-index is correct after showing (higher than ConfirmationModal backdrop)
-        setTimeout(() => {
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.style.zIndex = '10059';
-            }
-            // Also ensure modal dialog is on top
-            const modalDialog = modalElement.querySelector('.modal-dialog');
-            if (modalDialog) {
-                modalDialog.style.zIndex = '10061';
-            }
-        }, 10);
-    }, 50);
+function validateDeliveryInput(input) {
+    const remaining = toNumber(input.dataset.remaining);
+    const value = toNumber(input.value);
+    const errorBox = input.closest('.delivery-qty-row')?.querySelector('.delivery-qty-error');
+    let message = '';
+    if (!(value > 0)) {
+        message = 'Miktar 0\'dan büyük olmalıdır.';
+    } else if (value > remaining + 1e-9) {
+        message = `Kalan miktardan fazlası teslim alınamaz (kalan: ${fmtQty(remaining)}).`;
+    }
+    input.classList.toggle('is-invalid', !!message);
+    if (errorBox) {
+        errorBox.textContent = message;
+        errorBox.style.display = message ? 'block' : 'none';
+    }
+    return !message;
 }
 
 function updateBulkActions() {

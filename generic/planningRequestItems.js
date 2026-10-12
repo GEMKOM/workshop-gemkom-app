@@ -58,17 +58,26 @@ export async function getPlanningRequestItems(filters = {}) {
 }
 
 /**
- * Mark a single planning request item as delivered
+ * Record a warehouse receipt on a planning request item.
  * @param {number} planningRequestItemId - The ID of the planning request item
- * @returns {Promise<Object>} Full PlanningRequestItem object with is_delivered: true
+ * @param {Object} [receipt]
+ * @param {number|string} [receipt.quantity] - Amount received now (default: everything outstanding)
+ * @param {string} [receipt.note]
+ * @returns {Promise<Object>} PlanningRequestItem with delivered_quantity / is_delivered / deliveries
  */
-export async function markItemDelivered(planningRequestItemId) {
+export async function markItemDelivered(planningRequestItemId, receipt = {}) {
     try {
+        const body = {};
+        if (receipt.quantity !== undefined && receipt.quantity !== null && receipt.quantity !== '') {
+            body.quantity = String(receipt.quantity);
+        }
+        if (receipt.note) body.note = receipt.note;
         const response = await authedFetch(`${backendBase}/planning/items/${planningRequestItemId}/mark_delivered/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
@@ -84,17 +93,20 @@ export async function markItemDelivered(planningRequestItemId) {
 }
 
 /**
- * Revert a single planning request item's delivered flag
+ * Undo the latest receipt on a planning request item (or every receipt with all=true).
  * @param {number} planningRequestItemId - The ID of the planning request item
- * @returns {Promise<Object>} Full PlanningRequestItem object with is_delivered: false
+ * @param {Object} [options]
+ * @param {boolean} [options.all] - Wipe every receipt instead of only the last one
+ * @returns {Promise<Object>} PlanningRequestItem with the re-derived delivery state
  */
-export async function unmarkItemDelivered(planningRequestItemId) {
+export async function unmarkItemDelivered(planningRequestItemId, options = {}) {
     try {
         const response = await authedFetch(`${backendBase}/planning/items/${planningRequestItemId}/unmark_delivered/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            body: JSON.stringify(options.all ? { all: true } : {})
         });
 
         if (!response.ok) {
@@ -110,14 +122,29 @@ export async function unmarkItemDelivered(planningRequestItemId) {
 }
 
 /**
- * Bulk mark multiple planning request items as delivered
- * @param {number[]} ids - Array of planning request item IDs
- * @returns {Promise<Object>} Response with detail message and updated_count
+ * Record receipts on several planning request items at once.
+ * @param {number[]|{items: {id: number, quantity?: number|string}[], note?: string}} payload
+ *   Either a list of ids (every line receives everything outstanding) or
+ *   one amount per line. One over-delivery rejects the whole batch.
+ * @returns {Promise<Object[]>} The affected items with their delivery state
  */
-export async function bulkMarkItemsDelivered(ids) {
+export async function bulkMarkItemsDelivered(payload) {
     try {
-        if (!Array.isArray(ids) || ids.length === 0) {
-            throw new Error('ids is required and must be a non-empty list');
+        let body;
+        if (Array.isArray(payload)) {
+            if (payload.length === 0) throw new Error('ids is required and must be a non-empty list');
+            body = { ids: payload };
+        } else {
+            const items = (payload && payload.items) || [];
+            if (items.length === 0) throw new Error('En az bir kalem seçilmelidir');
+            body = {
+                items: items.map((entry) => (
+                    entry.quantity === undefined || entry.quantity === null || entry.quantity === ''
+                        ? { id: entry.id }
+                        : { id: entry.id, quantity: String(entry.quantity) }
+                )),
+            };
+            if (payload.note) body.note = payload.note;
         }
 
         const response = await authedFetch(`${backendBase}/planning/items/bulk_mark_delivered/`, {
@@ -125,7 +152,7 @@ export async function bulkMarkItemsDelivered(ids) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ ids })
+            body: JSON.stringify(body)
         });
 
         if (!response.ok) {
@@ -136,6 +163,25 @@ export async function bulkMarkItemsDelivered(ids) {
         return await response.json();
     } catch (error) {
         console.error('Error bulk marking items as delivered:', error);
+        throw error;
+    }
+}
+
+/**
+ * Receipt history of a planning request item, oldest first.
+ * @param {number} planningRequestItemId
+ * @returns {Promise<Object[]>} [{id, quantity, delivered_at, delivered_by_name, note}]
+ */
+export async function getPlanningItemDeliveries(planningRequestItemId) {
+    try {
+        const response = await authedFetch(`${backendBase}/planning/items/${planningRequestItemId}/deliveries/`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || errorData.error || 'Teslimat geçmişi yüklenirken hata oluştu');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error loading delivery history:', error);
         throw error;
     }
 }
