@@ -131,7 +131,8 @@ function initializeFilters() {
                         </label>
                         <select id="filter-is-delivered" class="form-select form-select-sm">
                             <option value="">Tümü</option>
-                            <option value="false" selected>Teslim Edilmedi</option>
+                            <option value="false" selected>Bekleyenler (kısmi teslim dahil)</option>
+                            <option value="none">Hiç Teslim Edilmedi</option>
                             <option value="partial">Kısmi Teslim</option>
                             <option value="true">Teslim Edildi</option>
                         </select>
@@ -525,12 +526,16 @@ function applyFilters() {
     if (itemCode) currentFilters.item_code = itemCode;
     if (itemName) currentFilters.item_name = itemName;
     
-    // Handle is_delivered filter - default to false if not explicitly set
+    // Status filter. The default ('false') is every line the warehouse still
+    // waits for: nothing received yet AND partially received alike.
     if (isDelivered === '') {
         delete currentFilters.is_delivered;   // Tümü
     } else if (isDelivered === 'partial') {
         currentFilters.is_delivered = false;  // some of it arrived, still waiting for the rest
         currentFilters.partially_delivered = true;
+    } else if (isDelivered === 'none') {
+        currentFilters.is_delivered = false;  // not a single shipment yet
+        currentFilters.partially_delivered = false;
     } else {
         currentFilters.is_delivered = isDelivered === 'true';
     }
