@@ -140,6 +140,8 @@ function render() {
     let banner;
     if (locked) {
         banner = `<div class="wt-banner approved"><i class="fas fa-circle-check"></i><div><strong>Onaylandı.</strong> Bu günün puantajı kayıtlara geçti. Değişiklik için ofise söyleyin.</div></div>`;
+    } else if (!sub && day.rejection) {
+        banner = `<div class="wt-banner rejected"><i class="fas fa-rotate-left"></i><div><strong>Ofis geri gönderdi.</strong> ${day.rejection.reason ? esc(day.rejection.reason) : 'Lütfen kontrol edip tekrar gönderin.'}<br><small>Düzeltip tekrar <strong>GÖNDER</strong>'e basın.</small></div></div>`;
     } else if (sub) {
         const when = sub.submitted_at ? new Date(sub.submitted_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : '';
         banner = `<div class="wt-banner pending"><i class="fas fa-clock"></i><div><strong>Gönderildi${when ? ' · ' + esc(when) : ''}.</strong> Ofis onayı bekleniyor. Yanlış bir şey varsa düzeltip tekrar gönderin.</div></div>`;
