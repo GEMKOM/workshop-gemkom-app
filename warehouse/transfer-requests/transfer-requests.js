@@ -307,6 +307,19 @@ function currentHistoryFiltersFromInputs() {
 // EXCEL EXPORT (one file per request: header block + material lines)
 // ============================================================================
 
+// Warehouse ledger of a request line: what arrived for the planning line,
+// how much every non-cancelled pull (this one included) claims, what is left.
+function lineStockHtml(item) {
+    if (item.delivered_quantity === undefined || item.delivered_quantity === null) return '';
+    const f = (v) => formatDecimalTurkish(parseFloat(v || 0), 2).replace(/,00$/, '');
+    const unit = escapeHtml(item.item_unit || '');
+    const left = parseFloat(item.quantity_available_to_pull || 0);
+    return `<small class="text-muted d-block">
+        Teslim alınan ${f(item.delivered_quantity)} · çekilen (bu talep dahil) ${f(item.pulled_quantity)}
+        · <span class="${left > 0 ? 'text-success' : ''}">depoda kalan ${f(left)} ${unit}</span>
+    </small>`;
+}
+
 function destinationTypeLabel(type) {
     if (type === 'subcontractor') return 'Taşeron';
     if (type === 'team') return 'Ekip';
@@ -650,6 +663,7 @@ function createDetailModalHTML(request) {
                             <td>
                                 ${escapeHtml(item.item_name || '-')}
                                 ${item.is_delivered === true ? '<small class="text-success d-block"><i class="fas fa-check-circle me-1"></i>Teslim Alındı</small>' : ''}
+                                ${lineStockHtml(item)}
                             </td>
                             <td class="job-no">${escapeHtml(item.job_no || '-')}</td>
                             <td class="text-end fw-bold">${formatDecimalTurkish(parseFloat(item.quantity || 0), 2)} ${escapeHtml(item.item_unit || '')}</td>
