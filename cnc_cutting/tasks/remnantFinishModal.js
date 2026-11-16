@@ -13,11 +13,11 @@ function rowHtml(index) {
         <div class="row g-2 align-items-end remnant-row mb-2" data-row="${index}">
             <div class="col-4">
                 <label class="form-label small mb-1">En (mm)</label>
-                <input type="number" min="1" step="1" class="form-control remnant-width" inputmode="numeric">
+                <input type="number" min="0.1" step="0.1" class="form-control remnant-width" inputmode="decimal">
             </div>
             <div class="col-4">
                 <label class="form-label small mb-1">Boy (mm)</label>
-                <input type="number" min="1" step="1" class="form-control remnant-length" inputmode="numeric">
+                <input type="number" min="0.1" step="0.1" class="form-control remnant-length" inputmode="decimal">
             </div>
             <div class="col-2">
                 <label class="form-label small mb-1">Adet</label>
@@ -80,8 +80,8 @@ function readRows(modal) {
     const rows = [];
     let incomplete = false;
     modal.querySelectorAll('.remnant-row').forEach((row) => {
-        const width = parseInt(row.querySelector('.remnant-width').value, 10);
-        const length = parseInt(row.querySelector('.remnant-length').value, 10);
+        const width = mm(row.querySelector('.remnant-width').value);
+        const length = mm(row.querySelector('.remnant-length').value);
         const quantity = parseInt(row.querySelector('.remnant-quantity').value, 10);
         const empty = !row.querySelector('.remnant-width').value && !row.querySelector('.remnant-length').value;
         if (empty) return;
@@ -89,15 +89,21 @@ function readRows(modal) {
             incomplete = true;
             return;
         }
-        rows.push({ width_mm: String(width), length_mm: String(length), quantity });
+        rows.push({ width_mm: width.toFixed(1), length_mm: length.toFixed(1), quantity });
     });
     return { rows, incomplete };
 }
 
+/** mm from the input, rounded to 0.1 (a comma is read as the decimal point). */
+function mm(value) {
+    const n = parseFloat(String(value).replace(',', '.'));
+    return Number.isFinite(n) ? Math.round(n * 10) / 10 : NaN;
+}
+
 function refreshScrapHints(modal) {
     modal.querySelectorAll('.remnant-row').forEach((row) => {
-        const width = parseInt(row.querySelector('.remnant-width').value, 10);
-        const length = parseInt(row.querySelector('.remnant-length').value, 10);
+        const width = mm(row.querySelector('.remnant-width').value);
+        const length = mm(row.querySelector('.remnant-length').value);
         const scrap = width > 0 && length > 0 && Math.min(width, length) < MIN_REMNANT_SIDE_MM;
         row.querySelector('.remnant-scrap').style.display = scrap ? 'block' : 'none';
     });

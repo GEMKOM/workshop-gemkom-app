@@ -35,12 +35,32 @@ export async function finishCncTask(taskKey, payload) {
     if (response.ok) return { ok: true, error: '' };
     let error = '';
     try {
-        const data = await response.json();
-        error = data.error || data.detail || '';
+        error = firstMessage(await response.json());
     } catch (e) {
         error = '';
     }
     return { ok: false, error };
+}
+
+/** The first message in a DRF error body: {error}, {detail}, or field errors (nested). */
+function firstMessage(data) {
+    if (!data) return '';
+    if (typeof data === 'string') return data;
+    if (Array.isArray(data)) {
+        for (const item of data) {
+            const text = firstMessage(item);
+            if (text) return text;
+        }
+        return '';
+    }
+    if (typeof data === 'object') {
+        if (data.error || data.detail) return String(data.error || data.detail);
+        for (const value of Object.values(data)) {
+            const text = firstMessage(value);
+            if (text) return text;
+        }
+    }
+    return '';
 }
 
 /**
