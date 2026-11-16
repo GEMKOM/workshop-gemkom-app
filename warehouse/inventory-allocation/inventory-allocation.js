@@ -845,6 +845,19 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
                                     <i class="fas fa-box me-2"></i>Bulunan Miktar
                                 </label>
                                 <span class="desktop-label">Bulunan Miktar</span>
+                                ${item.stock_fill_closed_reason ? `
+                                <input type="number"
+                                       id="qty-${item.id}"
+                                       class="form-control quantity-found-input"
+                                       data-item-id="${item.id}"
+                                       data-requested-quantity="${item.quantity || 0}"
+                                       value="${parseFloat(item.quantity_from_inventory || 0)}"
+                                       disabled
+                                       title="${escapeAttr(item.stock_fill_closed_reason)}">
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-lock me-1"></i>${escapeAttr(item.stock_fill_closed_reason)} Satın almaya gider.
+                                </small>
+                                ` : `
                                 <input type="number" 
                                        id="qty-${item.id}"
                                        class="form-control quantity-found-input" 
@@ -856,6 +869,7 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
                                        placeholder="Miktar girin"
                                        inputmode="decimal"
                                        required>
+                                `}
                             `}
                         </div>
                     </div>
@@ -869,6 +883,13 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
             initializeEditableInputsBehavior(request);
         }, 100);
     }
+}
+
+// Text from the API placed inside HTML attributes / markup.
+function escapeAttr(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function initializeEditableInputsBehavior(request) {
