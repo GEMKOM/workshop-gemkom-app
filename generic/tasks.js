@@ -20,6 +20,30 @@ export async function markTaskAsDoneShared(taskKey, module = 'machining') {
 }
 
 /**
+ * Finishes a CNC cut with its remnants: the backend issues the cut's sheets,
+ * brings the remnants back to stock and stores the fire.
+ * @param {string} taskKey
+ * @param {{remnants: Array<{width_mm: string, length_mm: string, quantity: number}>, no_remnant: boolean}} payload
+ * @returns {Promise<{ok: boolean, error: string}>} error: the backend's message when refused
+ */
+export async function finishCncTask(taskKey, payload) {
+    const response = await authedFetch(`${backendBase}/cnc_cutting/tasks/mark-completed/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: taskKey, ...payload })
+    });
+    if (response.ok) return { ok: true, error: '' };
+    let error = '';
+    try {
+        const data = await response.json();
+        error = data.error || data.detail || '';
+    } catch (e) {
+        error = '';
+    }
+    return { ok: false, error };
+}
+
+/**
  * Marks a task as processed by warehouse
  * @param {string} taskKey - Task key to mark as warehouse processed
  * @param {string} [module='cnc_cutting'] - Module name: 'machining' or 'cnc_cutting'

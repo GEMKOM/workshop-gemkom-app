@@ -3,7 +3,8 @@
 
 import { state } from '../cnc_cuttingService.js';
 import { navigateTo, ROUTES } from '../../authService.js';
-import { markTaskAsDoneShared } from '../../generic/tasks.js';
+import { finishCncTask } from '../../generic/tasks.js';
+import { askRemnants } from './remnantFinishModal.js';
 import { showCommentModal } from '../../components/taskTimerModals.js';
 import { createMaintenanceRequest } from '../../generic/machines.js';
 import { checkMachineMaintenance } from '../../generic/machines.js';
@@ -162,14 +163,19 @@ export async function handleMarkDoneClick() {
     if (!confirmed) {
         return;
     }
-    
+    // The cut's remnants (or "none left"): they go back to stock as it finishes.
+    const remnants = await askRemnants();
+    if (!remnants) {
+        return;
+    }
+
     try {
-        const marked = await markTaskAsDoneShared(state.currentIssue.key, 'cnc_cutting');
-        if (marked) {
+        const result = await finishCncTask(state.currentIssue.key, remnants);
+        if (result.ok) {
             alert('Görev tamamlandı olarak işaretlendi.');
             navigateTo(ROUTES.CNC_CUTTING);
         } else {
-            alert("Hata oluştu. Lütfen tekrar deneyin.");
+            alert(result.error || "Hata oluştu. Lütfen tekrar deneyin.");
         }
     } catch (error) {
         console.error('Error marking as done:', error);
