@@ -162,6 +162,36 @@ export function hasPermission(codename) {
     }
 }
 
+// Permissions used to be cached at login only, so a device that stayed signed
+// in never learned about pages granted afterwards (Kaynak Puantaj, 2026-10-12:
+// welders' phones kept the pre-launch cache and the page stayed hidden).
+// Refetch on page load, at most once a minute; a changed grant reloads the
+// page so the home cards, the navbar and the route guard all agree.
+const PERMISSIONS_REFRESHED_AT_KEY = 'permissions_refreshed_at';
+const PERMISSIONS_REFRESH_INTERVAL_MS = 60 * 1000;
+
+/**
+ * @param {{force?: boolean}} [options]
+ * @returns {Promise<boolean>} true when the stored permissions changed
+ */
+export async function refreshPermissions({ force = false } = {}) {
+    if (!isLoggedIn()) return false;
+    const last = Number(localStorage.getItem(PERMISSIONS_REFRESHED_AT_KEY) || 0);
+    if (!force && Date.now() - last < PERMISSIONS_REFRESH_INTERVAL_MS) return false;
+    localStorage.setItem(PERMISSIONS_REFRESHED_AT_KEY, String(Date.now()));
+    try {
+        const response = await authedFetch(`${backendBase}/users/me/permissions/`);
+        if (!response.ok) return false;
+        const fresh = JSON.stringify(await response.json());
+        const changed = fresh !== localStorage.getItem(STORAGE_KEYS.PERMISSIONS);
+        if (changed) localStorage.setItem(STORAGE_KEYS.PERMISSIONS, fresh);
+        return changed;
+    } catch (error) {
+        console.warn('Permission refresh failed:', error);
+        return false;
+    }
+}
+
 export function getRoutePermissionCodename(pathname = window.location.pathname) {
     const rawPath = String(pathname || '').split('#')[0];
     const [pathOnly, query = ''] = rawPath.split('?');
@@ -251,10 +281,24 @@ export function guardRoute() {
     }
 
     if (normalizedPath !== ROUTES.UNAUTHORIZED && !hasRouteAccess(currentPath)) {
-        navigateTo(ROUTES.UNAUTHORIZED);
+        // The cache may be stale: ask the server before turning the user away.
+        refreshPermissions({ force: true }).then(() => {
+            if (hasRouteAccess(currentPath)) {
+                window.location.reload();
+            } else {
+                navigateTo(ROUTES.UNAUTHORIZED);
+            }
+        });
         return false;
     }
-    
+
+    // Keep the cache fresh in the background; a changed grant re-renders the page.
+    if (normalizedPath !== ROUTES.UNAUTHORIZED) {
+        refreshPermissions().then((changed) => {
+            if (changed) window.location.reload();
+        });
+    }
+
     // If we get here, user is authenticated and on the right page
     document.body.classList.remove('pre-auth');
     return true;
