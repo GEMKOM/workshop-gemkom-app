@@ -21,7 +21,9 @@ export function setCurrentIssueState(issue) {
         machine_fk: issue.machine_fk,
         machine_name: issue.machine_name,
         estimated_hours: issue.estimated_hours,
-        is_hold_task: issue.is_hold_task
+        is_hold_task: issue.is_hold_task,
+        // Talep Edilen Sac: sheets still waiting for Mal Kabul (0 = none).
+        sheets_waiting: issue.sheets_waiting || 0
     };
 }   
 
