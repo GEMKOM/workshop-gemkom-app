@@ -7,6 +7,21 @@
 
 const MIN_REMNANT_SIDE_MM = 500;
 const MODAL_ID = 'remnantFinishModal';
+// The confirmation modal's stylesheet lifts every Bootstrap backdrop to 10049
+// (components/confirmation-modal/confirmation-modal.css), so this modal must
+// sit above it or it opens under its own backdrop and nothing is clickable.
+const MODAL_Z_INDEX = '10050';
+
+/** Waits until the "Görevi Tamamla" confirmation has finished closing, so the
+ * two Bootstrap modals never overlap (at most ~1 s). */
+async function waitForOtherModals() {
+    for (let i = 0; i < 40; i++) {
+        const others = [...document.querySelectorAll('.modal.show, .modal[style*="display: block"]')]
+            .filter((m) => m.id !== MODAL_ID);
+        if (!others.length) return;
+        await new Promise((r) => setTimeout(r, 25));
+    }
+}
 
 function rowHtml(index) {
     return `
@@ -70,7 +85,9 @@ function ensureModal() {
             </div>
         </div>`;
     document.body.appendChild(wrapper.firstElementChild);
-    return document.getElementById(MODAL_ID);
+    modal = document.getElementById(MODAL_ID);
+    modal.style.zIndex = MODAL_Z_INDEX;
+    return modal;
 }
 
 function readRows(modal) {
@@ -110,7 +127,8 @@ function refreshScrapHints(modal) {
  * Asks for the cut's remnants.
  * @returns {Promise<{remnants: Array, no_remnant: boolean} | null>} null when cancelled
  */
-export function askRemnants() {
+export async function askRemnants() {
+    await waitForOtherModals();
     return new Promise((resolve) => {
         const modal = ensureModal();
         const rowsBox = modal.querySelector('.remnant-rows');
@@ -156,6 +174,7 @@ export function askRemnants() {
         modal.addEventListener('click', onClick);
         modal.addEventListener('input', onInput);
         modal.addEventListener('hidden.bs.modal', onHidden);
+        modal.style.zIndex = MODAL_Z_INDEX;
         bootstrap.Modal.getOrCreateInstance(modal).show();
     });
 }
