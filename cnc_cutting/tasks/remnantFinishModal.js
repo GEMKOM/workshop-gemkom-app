@@ -1,6 +1,6 @@
 // --- remnantFinishModal.js ---
 // Finishing a CNC cut: the operator enters the remnants (fire sac) the cut
-// left, as rectangles, or confirms that no usable remnant is left. The
+// left, as rectangles. No rows means the cut left no usable remnant. The
 // backend books the cut with them: the sheets leave stock, the remnants go
 // back to stock as pieces, the rest is fire. A remnant shorter than 500 mm on
 // its short side is not kept; it counts as fire.
@@ -51,16 +51,13 @@ function ensureModal() {
                     <div class="modal-body">
                         <p class="small text-muted mb-2">
                             Kesimden artan kullanılabilir sacları girin (dikdörtgen olarak).
-                            Bunlar stoğa döner; kalanı fire sayılır.
+                            Bunlar stoğa döner; kalanı fire sayılır. Kullanılabilir fire
+                            kalmadıysa boş bırakın.
                         </p>
                         <div class="remnant-rows"></div>
                         <button type="button" class="btn btn-outline-primary btn-sm remnant-add mb-3">
                             <i class="fas fa-plus me-1"></i>Fire Sac Ekle
                         </button>
-                        <div class="form-check">
-                            <input class="form-check-input remnant-none" type="checkbox" id="${MODAL_ID}None">
-                            <label class="form-check-label" for="${MODAL_ID}None">Kullanılabilir fire sac kalmadı</label>
-                        </div>
                         <div class="alert alert-danger small mt-3 mb-0 remnant-error" style="display:none;"></div>
                     </div>
                     <div class="modal-footer">
@@ -117,7 +114,6 @@ export function askRemnants() {
     return new Promise((resolve) => {
         const modal = ensureModal();
         const rowsBox = modal.querySelector('.remnant-rows');
-        const none = modal.querySelector('.remnant-none');
         const error = modal.querySelector('.remnant-error');
         let counter = 0;
         let settled = false;
@@ -127,7 +123,6 @@ export function askRemnants() {
         };
         rowsBox.innerHTML = '';
         addRow();
-        none.checked = false;
         error.style.display = 'none';
 
         const showError = (text) => {
@@ -142,21 +137,15 @@ export function askRemnants() {
             } else if (event.target.closest('.remnant-confirm')) {
                 const { rows, incomplete } = readRows(modal);
                 if (incomplete) return showError('Her fire sac için en, boy ve adet girin.');
-                if (rows.length && none.checked) {
-                    return showError('Fire sac girdiniz; "Kullanılabilir fire sac kalmadı" işaretini kaldırın.');
-                }
-                if (!rows.length && !none.checked) {
-                    return showError('Fire sac ölçülerini girin ya da kullanılabilir fire sac kalmadığını işaretleyin.');
-                }
                 settled = true;
                 bootstrap.Modal.getOrCreateInstance(modal).hide();
-                resolve({ remnants: none.checked ? [] : rows, no_remnant: none.checked });
+                // No rows: the cut left no usable remnant.
+                resolve({ remnants: rows, no_remnant: rows.length === 0 });
             }
         };
         const onInput = () => {
             error.style.display = 'none';
             refreshScrapHints(modal);
-            rowsBox.style.opacity = none.checked ? '0.5' : '1';
         };
         const onHidden = () => {
             modal.removeEventListener('click', onClick);
