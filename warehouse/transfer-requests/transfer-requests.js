@@ -369,15 +369,16 @@ async function exportRequestExcel(requestOrId) {
     }
     header.push(['Not', request.note || '']);
 
-    const tableHeader = ['#', 'İş Emri', 'Stok Kodu', 'Malzeme', 'Miktar', 'Birim'];
+    const tableHeader = ['#', 'İş Emri', 'Stok Kodu', 'Malzeme', 'Ölçü', 'Miktar', 'Birim'];
     const lines = (request.items || []).map((item, i) => [
-        i + 1, item.job_no || '', item.item_code || '', item.item_name || '', Number(item.quantity ?? 0), item.item_unit || ''
+        i + 1, item.job_no || '', item.item_code || '', item.item_name || '', item.size_summary || '',
+        Number(item.quantity ?? 0), item.item_unit || ''
     ]);
     const aoa = [...header, [], tableHeader, ...lines];
     const tableHeaderRow = header.length + 1;             // 0-based row index of the table header
 
     const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
-    ws['!cols'] = [{ wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 40 }, { wch: 12 }, { wch: 8 }];
+    ws['!cols'] = [{ wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 40 }, { wch: 30 }, { wch: 12 }, { wch: 8 }];
     ws['!merges'] = header.map((_, r) => ({ s: { r, c: 1 }, e: { r, c: 5 } }));
 
     const font = { name: 'Segoe UI', sz: 9 };
@@ -662,6 +663,7 @@ function createDetailModalHTML(request) {
                             <td class="item-code">${escapeHtml(item.item_code || '-')}</td>
                             <td>
                                 ${escapeHtml(item.item_name || '-')}
+                                ${item.size_summary ? `<small class="text-muted d-block">${escapeHtml(item.size_summary)}</small>` : ''}
                                 ${item.is_delivered === true ? '<small class="text-success d-block"><i class="fas fa-check-circle me-1"></i>Teslim Alındı</small>' : ''}
                                 ${lineStockHtml(item)}
                             </td>

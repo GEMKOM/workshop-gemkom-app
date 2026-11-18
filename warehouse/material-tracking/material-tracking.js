@@ -225,7 +225,9 @@ function initializeTable() {
                 field: 'item_name',
                 label: 'Malzeme Adı',
                 sortable: true,
-                formatter: (value) => `<span class="item-name">${value || '-'}</span>`
+                // Plate / bar lines: the size under the name ("1500×6000 mm × 2 adet · 1.413 kg").
+                formatter: (value, row) => `<span class="item-name">${escapeHtml(value || '-')}</span>` +
+                    (row.size_summary ? `<small class="text-muted d-block">${escapeHtml(row.size_summary)}</small>` : '')
             },
             {
                 field: 'job_no',

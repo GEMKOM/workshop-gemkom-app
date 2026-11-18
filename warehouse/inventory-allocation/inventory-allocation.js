@@ -767,6 +767,7 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
                                 <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
                                 ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
                                 ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
+                                ${item.size_summary ? `<small class="text-muted d-block">${escapeAttr(item.size_summary)}</small>` : ''}
                                 ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
                             </div>
                         </div>
@@ -821,6 +822,7 @@ function initializeItemsTable(request, isWarehouseRequest = false) {
                                 <div class="fw-bold">${item.item_name || item.item_display || '-'}</div>
                                 ${item.item_code ? `<small class="text-muted d-block">Kod: ${item.item_code}</small>` : ''}
                                 ${item.item_description ? `<small class="text-muted d-block">${item.item_description}</small>` : ''}
+                                ${item.size_summary ? `<small class="text-muted d-block">${escapeAttr(item.size_summary)}</small>` : ''}
                                 ${item.job_no && item.job_no !== '1000' ? `<small class="text-primary d-block"><i class="fas fa-briefcase me-1"></i>İş No: ${item.job_no}</small>` : ''}
                             </div>
                         </div>
