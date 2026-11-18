@@ -9,7 +9,7 @@ import { showCommentModal } from '../../components/taskTimerModals.js';
 import { createMaintenanceRequest } from '../../generic/machines.js';
 import { checkMachineMaintenance } from '../../generic/machines.js';
 import { createManualTimeEntryShared } from '../../generic/timers.js';
-import { stopTimerShared, startTimerShared } from '../../generic/timers.js';
+import { stopTimerShared, startTimerOrError } from '../../generic/timers.js';
 import { getSyncedNow, syncServerTime } from '../../generic/timeService.js';
 import { setCurrentTimerState, setCurrentMachineState } from './taskState.js';
 import { TimerWidget } from '../../components/timerWidget.js';
@@ -20,10 +20,22 @@ import { ConfirmationModal } from '../../components/confirmation-modal/confirmat
 // TIMER FUNCTIONS (IMPLEMENTED FROM DELETED taskLogic.js)
 // ============================================================================
 
+// Talep Edilen Sac: the cut's sheets are still on order (not through Mal Kabul).
+export const SHEETS_WAITING_TEXT = "Bu kesimin sacı henüz Mal Kabul'den geçmedi; sac gelince başlatılabilir.";
+const SHEETS_WAITING_FINISH_TEXT = "Bu kesimin sacı henüz Mal Kabul'den geçmedi; sac gelince bitirilebilir.";
+
+function sheetsWaiting() {
+    return Number(state.currentIssue && state.currentIssue.sheets_waiting) > 0;
+}
+
 async function handleStartTimer(comment = null) {
     if (!state.currentMachine.id || !state.currentIssue.key){
         alert("Bir sorun oluştu. Sayfa yeniden yükleniyor.");
         navigateTo(ROUTES.CNC_CUTTING);
+        return;
+    }
+    if (sheetsWaiting()) {
+        alert(SHEETS_WAITING_TEXT);
         return;
     }
     
@@ -40,7 +52,12 @@ async function handleStartTimer(comment = null) {
             timerData.comment = comment;
         }
         
-        const timer = await startTimerShared(timerData, 'cnc_cutting');
+        const { timer, error } = await startTimerOrError(timerData, 'cnc_cutting');
+        if (!timer && error) {
+            // A refusal the operator can act on (e.g. the sheets are not here yet).
+            alert(error);
+            return;
+        }
         if (!timer) {
             alert("Bir sorun oluştu. Sayfa yeniden yükleniyor.");
             navigateTo(ROUTES.CNC_CUTTING);
@@ -158,6 +175,10 @@ function getConfirmationModal() {
 
 export async function handleMarkDoneClick() {
     if (await checkMaintenanceAndAlert()) return;
+    if (sheetsWaiting()) {
+        alert(SHEETS_WAITING_FINISH_TEXT);
+        return;
+    }
     
     const confirmed = await showCompleteTaskModal();
     if (!confirmed) {
@@ -203,6 +224,10 @@ export async function showCompleteTaskModal() {
 
 
 export async function handleManualLogClick() {
+    if (sheetsWaiting()) {
+        alert(SHEETS_WAITING_TEXT);
+        return;
+    }
     if (await checkMaintenanceAndAlert()) return;
     
     // For hold tasks, show comment modal first

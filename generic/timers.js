@@ -94,6 +94,28 @@ export async function startTimerShared(timerData, module = 'machining') {
 }
 
 /**
+ * Starts a timer like startTimerShared, but says why the backend refused it.
+ * @returns {Promise<{timer: Object|null, error: string}>}
+ */
+export async function startTimerOrError(timerData, module = 'machining') {
+    const modulePath = module === 'cnc_cutting' ? 'cnc_cutting' : 'machining';
+    const response = await authedFetch(`${backendBase}/${modulePath}/timers/start/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(timerData)
+    });
+    if (response.ok) return { timer: await response.json(), error: '' };
+    let error = '';
+    try {
+        const data = await response.json();
+        error = (data && (data.error || data.detail)) ? String(data.error || data.detail) : '';
+    } catch (e) {
+        error = '';
+    }
+    return { timer: null, error };
+}
+
+/**
  * Creates a manual time entry on the API
  * @param {Object} timerData - Manual time entry data
  * @param {string} timerData.issue_key - Issue key

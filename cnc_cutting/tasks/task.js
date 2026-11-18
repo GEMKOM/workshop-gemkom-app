@@ -134,8 +134,11 @@ function initializeTimerPage(issue, activeTimer) {
         },
 
         // Warning configuration
-        showWarning: issue.key === 'W-07' && hasActiveTimer,
-        warningMessage: 'Zamanlayıcı arızanız bakım ekibi tarafından çözüldüğünde otomatik olarak durdurulacaktır.',
+        // Talep Edilen Sac still on order: the cut can't start until Mal Kabul posts its sheets.
+        showWarning: (issue.key === 'W-07' && hasActiveTimer) || Number(issue.sheets_waiting) > 0,
+        warningMessage: Number(issue.sheets_waiting) > 0
+            ? `Bu kesimin sacı henüz Mal Kabul'den geçmedi (${issue.sheets_waiting} sac bekleniyor); sac gelince başlatılabilir.`
+            : 'Zamanlayıcı arızanız bakım ekibi tarafından çözüldüğünde otomatik olarak durdurulacaktır.',
         warningIcon: 'fas fa-exclamation-circle',
 
         // Modal configuration
