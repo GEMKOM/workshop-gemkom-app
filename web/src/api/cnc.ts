@@ -223,3 +223,57 @@ export function groupCuts(tasks: CncTask[]) {
   for (const list of machines.values()) list.sort(byPlan);
   return { reserve, planned, machines };
 }
+
+// ---- the task screen ----
+
+export interface StartCncTimer {
+  issue_key: string;
+  start_time: number;
+  machine_fk: number | string;
+  comment?: string;
+}
+
+/** Starts a cut's timer; a refusal (e.g. sheets not received) carries the server's message. */
+export function startCncTimer(body: StartCncTimer) {
+  return apiFetch<{ id?: number }>('/cnc_cutting/timers/start/', { method: 'POST', body });
+}
+
+export interface ManualCncTime {
+  issue_key: string;
+  start_time: number;
+  finish_time: number;
+  machine_fk: number | string;
+  comment?: string;
+}
+
+export function createCncManualTime(body: ManualCncTime) {
+  return apiFetch<unknown>('/cnc_cutting/manual-time/', { method: 'POST', body });
+}
+
+export interface BookedRemnant {
+  item_code?: string | null;
+  item_name?: string | null;
+  shape?: string | null;
+  width_mm?: string | number | null;
+  length_mm?: string | number | null;
+  area_m2?: string | number | null;
+  sheets?: { code?: string | null; heat_number?: string | null }[] | null;
+}
+
+/** Finishes a cut with its remnants (or none); the answer lists the remnant sheets' codes. */
+export function finishCncTask(key: string, payload: { remnants: unknown[]; no_remnant: boolean }) {
+  return apiFetch<{ booked?: { remnants?: BookedRemnant[] | null } | null }>(
+    '/cnc_cutting/tasks/mark-completed/',
+    { method: 'POST', body: { key, ...payload } },
+  );
+}
+
+/** Hold tasks (W-…) that start without a comment (lunch and the like). */
+export const HOLD_TASKS_WITHOUT_COMMENT = new Set(['W-14', 'W-02']);
+
+/** The hold task the fault button opens when the machine has stopped. */
+export const MACHINE_FAULT_HOLD = {
+  machineId: '7',
+  key: 'W-07',
+  name: 'Makine Arızası Nedeniyle Bekleme',
+};
