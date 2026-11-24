@@ -5,14 +5,18 @@
 //     (<prefix>/machining/index.html, ...), so deep links and the timer
 //     bubble's links load the app with a 200,
 //   - the manifest's start_url and scope set to <prefix>/, so "add to home
-//     screen" during the pilot opens the React app.
+//     screen" opens the React app.
 // The legacy files must already be in the site folder (deploy.yml copies them
-// first); nothing of theirs is overwritten.
+// first). Without a prefix (live, since the cutover) the app's pages replace
+// the legacy pages at the same routes and 404.html is the app too, so a
+// mistyped address shows the app's "not found" page; the other legacy files
+// stay, so a phone that still has a legacy page open keeps working until it
+// reloads. With a prefix (the /beta/ pilot) nothing legacy is overwritten.
 //
 // Usage: node scripts/assemble.mjs [--site <dir>] [--dist <dir>] [--prefix /beta]
 //   --site    the assembled site (default <repo>/_site)
 //   --dist    the React build (default web/dist)
-//   --prefix  where the app's pages live (default /beta; '' at the cutover)
+//   --prefix  where the app's pages live (default: the root)
 
 import {
   copyFileSync,
@@ -62,7 +66,7 @@ function copy(src, dest) {
 }
 
 /** Adds the app to `siteDir`; returns what it wrote. */
-export function assemble({ siteDir, distDir, prefix = '/beta' }) {
+export function assemble({ siteDir, distDir, prefix = '' }) {
   const cleanPrefix = prefix.replace(/\/+$/, '');
   const entry = path.join(distDir, 'index.html');
   if (!existsSync(entry))
@@ -108,6 +112,10 @@ export function assemble({ siteDir, distDir, prefix = '/beta' }) {
     writeFileSync(dest, html);
     pages.push(rel);
   }
+  if (!cleanPrefix) {
+    writeFileSync(path.join(siteDir, '404.html'), html);
+    pages.push('404.html');
+  }
   return { assets, pages };
 }
 
@@ -116,7 +124,7 @@ function main() {
     options: {
       site: { type: 'string' },
       dist: { type: 'string' },
-      prefix: { type: 'string', default: '/beta' },
+      prefix: { type: 'string', default: '' },
     },
   });
   const result = assemble({
