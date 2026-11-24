@@ -1,0 +1,102 @@
+.card {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+  box-shadow: var(--gk-shadow-card);
+  color: inherit;
+  text-decoration: none;
+  text-align: left;
+}
+
+.card:active {
+  background: var(--gk-surface-subtle);
+}
+
+.code {
+  font-family: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
+  font-size: 17px;
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fields small {
+  color: var(--gk-muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.holdCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 72px;
+  padding: 14px 16px;
+  border: 1px solid var(--gk-red-100);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-red-050);
+  color: var(--gk-red-700);
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+}
+
+/* ---- plate stock ---- */
+.group {
+  overflow: hidden;
+}
+
+.groupHead {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.chevron {
+  flex: none;
+  margin-top: 2px;
+  color: var(--gk-muted);
+  transition: transform 150ms ease;
+}
+
+.chevron[data-open] {
+  transform: rotate(180deg);
+}
+
+.sheetRow {
+  padding: 10px 14px;
+  border-top: 1px solid var(--gk-line);
+}
+
+.sheetRow[data-match] {
+  background: #fff8db;
+}
+
+.wrapBadge {
+  height: auto;
+  white-space: normal;
+  text-transform: none;
+}

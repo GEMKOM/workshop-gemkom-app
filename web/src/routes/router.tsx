@@ -102,6 +102,13 @@ export const routes: RouteObject[] = [
                 }),
               },
               {
+                path: 'cnc_cutting',
+                handle: handle({ title: 'CNC Kesim' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/cnc/CncPage')).CncPage,
+                }),
+              },
+              {
                 path: 'unauthorized',
                 handle: handle({ title: 'Yetkisiz Erişim' }),
                 lazy: async () => ({
