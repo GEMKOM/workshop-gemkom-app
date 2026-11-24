@@ -27,8 +27,18 @@ const STYLE: Record<NotifyType, { color: string; icon: Icon }> = {
   warning: { color: 'yellow', icon: IconAlertTriangle },
 };
 
-/** The text to show for a caught error: its `.message`, or the fallback. */
+/** What the browsers say when a request never reached the server. */
+const NETWORK_ERROR = /Failed to fetch|NetworkError|Load failed|network connection was lost/i;
+
+export const OFFLINE_TEXT =
+  'Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.';
+
+/**
+ * The text to show for a caught error: its `.message`, or the fallback. A
+ * request that never reached the server (shop-floor Wi-Fi) reads in Turkish.
+ */
 export function errorText(error: unknown, fallback = 'Bir hata oluştu'): string {
+  if (error instanceof TypeError && NETWORK_ERROR.test(error.message)) return OFFLINE_TEXT;
   if (typeof error === 'string' && error.trim()) return error;
   if (error && typeof error === 'object' && 'message' in error) {
     const { message } = error as { message: unknown };

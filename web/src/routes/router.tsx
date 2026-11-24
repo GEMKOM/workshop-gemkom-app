@@ -80,6 +80,13 @@ export const routes: RouteObject[] = [
                 }),
               },
               {
+                path: 'welding/timesheet',
+                handle: handle({ title: 'Kaynak Puantaj' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/welding/TimesheetPage')).TimesheetPage,
+                }),
+              },
+              {
                 path: 'unauthorized',
                 handle: handle({ title: 'Yetkisiz Erişim' }),
                 lazy: async () => ({
