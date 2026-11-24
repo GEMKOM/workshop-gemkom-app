@@ -1,4 +1,5 @@
 import { MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
@@ -15,8 +16,10 @@ export function renderApp(path = '/', appRoutes: RouteObject[] = routes) {
     <MantineProvider theme={theme}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Notifications />
-          <RouterProvider router={router} />
+          <ModalsProvider labels={{ confirm: 'Onayla', cancel: 'İptal' }}>
+            <Notifications />
+            <RouterProvider router={router} />
+          </ModalsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </MantineProvider>,

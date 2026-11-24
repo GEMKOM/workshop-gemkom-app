@@ -1,14 +1,22 @@
+/* Pinned above the bottom tab bar, whatever the page's height; the page gets
+   extra bottom padding while it is shown (styles/global.css). */
 .bar {
-  position: sticky;
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: calc(var(--gk-tabbar) + var(--gk-safe-bottom));
-  z-index: 10;
-  display: grid;
-  gap: 12px;
+  z-index: 15;
   min-height: var(--gk-actionbar);
   box-sizing: border-box;
-  margin: 0 calc(-1 * var(--gk-page-pad));
   padding: 12px var(--gk-page-pad);
   background: var(--gk-surface);
   border-top: 1px solid var(--gk-line);
-  box-shadow: 0 -2px 12px rgba(16, 24, 40, 0.06);
+  box-shadow: 0 -2px 12px rgba(16, 24, 40, 0.08);
+}
+
+.buttons {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto;
 }

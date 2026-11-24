@@ -102,14 +102,15 @@ Route permissions (`getRoutePermissionCodename`):
 
 ## Maintenance (`maintenance/`, `maintenance/faults/task/`)
 
-- [ ] Tabs by `?tab=`: `create-request` (default), `fault-requests`, `resolved-requests`; the URL is replaced, not pushed.
-- [ ] Create: machine picker with search from GET `/machines/?compact=true&exclude_used_in=it&page_size=1000`, or custom equipment (asset name and location, with its warning); maintenance or fault; "is operable" for faults; description → POST `/machines/faults/` `{is_maintenance, description, is_breaking, machine | asset_name + location}`.
-- [ ] Open faults: GET `/machines/faults/?unresolved=true`; tap → `/maintenance/faults/task/?fault_id=`.
-- [ ] Resolved: GET `/machines/faults/?unresolved=false`.
+- [ ] Tabs by `?tab=`: `create-request` (default), `fault-requests`, `resolved-requests`; the URL is replaced, not pushed. The open-requests tab needs `access_maintenance_list` (as its URL always did) and is hidden from users without it; the legacy page showed it and refused them on reload.
+- [ ] Create: machine picker with search (name, code, type, assigned users) from GET `/machines/?compact=true&exclude_used_in=it&page_size=1000`, or custom equipment (asset name and location, after its warning); maintenance or fault; "is operable" for faults; description → POST `/machines/faults/` `{is_maintenance, description, is_breaking, machine | asset_name + location}`. Afterwards the legacy page went to the home page (`../index.html`); it now opens the open requests (or home without the list permission).
+- [ ] Open faults: GET `/machines/faults/?unresolved=true&page_size=1000`, search by machine or description on the phone; "Makine duruşta" for breaking faults; tap → `/maintenance/faults/task/?fault_id=`.
+- [ ] Resolved: GET `/machines/faults/?unresolved=false&page_size=1000`, search also in the resolution; read-only.
 - [ ] Fault task loads GET `/machines/faults/{id}/` and GET `/machines/faults/timers/?issue_key={id}`.
 - [ ] Start: POST `/machines/faults/timers/start/` `{task_key, task_type: 'machine_fault', start_time, machine_fk}`; stop: POST `/machines/faults/timers/stop/`.
 - [ ] Complete with a required resolution: POST `/machines/faults/{id}/complete/`.
-- [ ] Back while a timer runs asks for confirmation.
+- [ ] Back while a timer runs asks for confirmation (now any in-app navigation: the back arrow, the bottom bar, the phone's back gesture).
+- [ ] A fault that can't be loaded shows an error and goes back to the open requests.
 
 ## Department requests (`department-requests/`, `department-requests/create/`)
 

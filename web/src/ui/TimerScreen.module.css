@@ -1,0 +1,48 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.head {
+  box-shadow: var(--gk-shadow-card);
+}
+
+.titles {
+  min-width: 0;
+}
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.clock {
+  margin-top: 12px;
+  text-align: center;
+  font-family: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  color: var(--gk-muted);
+}
+
+.clock[data-running] {
+  color: var(--gk-red-700);
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.detail[data-wide] {
+  grid-column: 1 / -1;
+}
+
+.detailValue {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
