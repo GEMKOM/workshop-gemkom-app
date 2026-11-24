@@ -113,8 +113,10 @@ Route permissions (`getRoutePermissionCodename`):
 
 ## Department requests (`department-requests/`, `department-requests/create/`)
 
-- [ ] My requests: GET `/planning/department-requests/my_requests/?status=`, status filter defaulting to `submitted`; read-only cards; a create link.
-- [ ] Create: title, needed date, description, priority (default normal), request type (730.06.004, 730.06.005, 730.10.004), item cards (name, quantity, unit: adet, kg, metre, litre, paket, kutu; spec), add and remove items → POST `/planning/department-requests/`.
+- [ ] My requests: GET `/planning/department-requests/my_requests/`; read-only cards; a create link.
+  - The legacy status filter never worked: the backend's `my_requests` ignores filters, so every request showed whatever was picked. The status filter now works on the phone and defaults to "Tümü", which shows what operators saw before.
+  - New: "Daha fazla" loads the next page (the legacy page showed only the first).
+- [ ] Create: title, needed date (default today), description, priority (default normal), request type (730.06.004, 730.06.005, 730.10.004), item cards (name, quantity, unit: adet, kg, metre, litre, paket, kutu; spec), add and remove items → POST `/planning/department-requests/` with each item's `name` = the type's account name, `item_code`, `item_description` = the item name, `item_specifications` = its description. Problems show inline instead of `alert()`.
 
 ## Not ported (dead in the legacy app)
 

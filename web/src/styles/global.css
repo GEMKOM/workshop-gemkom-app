@@ -26,6 +26,8 @@
      on notched phones), and the side padding of page content. */
   --gk-topbar: 56px;
   --gk-tabbar: 64px;
+  /* A page's sticky action bar (ui/StickyActions). */
+  --gk-actionbar: 74px;
   --gk-safe-bottom: env(safe-area-inset-bottom, 0px);
   --gk-safe-top: env(safe-area-inset-top, 0px);
   --gk-page-pad: 16px;

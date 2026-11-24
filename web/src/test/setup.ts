@@ -23,4 +23,15 @@ if (typeof window !== 'undefined') {
     disconnect() {}
   }
   window.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver;
+
+  // Textarea autosize listens for web fonts loading; jsdom has no FontFaceSet.
+  if (!('fonts' in document)) {
+    Object.defineProperty(document, 'fonts', {
+      value: {
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        ready: Promise.resolve(),
+      },
+    });
+  }
 }

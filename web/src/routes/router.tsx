@@ -50,6 +50,22 @@ export const routes: RouteObject[] = [
                 }),
               },
               {
+                path: 'department-requests',
+                handle: handle({ title: 'Departman Talepleri' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/department-requests/RequestsListPage'))
+                    .RequestsListPage,
+                }),
+              },
+              {
+                path: 'department-requests/create',
+                handle: handle({ title: 'Yeni Talep', back: '/department-requests/' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/department-requests/RequestCreatePage'))
+                    .RequestCreatePage,
+                }),
+              },
+              {
                 path: 'unauthorized',
                 handle: handle({ title: 'Yetkisiz Erişim' }),
                 lazy: async () => ({

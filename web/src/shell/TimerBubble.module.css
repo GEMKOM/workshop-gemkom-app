@@ -22,6 +22,11 @@
   -webkit-user-select: none;
 }
 
+:global(:root[data-sticky-actions]) .bubble {
+  /* Above a page's sticky action bar too. */
+  bottom: calc(var(--gk-tabbar) + var(--gk-safe-bottom) + var(--gk-actionbar) + 16px);
+}
+
 .bubble:active {
   background: var(--gk-red-800);
 }
