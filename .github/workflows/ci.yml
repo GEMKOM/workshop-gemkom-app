@@ -1,5 +1,5 @@
 # Checks the React app (web/) on every pull request and on main: types, lint,
-# formatting, tests and the production build. The legacy pages have no checks.
+# formatting, tests and the production build.
 
 name: CI
 
