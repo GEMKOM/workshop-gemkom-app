@@ -1,0 +1,311 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- date chips ---- */
+.dates {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.date {
+  flex: none;
+  min-width: 72px;
+  padding: 8px 12px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.date small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--gk-muted);
+}
+
+.date[data-active] {
+  border-color: var(--gk-red-700);
+  background: var(--gk-red-700);
+  color: #fff;
+}
+
+.date[data-active] small {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ---- body ---- */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.body:disabled {
+  opacity: 0.65;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+  font-weight: 500;
+}
+
+.toggle small {
+  color: var(--gk-muted);
+  font-weight: 400;
+}
+
+.check {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--gk-line);
+  border-radius: 6px;
+  color: #fff;
+}
+
+.toggle[data-on] {
+  border-color: #6c757d;
+  background: #f1f3f5;
+}
+
+.toggle[data-on] .check {
+  border-color: #495057;
+  background: #495057;
+}
+
+.section {
+  margin-top: 4px;
+  font-weight: 600;
+  color: var(--gk-ink-2);
+}
+
+.section small {
+  font-weight: 400;
+  color: var(--gk-muted);
+}
+
+/* ---- a job and its hour grid ---- */
+.job {
+  box-shadow: var(--gk-shadow-card);
+}
+
+.jobHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jobNo {
+  flex: none;
+  font-family: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--gk-red-700);
+}
+
+.jobTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gk-ink-2);
+}
+
+.remove {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f3f5;
+}
+
+.quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr 48px;
+  gap: 8px;
+  margin: 12px 0 10px;
+}
+
+.quick > button {
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gk-muted);
+}
+
+/* ~60 px cells on a 375 px phone: room for "07:30–08". */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 4px 2px;
+  border: 1px solid var(--gk-line);
+  border-radius: 8px;
+  background: var(--gk-surface);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.cell small {
+  min-height: 13px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--gk-muted);
+}
+
+.cell[data-ot] {
+  border-style: dashed;
+}
+
+.cell[data-half] {
+  background: #fafafa;
+}
+
+.cell[data-used] {
+  border-color: #e9ecef;
+  background: #e9ecef;
+  color: var(--gk-muted);
+}
+
+.cell[data-on] {
+  border-color: var(--gk-red-700);
+  background: var(--gk-red-700);
+  color: #fff;
+}
+
+.cell[data-on] small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.jobTotal {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.jobTotal span {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--gk-muted);
+}
+
+/* ---- add a job ---- */
+.addList {
+  display: grid;
+  gap: 8px;
+}
+
+.add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 12px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+}
+
+.addNo {
+  flex: none;
+  font-family: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
+  font-weight: 600;
+}
+
+.addTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gk-ink-2);
+  font-size: 14px;
+}
+
+.addTag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--gk-red-050);
+  color: var(--gk-red-700);
+  font-size: 12px;
+}
+
+.addIcon {
+  flex: none;
+  color: var(--gk-red-700);
+}
+
+.flags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---- bottom bar ---- */
+.total {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.total span {
+  font-size: 12px;
+  color: var(--gk-muted);
+}
+
+.total strong {
+  font-size: 18px;
+}

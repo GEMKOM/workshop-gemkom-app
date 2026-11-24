@@ -98,7 +98,7 @@ Route permissions (`getRoutePermissionCodename`):
 - [ ] Hour grid per job: taking an hour another job has moves it; Gündüz, Akşam and Clear quick buttons; remove a job.
 - [ ] Note, at most 200 characters.
 - [ ] Submit / resubmit: POST `/welding/timesheets/mobile/submit/` `{date, blank_day, rows: [{job_no, cells}], note}`.
-- [ ] Approved (read-only), rejected and pending banners; toasts.
+- [ ] Approved (read-only), rejected and pending banners; a day-kind banner for non-weekdays; toasts. The button reads GÖNDER / TEKRAR GÖNDER (sent, unchanged) / ONAYLANDI (locked) and is disabled until hours are marked or the day is blank.
 
 ## Maintenance (`maintenance/`, `maintenance/faults/task/`)
 
@@ -118,6 +118,10 @@ Route permissions (`getRoutePermissionCodename`):
   - The legacy status filter never worked: the backend's `my_requests` ignores filters, so every request showed whatever was picked. The status filter now works on the phone and defaults to "Tümü", which shows what operators saw before.
   - New: "Daha fazla" loads the next page (the legacy page showed only the first).
 - [ ] Create: title, needed date (default today), description, priority (default normal), request type (730.06.004, 730.06.005, 730.10.004), item cards (name, quantity, unit: adet, kg, metre, litre, paket, kutu; spec), add and remove items → POST `/planning/department-requests/` with each item's `name` = the type's account name, `item_code`, `item_description` = the item name, `item_specifications` = its description. Problems show inline instead of `alert()`.
+
+## Everywhere
+
+- [ ] A request that never reached the server (shop-floor Wi-Fi) shows "Sunucuya ulaşılamadı…" in Turkish; the legacy pages showed the browser's English "Failed to fetch".
 
 ## Not ported (dead in the legacy app)
 
