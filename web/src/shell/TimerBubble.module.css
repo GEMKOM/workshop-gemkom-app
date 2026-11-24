@@ -1,0 +1,73 @@
+.bubble {
+  position: fixed;
+  right: 16px;
+  /* Above the bottom bar and the home indicator. */
+  bottom: calc(var(--gk-tabbar) + var(--gk-safe-bottom) + 16px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gk-red-700);
+  color: var(--gk-on-dark);
+  box-shadow: 0 6px 18px rgba(139, 0, 0, 0.35);
+  cursor: pointer;
+  /* The finger drags the bubble, not the page. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bubble:active {
+  background: var(--gk-red-800);
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  border: 2px solid #fff;
+  background: #e03131;
+}
+
+.sheet {
+  height: auto;
+  max-height: 85dvh;
+  border-radius: var(--gk-radius-lg) var(--gk-radius-lg) 0 0;
+  padding-bottom: var(--gk-safe-bottom);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 14px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.row:active {
+  background: var(--gk-surface-subtle);
+}
+
+.rowText {
+  flex: 1;
+  min-width: 0;
+}
+
+.elapsed {
+  flex: none;
+  font-family: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--gk-red-700);
+}
