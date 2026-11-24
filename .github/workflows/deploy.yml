@@ -6,17 +6,16 @@
 # the files are served as they are. Later phases add the React build here
 # (first under /beta/, then at every route).
 #
-# REQUIRES: repo Settings -> Pages -> Build and deployment -> Source = "GitHub Actions".
-# Until that is switched, the branch deploy (main, repo root) keeps serving the
-# repo and the deploy job below fails without changing the site. After switching,
-# run this workflow once (Actions -> Deploy -> Run workflow) and check that the
-# custom domain (saha.gemcore.com.tr) is still set in the Pages settings.
+# Manual only for now. The site is still published by the branch deploy (Pages
+# source "Deploy from a branch": main, repo root), which goes live on every merge.
+# This workflow is needed once the React app has to be built before publishing
+# (the /beta/ pilot). Then: switch Settings -> Pages -> Source to "GitHub Actions",
+# run this workflow once, check the custom domain (saha.gemcore.com.tr) is still
+# set, and add `push: branches: [main]` below so every merge deploys again.
 
 name: Deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
