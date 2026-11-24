@@ -1,0 +1,27 @@
+.range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.card {
+  border-left: 4px solid var(--mantine-color-green-6);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.fields span {
+  color: var(--gk-muted);
+}
+
+.fields b {
+  font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

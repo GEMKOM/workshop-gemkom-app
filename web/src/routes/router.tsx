@@ -87,6 +87,21 @@ export const routes: RouteObject[] = [
                 }),
               },
               {
+                path: 'machining',
+                handle: handle({ title: 'Talaşlı İmalat' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/machining/MachiningPage')).MachiningPage,
+                }),
+              },
+              {
+                path: 'machining/tasks',
+                handle: handle({ title: 'Operasyon', back: '/machining/' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/machining/MachiningTaskPage'))
+                    .MachiningTaskPage,
+                }),
+              },
+              {
                 path: 'unauthorized',
                 handle: handle({ title: 'Yetkisiz Erişim' }),
                 lazy: async () => ({
