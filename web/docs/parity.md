@@ -76,11 +76,11 @@ Route permissions (`getRoutePermissionCodename`):
 
 ## CNC (`cnc_cutting/`, `cnc_cutting/tasks/`)
 
-- [ ] Aktif: machines from GET `/machines/?used_in=cutting&is_active=true&page_size=1000`; tasks GET `/cnc_cutting/tasks/?machine_fk=&completion_date__isnull=true&in_plan=true&ordering=plan_order&page_size=10`; client-side "TI numarası" search.
-- [ ] Hold-task picker: GET `/cnc_cutting/hold-tasks/` → `tasks/?machine_id&key&name&hold=1`.
+- [ ] Aktif: machines from GET `/machines/?used_in=cutting&is_active=true&page_size=1000` (busy / maintenance disabled), `?machine_id` pushed; tasks GET `/cnc_cutting/tasks/?machine_fk=&completion_date__isnull=true&in_plan=true&ordering=plan_order&page_size=10` as cards titled by the kesim kodu; client-side search on key or name.
+- [ ] "Diğer İşler" → hold-task picker: GET `/cnc_cutting/hold-tasks/` → `tasks/?machine_id&key&name&hold=1`. Now always shown once a machine is picked (the legacy list hid it on a machine with no planned cut).
 - [ ] Biten: like machining, on `/cnc_cutting/timers/`.
-- [ ] Görev Genel Bakış: GET `/cnc_cutting/tasks/?completion_date__isnull=true&page_size=1000`, grouped by machine / no machine in plan / no machine not in plan; detail from GET `/cnc_cutting/tasks/{key}/` with files (viewer for images and PDFs).
-- [ ] Fire Saclar: GET `/cnc_cutting/remnants/?material=&thickness_mm=&dimensions=`, collapsible filters.
+- [ ] Görev Genel Bakış: GET `/cnc_cutting/tasks/?completion_date__isnull=true&page_size=1000`, grouped Rezerv (not in plan) / Yapılacaklar (Planlı, no machine) / each machine in order, by plan order (collapsible sections on the phone); details from GET `/cnc_cutting/tasks/{key}/`: info, files (open in the phone's viewer), parts with the total weight.
+- [ ] Sac Stoğu (replaced Fire Saclar in the legacy app): GET `/warehouse/pieces/groups/?kind=plate&page&page_size=50&search` (350 ms debounce; a page past the end falls back to page 1); groups by card and size with thickness, weight, sheet count and what is set aside; sheets with code (or Kodsuz), quantity, size when it differs, heat number, place (warehouse / Fason / İş Emri), free or reserved-for-cut / pull-request badges, origin; a searched sheet code is highlighted.
 - [ ] Task screen loads GET `/machines/{id}/` and GET `/cnc_cutting/tasks/{key}/` (or, with `?hold=1`, a task built from the URL), and the active timer GET `/cnc_cutting/timers/?is_active=true&machine_fk=&issue_key=`.
 - [ ] Info cards: parts and files.
 - [ ] Start: POST `/cnc_cutting/timers/start/`, the server's error message shown; blocked while `sheets_waiting > 0`; hold tasks other than W-14 and W-02 ask for a comment first.
