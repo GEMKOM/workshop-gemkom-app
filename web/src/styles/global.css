@@ -1,0 +1,52 @@
+/* GEMKOM design tokens (the office app's direction B "Kırmızı bant",
+   white-app/web/src/styles/global.css), plus the phone layout sizes. */
+
+:root {
+  --gk-red-700: #8b0000;
+  --gk-red-800: #730000;
+  --gk-red-100: #ffdede;
+  --gk-red-050: #fff0f0;
+  --gk-on-dark: #ffffff;
+  --gk-on-band-muted: rgba(255, 255, 255, 0.78);
+  --gk-page: #f4f5f7;
+  --gk-surface: #ffffff;
+  --gk-surface-subtle: #f8f9fb;
+  --gk-line: #e3e6ea;
+  --gk-ink: #1f2933;
+  --gk-ink-2: #4a525b;
+  --gk-muted: #6b7480;
+  --gk-danger: #c92a2a;
+
+  --gk-radius-md: 10px;
+  --gk-radius-lg: 14px;
+  --gk-shadow-card: 0 1px 2px rgba(16, 24, 40, 0.05), 0 4px 16px rgba(16, 24, 40, 0.05);
+  --gk-focus-ring: 0 0 0 3px rgba(139, 0, 0, 0.25);
+
+  /* Phone layout: the red top bar, the bottom tab bar (plus the home indicator
+     on notched phones), and the side padding of page content. */
+  --gk-topbar: 56px;
+  --gk-tabbar: 64px;
+  --gk-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --gk-safe-top: env(safe-area-inset-top, 0px);
+  --gk-page-pad: 16px;
+}
+
+html,
+body {
+  background: var(--gk-page);
+  color: var(--gk-ink);
+  /* No pull-to-refresh bounce or horizontal drift on phones. */
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--gk-focus-ring);
+}
