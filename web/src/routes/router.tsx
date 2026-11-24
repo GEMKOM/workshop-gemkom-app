@@ -66,6 +66,20 @@ export const routes: RouteObject[] = [
                 }),
               },
               {
+                path: 'maintenance',
+                handle: handle({ title: 'Bakım' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/maintenance/MaintenancePage')).MaintenancePage,
+                }),
+              },
+              {
+                path: 'maintenance/faults/task',
+                handle: handle({ title: 'Arıza', back: '/maintenance/?tab=fault-requests' }),
+                lazy: async () => ({
+                  Component: (await import('@/pages/maintenance/FaultTaskPage')).FaultTaskPage,
+                }),
+              },
+              {
                 path: 'unauthorized',
                 handle: handle({ title: 'Yetkisiz Erişim' }),
                 lazy: async () => ({

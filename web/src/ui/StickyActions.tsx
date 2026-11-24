@@ -22,8 +22,10 @@ export function StickyActions({
     };
   }, []);
   return (
-    <div className={classes.bar} style={{ gridTemplateColumns: columns }}>
-      {children}
+    <div className={classes.bar}>
+      <div className={classes.buttons} style={{ gridTemplateColumns: columns }}>
+        {children}
+      </div>
     </div>
   );
 }

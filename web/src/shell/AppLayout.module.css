@@ -12,7 +12,7 @@
   box-sizing: border-box;
   padding: 16px var(--gk-page-pad);
   /* Clear of the fixed bottom bar and the home indicator. */
-  padding-bottom: calc(var(--gk-tabbar) + var(--gk-safe-bottom) + 24px);
+  padding-bottom: calc(var(--gk-tabbar) + var(--gk-safe-bottom) + var(--gk-main-extra, 0px) + 24px);
 }
 
 /* ---- top bar ---- */

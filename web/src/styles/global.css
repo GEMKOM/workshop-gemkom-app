@@ -33,6 +33,11 @@
   --gk-page-pad: 16px;
 }
 
+:root[data-sticky-actions] {
+  /* Room for the pinned action bar under the page content. */
+  --gk-main-extra: var(--gk-actionbar);
+}
+
 html,
 body {
   background: var(--gk-page);
