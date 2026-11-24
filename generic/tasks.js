@@ -24,7 +24,7 @@ export async function markTaskAsDoneShared(taskKey, module = 'machining') {
  * brings the remnants back to stock and stores the fire.
  * @param {string} taskKey
  * @param {{remnants: Array<{width_mm: string, length_mm: string, quantity: number}>, no_remnant: boolean}} payload
- * @returns {Promise<{ok: boolean, error: string}>} error: the backend's message when refused
+ * @returns {Promise<{ok: boolean, error: string, booked?: object}>} error: the backend's message when refused; booked: the finish result (remnants with their sheet codes)
  */
 export async function finishCncTask(taskKey, payload) {
     const response = await authedFetch(`${backendBase}/cnc_cutting/tasks/mark-completed/`, {
@@ -32,7 +32,16 @@ export async function finishCncTask(taskKey, payload) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: taskKey, ...payload })
     });
-    if (response.ok) return { ok: true, error: '' };
+    if (response.ok) {
+        // booked: what the cut booked, with the codes its remnant sheets got.
+        let booked = null;
+        try {
+            booked = (await response.json())?.booked ?? null;
+        } catch (e) {
+            booked = null;
+        }
+        return { ok: true, error: '', booked };
+    }
     let error = '';
     try {
         error = firstMessage(await response.json());

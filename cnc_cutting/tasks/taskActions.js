@@ -5,6 +5,7 @@ import { state } from '../cnc_cuttingService.js';
 import { navigateTo, ROUTES } from '../../authService.js';
 import { finishCncTask } from '../../generic/tasks.js';
 import { askRemnants } from './remnantFinishModal.js';
+import { remnantSheets, showRemnantCodes } from './remnantCodesModal.js';
 import { showCommentModal } from '../../components/taskTimerModals.js';
 import { createMaintenanceRequest } from '../../generic/machines.js';
 import { checkMachineMaintenance } from '../../generic/machines.js';
@@ -193,7 +194,13 @@ export async function handleMarkDoneClick() {
     try {
         const result = await finishCncTask(state.currentIssue.key, remnants);
         if (result.ok) {
-            alert('Görev tamamlandı olarak işaretlendi.');
+            // The remnant sheets' new codes, to write on them before leaving.
+            const sheets = remnantSheets(result.booked);
+            if (sheets.length) {
+                await showRemnantCodes(state.currentIssue.nesting_id || state.currentIssue.key, sheets);
+            } else {
+                alert('Görev tamamlandı olarak işaretlendi.');
+            }
             navigateTo(ROUTES.CNC_CUTTING);
         } else {
             alert(result.error || "Hata oluştu. Lütfen tekrar deneyin.");
