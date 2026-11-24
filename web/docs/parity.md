@@ -48,12 +48,14 @@ Route permissions (`getRoutePermissionCodename`):
 
 - [ ] Shown on every page except login and welding, only with `access_machining`, `access_cnc_cutting` or `access_maintenance`.
 - [ ] Active timers from GET `/machining/timers/?is_active=true`, `/cnc_cutting/timers/?is_active=true` and `/machines/faults/timers/`, loaded in parallel, de-duplicated by id.
-- [ ] Elapsed time ticks every second against server time (GET `/now/` offset, re-synced every 30 s).
-- [ ] Per-timer stop: POST `/{machining|cnc_cutting}/timers/stop/`.
+- [ ] Elapsed time ticks every second against server time (GET `/now/` offset, re-synced every 5 minutes while timers run; the legacy 30 s check skipped the sync until 5 minutes had passed).
+- [ ] Labels: the CNC kesim kodu (`nesting_id`), the downtime reason for break and downtime timers, `ARIZA-<fault>` for fault timers, else the task key.
+- [ ] No per-timer stop button: it was commented out in the legacy widget ("for future use").
 - [ ] Tap → the timer's task page; fault timers → `/maintenance/faults/task/?fault_id=`.
 - [ ] "New" button → CNC or machining by permission.
-- [ ] A task page whose timer was stopped elsewhere goes back to its list (legacy polls every 15 minutes).
-- [ ] Reloads when a page reports a timer change (legacy `timerUpdated` event).
+- [ ] A task page opened by `timer_id` whose timer was stopped elsewhere goes back to its list (legacy polls every 15 minutes while timers run; also on every reload now).
+- [ ] Reloads when a page reports a timer change (legacy `timerUpdated` event → `timersChanged(queryClient)`).
+- [ ] The legacy widget opened its panel by itself when a timer appeared; the bubble shows the count instead of covering the page.
 - [ ] New: draggable and tappable by touch.
 - [ ] New: on wake (`visibilitychange`/`pageshow`), reload active timers and re-sync the clock.
 
