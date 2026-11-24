@@ -23,7 +23,8 @@ export async function markTaskAsDoneShared(taskKey, module = 'machining') {
  * Finishes a CNC cut with its remnants: the backend issues the cut's sheets,
  * brings the remnants back to stock and stores the fire.
  * @param {string} taskKey
- * @param {{remnants: Array<{width_mm: string, length_mm: string, quantity: number}>, no_remnant: boolean}} payload
+ * @param {{remnants: Array<{width_mm: string, length_mm: string, quantity: number, shape: string, area_m2?: string}>, no_remnant: boolean}} payload
+ *   shape: rectangle | triangle | circle | irregular (width × length is the bounding box; a circle's diameter both); area_m2 for irregular only
  * @returns {Promise<{ok: boolean, error: string, booked?: object}>} error: the backend's message when refused; booked: the finish result (remnants with their sheet codes)
  */
 export async function finishCncTask(taskKey, payload) {

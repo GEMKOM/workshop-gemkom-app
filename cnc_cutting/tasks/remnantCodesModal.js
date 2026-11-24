@@ -3,6 +3,8 @@
 // own code (S26-00001). The operator writes it on the sheet itself, so a
 // search in Sac Stoğu finds its card, size and heat no. Shown with a print.
 
+import { sizeText } from '../plateShape.js';
+
 const MODAL_ID = 'remnantCodesModal';
 // Above the confirmation modal's backdrops (see remnantFinishModal.js).
 const MODAL_Z_INDEX = '10050';
@@ -11,8 +13,6 @@ const esc = (value) =>
     String(value ?? '').replace(/[&<>"']/g, (c) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     })[c]);
-
-const mm = (value) => (value === null || value === undefined ? '' : String(Number(value)));
 
 /** The coded remnant sheets of a finish result (`booked` of mark-completed). */
 export function remnantSheets(booked) {
@@ -24,7 +24,8 @@ export function remnantSheets(booked) {
                 code: sheet.code,
                 item_code: r.item_code,
                 item_name: r.item_name,
-                size: `${mm(r.width_mm)} × ${mm(r.length_mm)} mm`,
+                // "600 × 1200 mm", "Ø 600 mm", "Üçgen …", "Şekilsiz … · ~0,45 m²"
+                size: sizeText(r),
                 heat_number: sheet.heat_number || '',
             });
         }
