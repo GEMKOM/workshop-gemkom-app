@@ -1,2 +1,0 @@
-import{n as e}from"./rolldown-runtime-WkwZ5CU-.js";import{g as t,t as n}from"./react-BnOLQSvv.js";var r=e(t(),1),i={bar:`_bar_14td7_3`,buttons:`_buttons_14td7_17`},a=n();function o({children:e,columns:t=`1fr 2fr`,rows:n=1}){return(0,r.useEffect)(()=>{let e=document.documentElement;return e.dataset.stickyActions=String(n),()=>{delete e.dataset.stickyActions}},[n]),(0,a.jsx)(`div`,{className:i.bar,children:(0,a.jsx)(`div`,{className:i.buttons,style:{gridTemplateColumns:t},children:e})})}export{o as t};
-//# sourceMappingURL=StickyActions-DgSI8Dar.js.map
