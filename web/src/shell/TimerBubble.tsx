@@ -2,7 +2,6 @@ import { Badge, Button, Drawer, Stack, Text, UnstyledButton } from '@mantine/cor
 import { IconClockPlay, IconPlus } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router';
 import { formatElapsed, syncServerTime, useSyncedNow } from '@/api/time';
 import { activeTimersQueryOptions, timerLabel, timerPath, type ActiveTimer } from '@/api/timers';
 import { useAuth } from '@/auth/AuthProvider';
@@ -20,7 +19,11 @@ const CLOCK_CHECK_MS = 30 * 1000;
 /** The timer areas: the bubble shows for users of any of them. */
 export const TIMER_PERMISSIONS = ['access_machining', 'access_cnc_cutting', 'access_maintenance'];
 
-/** A task page whose timer (by `timer_id`) is no longer running goes back to its list. */
+/**
+ * A task page whose timer (by `timer_id`) is no longer running goes back to its
+ * list. The task pages apply it to their own timer data (they know whether the
+ * page's timer runs, so their leave guard doesn't get in the way).
+ */
 export function stoppedTimerRedirect(
   pathname: string,
   search: string,
@@ -56,8 +59,6 @@ function TimerRow({ timer, now, onOpen }: { timer: ActiveTimer; now: number; onO
 
 export function TimerBubble() {
   const auth = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
   const timers = useQuery(activeTimersQueryOptions());
   const list = timers.data ?? [];
   const [open, setOpen] = useState(false);
@@ -70,13 +71,6 @@ export function TimerBubble() {
     const id = window.setInterval(() => void syncServerTime(), CLOCK_CHECK_MS);
     return () => window.clearInterval(id);
   }, [list.length]);
-
-  // A timer stopped elsewhere (another phone, an admin) closes its task page.
-  useEffect(() => {
-    if (!timers.isSuccess) return;
-    const target = stoppedTimerRedirect(location.pathname, location.search, timers.data);
-    if (target) void navigate(target, { replace: true });
-  }, [timers.isSuccess, timers.data, location.pathname, location.search, navigate]);
 
   // ---- dragging (pointer events: touch, pen and mouse) ----
   const [offset, setOffset] = useState({ x: 0, y: 0 });

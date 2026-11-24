@@ -53,7 +53,7 @@ Route permissions (`getRoutePermissionCodename`):
 - [ ] No per-timer stop button: it was commented out in the legacy widget ("for future use").
 - [ ] Tap → the timer's task page; fault timers → `/maintenance/faults/task/?fault_id=`.
 - [ ] "New" button → CNC or machining by permission.
-- [ ] A task page opened by `timer_id` whose timer was stopped elsewhere goes back to its list (legacy polls every 15 minutes while timers run; also on every reload now).
+- [ ] (Moved to the task pages, see Machining and CNC.)
 - [ ] Reloads when a page reports a timer change (legacy `timerUpdated` event → `timersChanged(queryClient)`).
 - [ ] The legacy widget opened its panel by itself when a timer appeared; the bubble shows the count instead of covering the page.
 - [ ] New: draggable and tappable by touch.
@@ -69,8 +69,10 @@ Route permissions (`getRoutePermissionCodename`):
 - [ ] Task screen loads GET `/machines/{id}/`, GET `/machining/timers/?is_active=true&machine_fk=[&issue_key=]`, GET `/tasks/operations/{key}/`.
 - [ ] Start: sync time (GET `/now/`), then POST `/tasks/operations/{key}/start-timer/`; blocked when the machine is under maintenance or on a timer-only page.
 - [ ] Stop productive → reason sheet → POST `/tasks/log-reason/` `{current_timer_id, reason_id, comment?}` → back to `/machining/`.
-- [ ] Stop non-productive → POST `/machining/timers/stop/` with `finish_time` from server time; not offered when `can_be_stopped_by_user === false`.
-- [ ] Back while a timer runs asks for confirmation.
+- [ ] Stop non-productive → POST `/machining/timers/stop/` `{timer_id, finish_time (server time), synced_to_jira: true}`; "Durdurulamaz" with the legacy explanation when `can_be_stopped_by_user === false`.
+- [ ] Back while a timer runs asks for confirmation (any in-app navigation).
+- [ ] A machine busy with another task shows "Makine kullanımda" instead of offering Başlat (the legacy page offered it, then alerted "Zamanlayıcı bilgisi bulunamadı").
+- [ ] After stopping with a reason, the list opens with the same machine selected (legacy: the list with no machine).
 
 ## CNC (`cnc_cutting/`, `cnc_cutting/tasks/`)
 

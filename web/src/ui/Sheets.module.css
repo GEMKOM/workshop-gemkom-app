@@ -1,0 +1,31 @@
+/* Bottom sheets: as tall as their content, rounded on top, clear of the home indicator. */
+.sheet {
+  height: auto;
+  max-height: 85dvh;
+  border-radius: var(--gk-radius-lg) var(--gk-radius-lg) 0 0;
+  padding-bottom: var(--gk-safe-bottom);
+}
+
+.choices {
+  display: grid;
+  gap: 8px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+  font-weight: 500;
+}
+
+.choice[data-checked] {
+  border-color: var(--gk-red-700);
+  background: var(--gk-red-050);
+  color: var(--gk-red-700);
+}
