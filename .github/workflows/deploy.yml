@@ -1,0 +1,71 @@
+# Deploys saha.gemcore.com.tr to GitHub Pages.
+#
+# Phase 0 of the React migration (web/docs/parity.md): this publishes the
+# legacy site exactly as the branch deploy serves it today: every tracked file
+# except the workflow and the new React app's folder (web/), plus .nojekyll so
+# the files are served as they are. Later phases add the React build here
+# (first under /beta/, then at every route).
+#
+# REQUIRES: repo Settings -> Pages -> Build and deployment -> Source = "GitHub Actions".
+# Until that is switched, the branch deploy (main, repo root) keeps serving the
+# repo and the deploy job below fails without changing the site. After switching,
+# run this workflow once (Actions -> Deploy -> Run workflow) and check that the
+# custom domain (saha.gemcore.com.tr) is still set in the Pages settings.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push waits instead of cancelling one in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble the legacy site
+        run: |
+          mkdir _site
+          git ls-files -z \
+            | grep -zv -e '^\.github/' -e '^web/' \
+            | xargs -0 cp --parents -t _site
+          touch _site/.nojekyll
+
+      # The pages every operator opens must be there, with the custom domain.
+      - name: Check the site
+        run: |
+          test "$(cat _site/CNAME)" = "saha.gemcore.com.tr"
+          for page in index.html login/index.html machining/index.html machining/tasks/index.html \
+                      cnc_cutting/index.html cnc_cutting/tasks/index.html welding/timesheet/index.html \
+                      maintenance/index.html maintenance/faults/task/index.html \
+                      department-requests/index.html department-requests/create/index.html; do
+            test -s "_site/$page" || { echo "missing $page"; exit 1; }
+          done
+          test ! -e _site/web
+          echo "files: $(find _site -type f | wc -l)"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
