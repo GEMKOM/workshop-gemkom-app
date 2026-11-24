@@ -134,7 +134,7 @@ describe('cnc page', () => {
     signIn({ permissions: perms });
     renderApp('/cnc_cutting/?machine_id=7');
     const card = await screen.findByRole('link', { name: /E8338/ });
-    // The CNC task page is still the legacy page: a full page load.
+    // The cut's task screen, in the app.
     expect(card).toHaveAttribute('href', '/cnc_cutting/tasks/?machine_id=7&key=CNC-2278');
     const params = calls.find((c) => c.url.searchParams.get('machine_fk') === '7')!.url
       .searchParams;

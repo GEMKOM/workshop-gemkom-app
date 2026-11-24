@@ -9,18 +9,21 @@ import classes from './StickyActions.module.css';
 export function StickyActions({
   children,
   columns = '1fr 2fr',
+  rows = 1,
 }: {
   children: ReactNode;
   /** CSS grid columns for the buttons. */
   columns?: string;
+  /** Two rows of buttons make the bar (and the room kept for it) taller. */
+  rows?: 1 | 2;
 }) {
   useEffect(() => {
     const root = document.documentElement;
-    root.dataset.stickyActions = '';
+    root.dataset.stickyActions = String(rows);
     return () => {
       delete root.dataset.stickyActions;
     };
-  }, []);
+  }, [rows]);
   return (
     <div className={classes.bar}>
       <div className={classes.buttons} style={{ gridTemplateColumns: columns }}>

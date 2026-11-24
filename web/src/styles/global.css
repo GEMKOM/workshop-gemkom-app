@@ -38,6 +38,10 @@
   --gk-main-extra: var(--gk-actionbar);
 }
 
+:root[data-sticky-actions='2'] {
+  --gk-actionbar: 130px;
+}
+
 html,
 body {
   background: var(--gk-page);

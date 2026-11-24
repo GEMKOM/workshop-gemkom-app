@@ -81,14 +81,15 @@ Route permissions (`getRoutePermissionCodename`):
 - [ ] Biten: like machining, on `/cnc_cutting/timers/`.
 - [ ] Görev Genel Bakış: GET `/cnc_cutting/tasks/?completion_date__isnull=true&page_size=1000`, grouped Rezerv (not in plan) / Yapılacaklar (Planlı, no machine) / each machine in order, by plan order (collapsible sections on the phone); details from GET `/cnc_cutting/tasks/{key}/`: info, files (open in the phone's viewer), parts with the total weight.
 - [ ] Sac Stoğu (replaced Fire Saclar in the legacy app): GET `/warehouse/pieces/groups/?kind=plate&page&page_size=50&search` (350 ms debounce; a page past the end falls back to page 1); groups by card and size with thickness, weight, sheet count and what is set aside; sheets with code (or Kodsuz), quantity, size when it differs, heat number, place (warehouse / Fason / İş Emri), free or reserved-for-cut / pull-request badges, origin; a searched sheet code is highlighted.
-- [ ] Task screen loads GET `/machines/{id}/` and GET `/cnc_cutting/tasks/{key}/` (or, with `?hold=1`, a task built from the URL), and the active timer GET `/cnc_cutting/timers/?is_active=true&machine_fk=&issue_key=`.
-- [ ] Info cards: parts and files.
-- [ ] Start: POST `/cnc_cutting/timers/start/`, the server's error message shown; blocked while `sheets_waiting > 0`; hold tasks other than W-14 and W-02 ask for a comment first.
-- [ ] Stop: POST `/cnc_cutting/timers/stop/`.
-- [ ] Manual time: POST `/cnc_cutting/manual-time/`.
-- [ ] Tamamla (not for hold tasks): confirm → remnant rows (width, length mm, quantity; a side under 500 mm is fire) or "no remnant" → POST `/cnc_cutting/tasks/mark-completed/` `{key, remnants, no_remnant}` → show the booked remnant codes with Print.
-- [ ] Arıza: "is the machine stopped?" Yes → description → POST `/machines/faults/`; No → the hold task `?machine_id=7&key=W-07&hold=1`.
-- [ ] Maintenance check via GET `/machines/{id}/`.
+- [ ] Task screen loads GET `/machines/{id}/` and GET `/cnc_cutting/tasks/{key}/` (or, with `?hold=1`, a task built from the URL: key, name), and the active timer GET `/cnc_cutting/timers/?is_active=true&machine_fk=&issue_key=`; a cut that can't be loaded goes back to the list.
+- [ ] Details: Nesting ID, material, dimensions, thickness, parts (count · total kg · job orders, tap → parts and files sheet), files, estimated time; the waiting-sheets warning ("N sac bekleniyor") and, on the W-07 hold task while running, the "stopped when maintenance resolves it" note.
+- [ ] Start: POST `/cnc_cutting/timers/start/` `{issue_key, start_time (server time), machine_fk, comment?}`, the server's error message shown; "Sac bekleniyor" while `sheets_waiting > 0`; hold tasks other than W-14 and W-02 ask for a comment first ("Bekletme Görevi Başlatma").
+- [ ] Stop: POST `/cnc_cutting/timers/stop/` `{timer_id, finish_time, synced_to_jira: true}`. The legacy page sent the phone's clock as finish_time; it is now server time, like the start.
+- [ ] "Makine bakımda" / "Makine kullanımda" (another cut runs; the legacy button did nothing then).
+- [ ] Manual time: datetime-local start and end (defaults now and +1 h), duration preview, end after start, a comment for hold tasks (except W-14/W-02) → POST `/cnc_cutting/manual-time/`.
+- [ ] Tamamla (not for hold tasks; refused while sheets wait): "{nesting} tamamen kesildi, markalandı ve makineden kaldırıldı mı?" → remnant rows (shape rectangle / triangle / circle / irregular with their fields, quantity; the short side under 500 mm is fire, with the hint) or none → POST `/cnc_cutting/tasks/mark-completed/` `{key, remnants, no_remnant}` → the booked remnant codes (Yazdır opens the A4 print page; "Kodları yazdım") → the list.
+- [ ] Arıza: "Makine çalışır durumda mı?" Evet → "Arıza Bildirimi" → POST `/machines/faults/` `{machine, description, is_breaking: false}`; Hayır → "Bekletme sayfasına yönlendirileceksiniz" → the hold task `?machine_id=7&key=W-07&name=Makine Arızası Nedeniyle Bekleme&hold=1`.
+- [ ] Back while a timer runs asks for confirmation.
 
 ## Welding timesheet (`welding/timesheet/`)
 
