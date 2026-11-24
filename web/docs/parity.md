@@ -68,7 +68,7 @@ Route permissions (`getRoutePermissionCodename`):
 - [ ] Biten: GET `/machining/timers/?is_active=false&ordering=-finish_time&page=&page_size=20&start_date=&end_date=`, default last 30 days, paged.
 - [ ] Task screen loads GET `/machines/{id}/`, GET `/machining/timers/?is_active=true&machine_fk=[&issue_key=]`, GET `/tasks/operations/{key}/`.
 - [ ] Start: sync time (GET `/now/`), then POST `/tasks/operations/{key}/start-timer/`; blocked when the machine is under maintenance or on a timer-only page.
-- [ ] Stop productive → reason sheet → POST `/tasks/log-reason/` `{current_timer_id, reason_id, comment?}` → back to `/machining/`.
+- [ ] Stop productive → reason sheet with **every active reason** (not only `creates_timer`: "Parça İşlemesi Tamamlandı" `WORK_COMPLETE` completes the operation, "Mesai Sonu" `END_SHIFT`, "Acil İş Geçişi"; `WORK_COMPLETE` in green); comment optional for WORK_COMPLETE, END_SHIFT, LUNCH and BREAK → POST `/tasks/log-reason/` `{current_timer_id, reason_id, comment?}` → back to `/machining/`.
 - [ ] Stop non-productive → POST `/machining/timers/stop/` `{timer_id, finish_time (server time), synced_to_jira: true}`; "Durdurulamaz" with the legacy explanation when `can_be_stopped_by_user === false`.
 - [ ] Back while a timer runs asks for confirmation (any in-app navigation).
 - [ ] A machine busy with another task shows "Makine kullanımda" instead of offering Başlat (the legacy page offered it, then alerted "Zamanlayıcı bilgisi bulunamadı").

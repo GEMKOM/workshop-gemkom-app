@@ -29,3 +29,16 @@
   background: var(--gk-red-050);
   color: var(--gk-red-700);
 }
+
+/* "Parça İşlemesi Tamamlandı" stands out in green, as in the legacy app. */
+.choice[data-complete] {
+  border-color: var(--mantine-color-green-7);
+  background: var(--mantine-color-green-0);
+  color: var(--mantine-color-green-9);
+}
+
+.choice[data-complete][data-checked] {
+  background: var(--mantine-color-green-1);
+  box-shadow: 0 0 0 1px var(--mantine-color-green-7);
+  font-weight: 600;
+}

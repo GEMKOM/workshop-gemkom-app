@@ -251,6 +251,7 @@ function MachiningTask({
         opened={reasonOpen}
         onClose={() => setReasonOpen(false)}
         title="Neden duruyorsunuz?"
+        mode="stop"
         reasons={reasons.data ?? []}
         onSubmit={async (reasonId, comment) => {
           if (!running) return;

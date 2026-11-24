@@ -32,6 +32,8 @@ const REASONS = [
   { id: 1, name: 'Yemek Molası', code: 'LUNCH', creates_timer: true },
   { id: 2, name: 'Malzeme Bekleme', code: 'MATERIAL', creates_timer: true },
   { id: 3, name: 'Kayıt dışı', code: 'X', creates_timer: false },
+  { id: 4, name: 'Parça İşlemesi Tamamlandı', code: 'WORK_COMPLETE', creates_timer: false },
+  { id: 5, name: 'Eski neden', code: 'OLD', creates_timer: false, is_active: false },
 ];
 
 const OPERATION = {
@@ -63,9 +65,11 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('machining rules', () => {
-  it('needs a comment except for lunch and short breaks', () => {
+  it('needs a comment except for lunch, short breaks, work complete and end of shift', () => {
     expect(reasonCommentOptional({ code: 'LUNCH', name: '' })).toBe(true);
     expect(reasonCommentOptional({ code: '', name: 'Kısa mola' })).toBe(true);
+    expect(reasonCommentOptional({ code: 'WORK_COMPLETE', name: '' })).toBe(true);
+    expect(reasonCommentOptional({ code: 'END_SHIFT', name: '' })).toBe(true);
     expect(reasonCommentOptional({ code: 'MATERIAL', name: 'Malzeme' })).toBe(false);
   });
 
@@ -187,6 +191,29 @@ describe('machining task', () => {
     expect(calls.find((c) => c.url.pathname === '/tasks/log-reason/')?.body).toEqual({
       current_timer_id: 50,
       reason_id: 1,
+    });
+  });
+
+  it('completes the operation by stopping with "Parça İşlemesi Tamamlandı", no comment needed', async () => {
+    const calls = serveTask({
+      timers: [
+        { id: 50, start_time: Date.now() - 2000, timer_type: 'productive', issue_key: 'OP-17' },
+      ],
+    });
+    signIn({ permissions: perms });
+    const { router } = renderApp('/machining/tasks/?machine_id=4&key=OP-17');
+    fireEvent.click(await screen.findByRole('button', { name: 'Durdur' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Neden duruyorsunuz?' });
+    // Every active reason, not only those that start a timer.
+    expect(within(sheet).getByRole('radio', { name: 'Kayıt dışı' })).toBeInTheDocument();
+    expect(within(sheet).queryByRole('radio', { name: 'Eski neden' })).toBeNull();
+    fireEvent.click(within(sheet).getByRole('radio', { name: 'Parça İşlemesi Tamamlandı' }));
+    expect(within(sheet).getByLabelText('Açıklama (Opsiyonel)')).toBeInTheDocument();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/machining/'));
+    expect(calls.find((c) => c.url.pathname === '/tasks/log-reason/')?.body).toEqual({
+      current_timer_id: 50,
+      reason_id: 4,
     });
   });
 

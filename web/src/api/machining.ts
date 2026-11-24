@@ -61,7 +61,11 @@ export interface DowntimeReason {
   name: string;
   code?: string | null;
   creates_timer?: boolean | null;
+  is_active?: boolean | null;
 }
+
+/** "Parça İşlemesi Tamamlandı": stopping with it completes the operation. */
+export const WORK_COMPLETE = 'WORK_COMPLETE';
 
 interface Page<T> {
   count?: number;
@@ -241,11 +245,16 @@ export function stopModuleTimer(
   });
 }
 
-/** The legacy rule: lunch and short breaks need no comment; every other reason does. */
+/**
+ * The legacy rule: lunch and short breaks need no comment, and neither do
+ * "work complete" and "end of shift" when stopping a task; every other reason does.
+ */
 export function reasonCommentOptional(reason: Pick<DowntimeReason, 'code' | 'name'>): boolean {
   const code = reason.code ?? '';
   const name = reason.name ?? '';
   return (
+    code === WORK_COMPLETE ||
+    code === 'END_SHIFT' ||
     code === 'LUNCH' ||
     code === 'BREAK' ||
     ['Yemek Molası', 'Yemek Molasi', 'Kısa mola', 'Kisa Mola'].includes(name)

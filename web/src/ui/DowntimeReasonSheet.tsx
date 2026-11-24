@@ -1,25 +1,30 @@
 import { Button, Drawer, Stack, Text, Textarea, UnstyledButton } from '@mantine/core';
 import { IconCircleCheck } from '@tabler/icons-react';
 import { useState } from 'react';
-import { reasonCommentOptional, type DowntimeReason } from '@/api/machining';
+import { reasonCommentOptional, WORK_COMPLETE, type DowntimeReason } from '@/api/machining';
 import { errorText } from './notify';
 import classes from './Sheets.module.css';
 
 /**
- * "Durma Nedeni" (the legacy downtime-reason modal, which existed twice): pick
- * one of the reasons that start a timer, with a comment unless it's lunch or a
- * short break. `onSubmit` sends it; an error it throws shows in the sheet.
+ * "Durma Nedeni" (the legacy downtime-reason modal, which existed twice), with
+ * a comment unless reasonCommentOptional says otherwise. From the operations
+ * list (`mode="start"`) it offers the reasons that start a timer; when stopping
+ * a task (`mode="stop"`) every active reason, among them "Parça İşlemesi
+ * Tamamlandı", which completes the operation. `onSubmit` sends the choice; an
+ * error it throws shows in the sheet.
  */
 export function DowntimeReasonSheet({
   opened,
   onClose,
   reasons,
+  mode = 'start',
   title = 'Durma Nedeni Kaydet',
   onSubmit,
 }: {
   opened: boolean;
   onClose: () => void;
   reasons: DowntimeReason[];
+  mode?: 'start' | 'stop';
   title?: string;
   onSubmit: (reasonId: number, comment: string) => Promise<void>;
 }) {
@@ -27,7 +32,7 @@ export function DowntimeReasonSheet({
   const [comment, setComment] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const list = reasons.filter((r) => r.creates_timer);
+  const list = reasons.filter((r) => (mode === 'stop' ? r.is_active !== false : r.creates_timer));
   const optional = selected ? reasonCommentOptional(selected) : true;
 
   const close = () => {
@@ -81,6 +86,7 @@ export function DowntimeReasonSheet({
                 role="radio"
                 aria-checked={selected?.id === reason.id}
                 data-checked={selected?.id === reason.id || undefined}
+                data-complete={reason.code === WORK_COMPLETE || undefined}
                 className={classes.choice}
                 onClick={() => {
                   setSelected(reason);
