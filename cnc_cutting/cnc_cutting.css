@@ -1683,3 +1683,34 @@ html {
         width: 100%;
     }
 }
+
+/* ============================================================================
+   SAC STOĞU (plateStock.js)
+   ============================================================================ */
+
+.plate-stock-view {
+    width: 100%;
+    padding: 1rem 0;
+}
+
+.plate-group .plate-group-head[role="button"] {
+    cursor: pointer;
+}
+
+.plate-group .plate-group-head[role="button"]:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.plate-group-chevron {
+    transition: transform 0.2s ease;
+}
+
+.plate-sheet-code {
+    letter-spacing: 0.03em;
+    min-width: 7.5rem;
+}
+
+.plate-sheet-match {
+    background: #fff8e1;
+    box-shadow: inset 4px 0 0 #f0ad4e;
+}
