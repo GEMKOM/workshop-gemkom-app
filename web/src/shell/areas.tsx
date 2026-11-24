@@ -90,7 +90,7 @@ export const AREAS: Area[] = [
  * The areas already ported to React. During the pilot the others are still the
  * legacy pages: their links leave the /beta/ app with a full page load.
  */
-export const PORTED_AREAS = new Set<string>([]);
+export const PORTED_AREAS = new Set<string>(['requests']);
 
 /** Whether a path is a page of this app (pages outside every area, like home, are). */
 export function isPorted(path: string): boolean {

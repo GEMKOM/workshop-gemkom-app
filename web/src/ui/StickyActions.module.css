@@ -1,0 +1,14 @@
+.bar {
+  position: sticky;
+  bottom: calc(var(--gk-tabbar) + var(--gk-safe-bottom));
+  z-index: 10;
+  display: grid;
+  gap: 12px;
+  min-height: var(--gk-actionbar);
+  box-sizing: border-box;
+  margin: 0 calc(-1 * var(--gk-page-pad));
+  padding: 12px var(--gk-page-pad);
+  background: var(--gk-surface);
+  border-top: 1px solid var(--gk-line);
+  box-shadow: 0 -2px 12px rgba(16, 24, 40, 0.06);
+}

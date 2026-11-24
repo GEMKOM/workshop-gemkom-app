@@ -1,0 +1,43 @@
+.card {
+  box-shadow: var(--gk-shadow-card);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin-top: 12px;
+}
+
+.description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---- create ---- */
+.typeCard {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.typeCard[data-checked] {
+  border-color: var(--gk-red-700);
+  background: var(--gk-red-050);
+  box-shadow: 0 0 0 1px var(--gk-red-700);
+}
+
+.itemCard {
+  border-left: 3px solid var(--gk-red-700);
+}
+
+.itemRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
