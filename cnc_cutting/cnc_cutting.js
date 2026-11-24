@@ -3,7 +3,7 @@ import { initNavbar } from '../components/navbar.js';
 import { loadActiveTimersContent } from './activeTimers.js';
 import { loadFinishedTimersContent } from './finishedTimers.js';
 import { loadTaskOverviewContent } from './taskOverview.js';
-import { loadFireSaclarContent } from './fireSaclar.js';
+import { loadPlateStockContent } from './plateStock.js';
 
 // ============================================================================
 // TAB NAVIGATION SETUP
@@ -45,9 +45,9 @@ function loadTabContent(tabName) {
     } else if (tabName === 'task-overview') {
         // Load task overview content
         loadTaskOverviewContent();
-    } else if (tabName === 'fire-saclar') {
-        // Load fire saclar content
-        loadFireSaclarContent();
+    } else if (tabName === 'plate-stock') {
+        // Sac Stoğu: the plate sheets in stock, each with its code
+        loadPlateStockContent();
     }
 }
 
