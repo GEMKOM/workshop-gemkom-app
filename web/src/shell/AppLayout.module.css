@@ -1,0 +1,102 @@
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 16px var(--gk-page-pad);
+  /* Clear of the fixed bottom bar and the home indicator. */
+  padding-bottom: calc(var(--gk-tabbar) + var(--gk-safe-bottom) + 24px);
+}
+
+/* ---- top bar ---- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--gk-topbar);
+  padding: var(--gk-safe-top) 8px 0;
+  background: var(--gk-red-700);
+  color: var(--gk-on-dark);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+}
+
+.topbarTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 18px;
+  font-weight: 600;
+  padding-left: 8px;
+}
+
+.topbarButton {
+  color: var(--gk-on-dark);
+}
+
+.topbarButton:hover,
+.topbarButton:active {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---- bottom tab bar ---- */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-around;
+  height: calc(var(--gk-tabbar) + var(--gk-safe-bottom));
+  padding-bottom: var(--gk-safe-bottom);
+  background: var(--gk-surface);
+  border-top: 1px solid var(--gk-line);
+  box-shadow: 0 -2px 12px rgba(16, 24, 40, 0.06);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  color: var(--gk-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.tab[data-active] {
+  color: var(--gk-red-700);
+  font-weight: 600;
+}
+
+/* A bottom sheet as tall as its content (Mantine's size="auto" has no value). */
+.sheet {
+  height: auto;
+  max-height: 85dvh;
+  border-radius: var(--gk-radius-lg) var(--gk-radius-lg) 0 0;
+  padding-bottom: var(--gk-safe-bottom);
+}
+
+.tabLabel {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}

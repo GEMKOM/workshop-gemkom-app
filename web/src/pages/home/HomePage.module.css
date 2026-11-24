@@ -1,0 +1,42 @@
+.card {
+  overflow: hidden;
+  box-shadow: var(--gk-shadow-card);
+}
+
+.cardMain {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 84px;
+  padding: 16px;
+  box-sizing: border-box;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cardMain:active {
+  background: var(--gk-surface-subtle);
+}
+
+.cardText {
+  flex: 1;
+  min-width: 0;
+}
+
+.chevron {
+  flex: none;
+  color: var(--gk-muted);
+}
+
+.shortcuts {
+  padding: 12px 16px;
+  border-top: 1px solid var(--gk-line);
+  background: var(--gk-surface-subtle);
+}
+
+.shortcuts a {
+  /* A comfortable tap target. */
+  display: inline-block;
+  padding: 6px 0;
+}

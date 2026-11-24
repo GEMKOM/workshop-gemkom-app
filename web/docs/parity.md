@@ -14,6 +14,7 @@ URLs and query parameters stay the same, so bookmarks, the timer bubble's links 
 - [ ] `must_reset_password` → `/login/reset-password/`; reset: POST `/users/reset-password/`, then GET `/users/me/`, then home.
 - [ ] Forgot password: POST `/users/forgot-password/request/` `{username}`.
 - [ ] Show-password toggle.
+- [ ] The separate "Admin Girişi" form called the same login; one form serves both.
 - [ ] Requests: `Authorization: Bearer`, no `X-Subdomain` header.
 - [ ] On a 401: reuse a newer token from another tab, else a single shared POST `/token/refresh/`; keep the rotated refresh token; log out only on a 400/401 from the refresh (not on network errors or 5xx).
 - [ ] Admins (`is_superuser` or `is_admin`) pass every permission check.
@@ -23,23 +24,23 @@ URLs and query parameters stay the same, so bookmarks, the timer bubble's links 
 
 Route permissions (`getRoutePermissionCodename`):
 
-| Route | Permission |
-|---|---|
-| `/cnc_cutting/` | `access_cnc_cutting` |
-| `/cnc_cutting/tasks/` | `access_cnc_cutting_tasks` |
-| `/department-requests/` | `access_department_requests` |
-| `/department-requests/create/` | `access_department_requests_create` |
-| `/machining/` | `access_machining` |
-| `/machining/tasks/` | `access_machining_tasks` |
-| `/maintenance/` | `access_maintenance` |
-| `/maintenance/?tab=fault-requests` | `access_maintenance_list` |
-| `/welding/timesheet/` | `access_welding_timesheet` |
-| `/maintenance/faults/task/`, `/`, login pages | none |
+| Route                                         | Permission                          |
+| --------------------------------------------- | ----------------------------------- |
+| `/cnc_cutting/`                               | `access_cnc_cutting`                |
+| `/cnc_cutting/tasks/`                         | `access_cnc_cutting_tasks`          |
+| `/department-requests/`                       | `access_department_requests`        |
+| `/department-requests/create/`                | `access_department_requests_create` |
+| `/machining/`                                 | `access_machining`                  |
+| `/machining/tasks/`                           | `access_machining_tasks`            |
+| `/maintenance/`                               | `access_maintenance`                |
+| `/maintenance/?tab=fault-requests`            | `access_maintenance_list`           |
+| `/welding/timesheet/`                         | `access_welding_timesheet`          |
+| `/maintenance/faults/task/`, `/`, login pages | none                                |
 
 ## Shell (`components/navbar.js`, `main.js`)
 
 - [ ] Home cards by permission: Welding (`access_welding_timesheet`), Machining (`access_machining`), CNC (`access_cnc_cutting`), Maintenance (`access_maintenance`, with "create request" and "fault requests" shortcuts).
-- [ ] Navigation: Home, Maintenance and Department Requests always; Machining, CNC and Welding by the same permissions.
+- [ ] Navigation: Home plus the areas the user can open. The legacy navbar always showed Maintenance and Department Requests, which led a user without the permission to a refused page; the bottom bar shows them by their route permission, like the others.
 - [ ] Profile edit: first name, last name, email → PUT `/users/me/`, then GET `/users/me/`.
 - [ ] Logout clears the session and goes to `/login/`.
 
