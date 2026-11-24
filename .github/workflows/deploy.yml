@@ -1,16 +1,10 @@
 # Deploys saha.gemcore.com.tr to GitHub Pages.
 #
-# The site is the React app (web/): its build under /app-assets/ and its entry
-# page at every route (/, /machining/, /cnc_cutting/tasks/, ..., and 404.html),
-# written by web/scripts/assemble.mjs over the legacy files (every tracked file
-# except .github/ and web/, plus .nojekyll). The legacy scripts stay, so a
-# phone that still has a legacy page open keeps working until it reloads (the
-# warehouse pages were removed at the cutover). Recent deploys' asset files stay
-# published so a phone that opened the app before a deploy keeps working
-# (web/scripts/keep-old-assets.mjs).
-#
-# Rollback to the legacy pages: revert the cutover PR; the deploy that follows
-# serves them again, with the React app back at /beta/.
+# The site is the React app (web/) and the CNAME: the build under /app-assets/
+# and its entry page at every route (/, /machining/, /cnc_cutting/tasks/, ...,
+# and 404.html), written by web/scripts/assemble.mjs. Recent deploys' asset
+# files stay published so a phone that opened the app before a deploy keeps
+# working (web/scripts/keep-old-assets.mjs).
 #
 # Settings -> Pages -> Source is "GitHub Actions" (since 2026-11-24).
 
@@ -37,12 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Assemble the legacy site
+      - name: Start the site
         run: |
           mkdir _site
-          git ls-files -z \
-            | grep -zv -e '^\.github/' -e '^web/' \
-            | xargs -0 cp --parents -t _site
+          cp CNAME _site/
           touch _site/.nojekyll
 
       - uses: actions/setup-node@v4
@@ -72,10 +64,8 @@ jobs:
                       department-requests/index.html department-requests/create/index.html; do
             grep -q '/app-assets/' "_site/$page" || { echo "$page is not the React app"; exit 1; }
           done
-          # The legacy scripts stay for a phone that still has a legacy page open.
-          test -s _site/authService.js
-          test -s _site/machining/tasks/taskLogic.js
-          test ! -e _site/warehouse
+          # Nothing else: the legacy app is gone.
+          test ! -e _site/authService.js
           test ! -e _site/beta
           test ! -e _site/web
           echo "files: $(find _site -type f | wc -l)"

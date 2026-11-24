@@ -1,17 +1,14 @@
 #!/usr/bin/env node
-// Adds the React app to the assembled site, next to the legacy pages:
+// Adds the React app to the site folder (deploy.yml puts the CNAME in first):
 //   - web/dist (the build, hashed file names) under /app-assets/,
 //   - the app's entry page at <prefix>/ and at every route under it
 //     (<prefix>/machining/index.html, ...), so deep links and the timer
 //     bubble's links load the app with a 200,
 //   - the manifest's start_url and scope set to <prefix>/, so "add to home
 //     screen" opens the React app.
-// The legacy files must already be in the site folder (deploy.yml copies them
-// first). Without a prefix (live, since the cutover) the app's pages replace
-// the legacy pages at the same routes and 404.html is the app too, so a
-// mistyped address shows the app's "not found" page; the other legacy files
-// stay, so a phone that still has a legacy page open keeps working until it
-// reloads. With a prefix (the /beta/ pilot) nothing legacy is overwritten.
+// Without a prefix (live) 404.html is the app too, so a mistyped address shows
+// the app's "not found" page. A prefix (used for the /beta/ pilot) never
+// overwrites a page that is already in the folder.
 //
 // Usage: node scripts/assemble.mjs [--site <dir>] [--dist <dir>] [--prefix /beta]
 //   --site    the assembled site (default <repo>/_site)
@@ -78,7 +75,7 @@ export function assemble({ siteDir, distDir, prefix = '' }) {
     );
   }
   if (!existsSync(path.join(siteDir, 'CNAME'))) {
-    throw new Error(`${siteDir} has no CNAME; copy the legacy site into it first`);
+    throw new Error(`${siteDir} has no CNAME; copy the CNAME into it first`);
   }
   if (existsSync(path.join(siteDir, ASSETS_DIR))) {
     // Only keep-old-assets may add to it, after this step.
@@ -107,7 +104,7 @@ export function assemble({ siteDir, distDir, prefix = '' }) {
   for (const route of APP_ROUTES) {
     const rel = [cleanPrefix.replace(/^\//, ''), route, 'index.html'].filter(Boolean).join('/');
     const dest = path.join(siteDir, ...rel.split('/'));
-    if (existsSync(dest) && cleanPrefix) throw new Error(`${rel} would overwrite a legacy page`);
+    if (existsSync(dest) && cleanPrefix) throw new Error(`${rel} would overwrite an existing page`);
     mkdirSync(path.dirname(dest), { recursive: true });
     writeFileSync(dest, html);
     pages.push(rel);
