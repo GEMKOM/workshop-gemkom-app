@@ -7,6 +7,7 @@ import { afterEach, expect, it } from 'vitest';
 import { APP_ROUTES, assemble } from './assemble.mjs';
 
 const dirs = [];
+const read = (...parts) => readFileSync(path.join(...parts), 'utf8');
 afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
@@ -49,6 +50,26 @@ it('adds the app under /beta/ next to the untouched legacy pages', () => {
   );
   expect(manifest).toMatchObject({ start_url: '/beta/', scope: '/beta/' });
   expect(result.pages).toHaveLength(APP_ROUTES.length);
+});
+
+it('serves the app at the legacy routes when live, keeping the other legacy files', () => {
+  const { siteDir, distDir } = setup();
+  writeFileSync(path.join(siteDir, 'machining', 'machining.js'), 'legacy script');
+  writeFileSync(path.join(siteDir, 'authService.js'), 'legacy auth');
+  const result = assemble({ siteDir, distDir });
+  expect(read(siteDir, 'machining', 'index.html')).toContain(
+    '/app-assets/assets/index-AAAAAAAA.js',
+  );
+  expect(read(siteDir, 'index.html')).toContain('/app-assets/');
+  expect(read(siteDir, '404.html')).toContain('/app-assets/');
+  expect(read(siteDir, 'machining', 'machining.js')).toBe('legacy script');
+  expect(read(siteDir, 'authService.js')).toBe('legacy auth');
+  expect(existsSync(path.join(siteDir, 'beta'))).toBe(false);
+  expect(JSON.parse(read(siteDir, 'app-assets', 'manifest.webmanifest'))).toMatchObject({
+    start_url: '/',
+    scope: '/',
+  });
+  expect(result.pages).toHaveLength(APP_ROUTES.length + 1);
 });
 
 it('refuses a build that was not made for /app-assets/', () => {
