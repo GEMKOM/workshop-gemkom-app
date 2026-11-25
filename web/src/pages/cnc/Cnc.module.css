@@ -53,16 +53,6 @@
   gap: 10px 16px;
 }
 
-.file {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 6px 10px;
-  border: 1px solid var(--gk-line);
-  border-radius: var(--gk-radius-md);
-}
-
 /* ---- plate stock ---- */
 .group {
   overflow: hidden;
