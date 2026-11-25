@@ -1,6 +1,5 @@
 import {
   Accordion,
-  Anchor,
   Badge,
   Drawer,
   Group,
@@ -10,7 +9,6 @@ import {
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { IconFile } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import {
@@ -18,15 +16,34 @@ import {
   cncTaskQueryOptions,
   groupCuts,
   openCutsQueryOptions,
+  type CncFile,
   type CncTask,
 } from '@/api/cnc';
-import { formatDateTime } from '@/lib/format';
+import { FileList } from '@/ui/FileList';
+import { baseName, type ViewFile } from '@/ui/files';
 import sheets from '@/ui/Sheets.module.css';
 import classes from './Cnc.module.css';
 
 // Legacy cnc_cutting/taskOverview.js: every open cut, grouped (Rezerv, planned
 // without a machine, then each machine in order), each opening its details:
 // the cut, its parts with the total weight, and its files.
+
+/** The task's files as FileList shows them; a file without a URL can't be opened, so it is left out. */
+function toViewFiles(files: CncFile[] | null | undefined): ViewFile[] {
+  return (files ?? []).flatMap((f) =>
+    f.file_url
+      ? [
+          {
+            id: f.id,
+            url: f.file_url,
+            name: baseName(f.file_name || f.name) || 'Dosya',
+            uploadedBy: f.uploaded_by_username,
+            uploadedAt: f.uploaded_at,
+          },
+        ]
+      : [],
+  );
+}
 
 function OverviewCard({ task, onOpen }: { task: CncTask; onOpen: () => void }) {
   return (
@@ -67,7 +84,7 @@ export function CutDetails({ taskKey, onClose }: { taskKey: string | null; onClo
   const t = task.data;
   const parts = t?.parts ?? [];
   const totalKg = parts.reduce((sum, p) => sum + (Number.parseFloat(String(p.weight_kg)) || 0), 0);
-  const files = t?.files ?? [];
+  const files = toViewFiles(t?.files);
 
   return (
     <Drawer
@@ -113,31 +130,7 @@ export function CutDetails({ taskKey, onClose }: { taskKey: string | null; onClo
             <Text fw={600} mb={6}>
               Dosyalar
             </Text>
-            {files.length === 0 ? (
-              <Text size="sm" c="dimmed">
-                Dosya yok
-              </Text>
-            ) : (
-              <Stack gap={6}>
-                {files.map((file, i) => (
-                  <Anchor
-                    key={file.id ?? i}
-                    href={file.file_url ?? undefined}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={classes.file}
-                  >
-                    <IconFile size={18} />
-                    <span>{file.file_name || file.name || 'Dosya'}</span>
-                    {file.uploaded_at ? (
-                      <Text span size="xs" c="dimmed">
-                        {formatDateTime(file.uploaded_at)}
-                      </Text>
-                    ) : null}
-                  </Anchor>
-                ))}
-              </Stack>
-            )}
+            <FileList files={files} />
           </div>
 
           <div>

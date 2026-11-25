@@ -1,0 +1,103 @@
+/* FileViewer: the file on a grey stage, Kapat and İndir under it. */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage {
+  display: grid;
+  place-items: center;
+  height: min(70vh, 760px);
+  overflow: hidden;
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface-subtle);
+  border: 1px solid var(--gk-line);
+}
+
+/* Full screen on a phone: the stage takes what the title and buttons leave. */
+:global(.mantine-Modal-content[data-full-screen]) .stage {
+  height: calc(100dvh - 60px - 72px - var(--gk-safe-bottom));
+}
+
+.stage[data-kind='pdf'],
+.stage[data-kind='text'] {
+  place-items: stretch;
+}
+
+.footer {
+  padding-bottom: var(--gk-safe-bottom);
+}
+
+.footer > * {
+  min-height: 44px;
+}
+
+.imageScroller {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--gk-surface);
+}
+
+.video {
+  max-width: 100%;
+  max-height: 100%;
+  background: #000;
+}
+
+.text {
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  background: var(--gk-surface);
+  color: var(--gk-ink);
+  font-family: ui-monospace, 'IBM Plex Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 360px;
+  padding: 24px 16px;
+  color: var(--gk-muted);
+  text-align: center;
+}
+
+.cardName {
+  color: var(--gk-ink);
+  overflow-wrap: anywhere;
+}
+
+.card a,
+.card button {
+  min-height: 44px;
+}

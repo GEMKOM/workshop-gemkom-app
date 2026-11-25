@@ -168,8 +168,23 @@ describe('cnc page', () => {
             { id: 1, job_no: '304-01', weight_kg: '2.5' },
             { id: 2, job_no: '304-01', weight_kg: '1' },
           ],
-          files: [{ id: 4, file_name: 'E1.pdf', file_url: 'https://files.test/E1.pdf' }],
+          files: [
+            {
+              id: 4,
+              file_name: 'task_attachments/cnc_cutting/CNC-1/E1.pdf',
+              file_url: 'https://files.test/E1.pdf',
+              uploaded_by_username: 'planlama',
+            },
+            {
+              id: 5,
+              file_name: 'task_attachments/cnc_cutting/CNC-1/E1.MPG',
+              file_url: 'https://files.test/E1.MPG',
+            },
+          ],
         });
+      }
+      if (url.href === 'https://files.test/E1.MPG') {
+        return new Response('E1-ST44-20MM\r\nInfo: Columbus');
       }
       return undefined;
     });
@@ -180,10 +195,15 @@ describe('cnc page', () => {
     fireEvent.click(await screen.findByText('E1'));
     const sheet = await screen.findByRole('dialog', { name: 'CNC-1 - Görev Detayları' });
     expect(await within(sheet).findByText('3.50 kg')).toBeInTheDocument();
-    expect(within(sheet).getByRole('link', { name: /E1.pdf/ })).toHaveAttribute(
-      'href',
-      'https://files.test/E1.pdf',
-    );
+    // Each file has Önizle and İndir (legacy Görüntüle / İndir), named by its last path segment.
+    expect(within(sheet).getByText('E1.pdf')).toBeInTheDocument();
+    expect(within(sheet).getByText('planlama')).toBeInTheDocument();
+    expect(within(sheet).getByRole('button', { name: 'E1.pdf indir' })).toBeInTheDocument();
+    // The CNC program (MPG) previews as text.
+    fireEvent.click(within(sheet).getByRole('button', { name: 'E1.MPG önizle' }));
+    const viewer = await screen.findByRole('dialog', { name: 'E1.MPG' });
+    expect(await within(viewer).findByText(/E1-ST44-20MM/)).toBeInTheDocument();
+    expect(within(viewer).getByRole('button', { name: 'İndir' })).toBeInTheDocument();
   });
 
   it('searches plate stock and shows each sheet’s state', async () => {

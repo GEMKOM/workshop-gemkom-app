@@ -1,0 +1,53 @@
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Name on top, the two buttons under it on a phone; side by side when there is room. */
+.row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--gk-line);
+  border-radius: var(--gk-radius-md);
+  background: var(--gk-surface);
+}
+
+.icon {
+  color: var(--gk-muted);
+}
+
+.main {
+  min-width: 0;
+}
+
+.name {
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.actions > button {
+  min-height: 44px;
+}
+
+@media (min-width: 36em) {
+  .row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .actions {
+    grid-column: auto;
+    grid-template-columns: auto auto;
+  }
+}
